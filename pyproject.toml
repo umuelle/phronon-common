@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phronon_common"
+version = "0.1.0"
+description = "Shared framework-agnostic helpers for the Phronon teaching tools"
+requires-python = ">=3.10"
+dependencies = [
+    "itsdangerous>=2.2.0",
+]
+
+[tool.setuptools]
+packages = ["phronon_common"]
+package-dir = { "phronon_common" = "." }
