@@ -8,20 +8,24 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses."""
 
     def __init__(self, app, enable_hsts: bool = False, frame_options: str = "SAMEORIGIN",
-                 private_path_prefix: str = "/backoffice"):
+                 private_path_prefix: str = "/backoffice", csp: str = None):
         super().__init__(app)
         self.enable_hsts = enable_hsts
         self.frame_options = frame_options
         self.private_path_prefix = private_path_prefix
+        self.csp = csp
 
     def _build_csp(self) -> str:
-        # Matches the other Phronon tools: allows the Bootstrap CDN (jsdelivr/cdnjs).
+        if self.csp:
+            return self.csp
+        # CDN-free default: since 2026-06-11 all Phronon tools self-host their
+        # JS/CSS/fonts in static/vendor (corporate proxies block CDN hosts).
         directives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "script-src 'self' 'unsafe-inline'",
+            "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob:",
-            "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com",
+            "font-src 'self'",
             "connect-src 'self'",
             "form-action 'self'",
             "frame-ancestors 'self'",
