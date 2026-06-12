@@ -1,0 +1,174 @@
+<!-- Shared Phronon backoffice navbar — harmonization J1 -->
+<!--
+  Usage in backoffice/base.html:
+  {% include "phronon_common/navbar.html" %}
+
+  Pass these context variables:
+  - app_name: str (e.g., "Drawbridge", "Layoff Exercise")
+  - app_icon: str (path to /static/brand/icon.svg)
+  - nav_items: list of dicts [{"href": "...", "label": "...", "active": bool}, ...]
+  - admin: user object (optional, if None omit the admin/user section)
+  - admin_role: str (e.g., "ADMIN" or "EDUCATOR")
+-->
+<nav class="ph-bo-nav{% if admin and admin_role == 'ADMIN' %} ph-bo-nav--admin{% endif %}">
+  <div class="ph-bo-nav__container">
+    <!-- Brand / Home -->
+    <a href="/backoffice/" class="ph-bo-nav__brand">
+      {% if app_icon %}
+        <img src="{{ app_icon }}" alt="" aria-hidden="true" class="ph-bo-nav__icon">
+      {% endif %}
+      <span>{{ app_name }}</span>
+    </a>
+
+    <!-- Nav Links (center) -->
+    <div class="ph-bo-nav__links">
+      {% for item in nav_items %}
+        <a href="{{ item.href }}"
+           class="ph-bo-nav__link{% if item.active %} ph-bo-nav__link--active{% endif %}">
+          {{ item.label }}
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- User menu (right) -->
+    {% if admin %}
+    <div class="ph-bo-nav__user">
+      <span class="ph-bo-nav__user-email">{{ admin.email }}</span>
+      {% if admin_role == 'ADMIN' %}
+        <span class="ph-bo-nav__badge">Admin</span>
+      {% endif %}
+      <form method="POST" action="/logout" style="display:inline;">
+        <button type="submit" class="ph-bo-nav__logout">Logout</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</nav>
+
+<style>
+.ph-bo-nav {
+  background: var(--ph-color-educator);
+  color: #fff;
+  padding: 0 var(--ph-space-md);
+  border-bottom: 3px solid var(--ph-color-secondary);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.ph-bo-nav--admin {
+  background: var(--ph-color-admin);
+  border-bottom-color: #a00000;
+}
+
+.ph-bo-nav__container {
+  max-width: var(--ph-container-max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ph-space-lg);
+  height: 64px;
+}
+
+.ph-bo-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ph-space-sm);
+  color: #fff;
+  font-weight: var(--ph-font-weight-bold);
+  font-size: var(--ph-font-size-lg);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.ph-bo-nav__brand:hover {
+  opacity: 0.9;
+}
+
+.ph-bo-nav__icon {
+  width: 28px;
+  height: 28px;
+}
+
+.ph-bo-nav__links {
+  display: flex;
+  gap: var(--ph-space-lg);
+  flex: 1;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.ph-bo-nav__link {
+  color: rgba(255, 255, 255, 0.9);
+  padding: var(--ph-space-sm) 0;
+  border-bottom: 3px solid transparent;
+  transition: var(--ph-transition);
+  text-decoration: none;
+  font-size: var(--ph-font-size-base);
+}
+
+.ph-bo-nav__link:hover {
+  color: #fff;
+}
+
+.ph-bo-nav__link--active {
+  color: #fff;
+  border-bottom-color: #fff;
+  font-weight: var(--ph-font-weight-medium);
+}
+
+.ph-bo-nav__user {
+  display: flex;
+  align-items: center;
+  gap: var(--ph-space-md);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ph-bo-nav__user-email {
+  font-size: var(--ph-font-size-sm);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ph-bo-nav__badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px var(--ph-space-sm);
+  border-radius: var(--ph-border-radius);
+  font-size: var(--ph-font-size-xs);
+  font-weight: var(--ph-font-weight-bold);
+  color: #fff;
+}
+
+.ph-bo-nav__logout {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: var(--ph-space-sm) var(--ph-space-md);
+  border-radius: var(--ph-border-radius);
+  font-size: var(--ph-font-size-sm);
+  cursor: pointer;
+  transition: var(--ph-transition);
+}
+
+.ph-bo-nav__logout:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ph-bo-nav__container {
+    flex-wrap: wrap;
+    gap: var(--ph-space-md);
+    height: auto;
+    padding: var(--ph-space-md);
+  }
+
+  .ph-bo-nav__links {
+    width: 100%;
+    order: 3;
+  }
+
+  .ph-bo-nav__user {
+    margin-left: 0;
+  }
+}
+</style>

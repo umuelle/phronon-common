@@ -1,0 +1,182 @@
+/* Phronon Design System — shared tokens + footer/navbar components.
+ * Harmonization J1/J3/P3.
+ *
+ * SAFE TO DROP INTO ANY TOOL: this file only defines :root custom
+ * properties (which do nothing unless referenced) and component classes
+ * prefixed with .ph-* (which only affect elements that opt in). It does
+ * NOT restyle bare html/body/a/button, so existing layouts are untouched.
+ *
+ * Source of truth: phronon_common/design-tokens.css
+ * Deployed copy: each tool's static/css/phronon-tokens.css
+ */
+
+:root {
+  /* Brand colors */
+  --ph-color-educator: #1e3a5f;   /* educator navbar */
+  --ph-color-admin: #8b0000;      /* admin navbar */
+  --ph-color-secondary: #2d5a8c;
+  --ph-color-success: #28a745;
+  --ph-color-danger: #dc3545;
+  --ph-color-warning: #ffc107;
+  --ph-color-light: #f8f9fa;
+  --ph-color-border: #dee2e6;
+  --ph-color-text: #333;
+  --ph-color-text-light: #666;
+
+  /* Typography */
+  --ph-font-serif: "Source Serif 4", Georgia, serif;
+  --ph-font-sans: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ph-font-mono: "Courier New", monospace;
+  --ph-font-size-sm: 0.875rem;
+  --ph-font-size-xs: 0.75rem;
+  --ph-font-size-lg: 1.125rem;
+
+  /* Spacing — 8px scale */
+  --ph-space-xs: 0.25rem;
+  --ph-space-sm: 0.5rem;
+  --ph-space-md: 1rem;
+  --ph-space-lg: 1.5rem;
+  --ph-space-xl: 2rem;
+  --ph-space-2xl: 3rem;
+
+  /* Layout */
+  --ph-container-max-width: 1200px;
+  --ph-border-radius: 4px;
+  --ph-transition: all 0.2s ease-in-out;
+}
+
+/* ── Shared footer ────────────────────────────────────────────────
+ * Markup (Drawbridge-style, no year):
+ *   <footer class="ph-footer">
+ *     <nav class="ph-footer__legal" aria-label="Legal">
+ *       <a href="/imprint">Imprint</a><span aria-hidden="true">·</span>
+ *       <a href="/imprint#privacy">Privacy Policy</a><span aria-hidden="true">·</span>
+ *       <a href="/imprint#cookies">Cookie Policy</a>
+ *     </nav>
+ *     <p class="ph-footer__meta">Part of <a href="https://phronon.org">Phronon</a>
+ *        — classroom simulations for practical judgment</p>
+ *   </footer>
+ */
+.ph-footer {
+  margin-top: var(--ph-space-2xl, 3rem);
+  padding: var(--ph-space-xl, 2rem) var(--ph-space-md, 1rem);
+  border-top: 1px solid var(--ph-color-border, #dee2e6);
+  background: var(--ph-color-light, #f8f9fa);
+  font-size: var(--ph-font-size-sm, 0.875rem);
+  text-align: center;
+  color: var(--ph-color-text-light, #666);
+}
+.ph-footer__legal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--ph-space-sm, 0.5rem);
+  flex-wrap: wrap;
+  margin-bottom: var(--ph-space-md, 1rem);
+}
+.ph-footer__legal a,
+.ph-footer__meta a {
+  color: var(--ph-color-text-light, #666);
+}
+.ph-footer__meta a { text-decoration: underline; }
+.ph-footer__legal a:hover,
+.ph-footer__meta a:hover { color: var(--ph-color-educator, #1e3a5f); }
+.ph-footer__meta {
+  margin: var(--ph-space-sm, 0.5rem) 0;
+  line-height: 1.5;
+}
+
+/* ── Shared backoffice navbar ─────────────────────────────────────
+ * Opt-in class layer for tool navbars. Each tool keeps its own links;
+ * these classes only standardize the look (navy bg, height, active
+ * underline, user section). Add .ph-bo-nav--admin for the admin red.
+ */
+.ph-bo-nav {
+  background: var(--ph-color-educator, #1e3a5f);
+  color: #fff;
+  padding: 0 var(--ph-space-md, 1rem);
+  border-bottom: 3px solid var(--ph-color-secondary, #2d5a8c);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.ph-bo-nav--admin {
+  background: var(--ph-color-admin, #8b0000);
+  border-bottom-color: #a00000;
+}
+.ph-bo-nav__container {
+  max-width: var(--ph-container-max-width, 1200px);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--ph-space-lg, 1.5rem);
+  min-height: 64px;
+}
+.ph-bo-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ph-space-sm, 0.5rem);
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--ph-font-size-lg, 1.125rem);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.ph-bo-nav__brand:hover { opacity: 0.9; }
+.ph-bo-nav__icon { width: 28px; height: 28px; }
+.ph-bo-nav__links {
+  display: flex;
+  gap: var(--ph-space-lg, 1.5rem);
+  flex: 1;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.ph-bo-nav__link {
+  color: rgba(255,255,255,0.9);
+  padding: var(--ph-space-sm, 0.5rem) 0;
+  border-bottom: 3px solid transparent;
+  transition: var(--ph-transition, all .2s ease-in-out);
+  text-decoration: none;
+}
+.ph-bo-nav__link:hover { color: #fff; }
+.ph-bo-nav__link--active {
+  color: #fff;
+  border-bottom-color: #fff;
+  font-weight: 500;
+}
+.ph-bo-nav__user {
+  display: flex;
+  align-items: center;
+  gap: var(--ph-space-md, 1rem);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.ph-bo-nav__user-email {
+  font-size: var(--ph-font-size-sm, 0.875rem);
+  color: rgba(255,255,255,0.9);
+}
+.ph-bo-nav__badge {
+  background: rgba(255,255,255,0.2);
+  padding: 2px var(--ph-space-sm, 0.5rem);
+  border-radius: var(--ph-border-radius, 4px);
+  font-size: var(--ph-font-size-xs, 0.75rem);
+  font-weight: 700;
+}
+.ph-bo-nav__logout {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: var(--ph-space-sm, 0.5rem) var(--ph-space-md, 1rem);
+  border-radius: var(--ph-border-radius, 4px);
+  font-size: var(--ph-font-size-sm, 0.875rem);
+  cursor: pointer;
+  transition: var(--ph-transition, all .2s ease-in-out);
+}
+.ph-bo-nav__logout:hover {
+  background: rgba(255,255,255,0.3);
+  border-color: rgba(255,255,255,0.6);
+}
+
+@media (max-width: 768px) {
+  .ph-bo-nav__container { flex-wrap: wrap; min-height: 0; padding: var(--ph-space-md, 1rem) 0; }
+  .ph-bo-nav__links { width: 100%; order: 3; }
+  .ph-bo-nav__user { margin-left: 0; }
+}
