@@ -74,10 +74,19 @@ def send_password_reset(tool_name: str, default_from: str, to_email: str,
     """Send the branded reset email. No-op (logs the link) if SMTP unconfigured."""
     hours = os.getenv("RESET_TOKEN_HOURS", "2")
     if not os.getenv("SMTP_PASSWORD"):
-        logger.warning(
-            "SMTP not configured (SMTP_PASSWORD unset) — reset link for %s: %s",
-            to_email, reset_url,
-        )
+        # A reset URL is a live credential — never log it in production
+        # (security audit, finding 3). Locally the link is logged so the dev
+        # can complete the flow without SMTP configured.
+        if os.getenv("PRODUCTION", "").strip().lower() in ("1", "true", "yes"):
+            logger.error(
+                "SMTP not configured (SMTP_PASSWORD unset) — password reset for "
+                "%s could not be sent; reset link withheld from logs.", to_email,
+            )
+        else:
+            logger.warning(
+                "SMTP not configured (dev) — reset link for %s: %s",
+                to_email, reset_url,
+            )
         return
     sender = os.getenv("EMAIL_FROM") or os.getenv("SMTP_FROM") or default_from
     msg = build_password_reset_message(tool_name, sender, to_email, reset_url, hours)
