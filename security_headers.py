@@ -1,4 +1,14 @@
-"""Security headers middleware (shared; identical to the LSR/Drawbridge version)."""
+"""Security headers middleware (shared; identical to the LSR/Drawbridge version).
+
+Per-request CSP nonce: every response mints a nonce, exposed as
+`request.state.csp_nonce` for templates to stamp on inline <script> blocks. If a
+custom `csp` string contains the literal token `{nonce}`, it is replaced with
+that request's nonce — this is how a tool moves to `script-src 'self'
+'nonce-{nonce}'` and drops `'unsafe-inline'`. A `csp` without the token is
+returned unchanged (backward compatible).
+"""
+
+import secrets
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -15,9 +25,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         self.private_path_prefix = private_path_prefix
         self.csp = csp
 
-    def _build_csp(self) -> str:
+    def _build_csp(self, nonce: str) -> str:
         if self.csp:
-            return self.csp
+            return self.csp.replace("{nonce}", nonce)
         # CDN-free default: since 2026-06-11 all Phronon tools self-host their
         # JS/CSS/fonts in static/vendor (corporate proxies block CDN hosts).
         directives = [
@@ -35,9 +45,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return "; ".join(directives)
 
     async def dispatch(self, request: Request, call_next):
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
+
         response = await call_next(request)
 
-        response.headers["Content-Security-Policy"] = self._build_csp()
+        response.headers["Content-Security-Policy"] = self._build_csp(nonce)
         response.headers["X-Frame-Options"] = self.frame_options
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-XSS-Protection"] = "1; mode=block"
