@@ -15,4 +15,4 @@ Moral Mirror is the first consumer; migrate the other tools opportunistically.
 Keep tool-specific logic OUT of here — only what is identical everywhere.
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
