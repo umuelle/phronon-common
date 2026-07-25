@@ -44,4 +44,9 @@ jobs:
           if [ -f requirements.txt ]; then pip install --quiet -r requirements.txt; fi
           if [ -f requirements-test.txt ]; then pip install --quiet -r requirements-test.txt; fi
           pip install --quiet pytest "phronon_common @ git+https://github.com/umuelle/phronon-common.git"
-          python -m pytest tests/ -q -p no:cacheprovider
+          pip install --quiet pip-audit
+          audit_args=""
+          if [ -f requirements.txt ]; then audit_args="$audit_args -r requirements.txt"; fi
+          if [ -f requirements-test.txt ]; then audit_args="$audit_args -r requirements-test.txt"; fi
+          if [ -n "$audit_args" ]; then pip-audit $audit_args || echo "::warning::pip-audit reported advisories (non-blocking)"; fi
+          python -m pytest tests/ -q -ra -p no:cacheprovider
