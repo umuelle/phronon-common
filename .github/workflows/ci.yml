@@ -1,8 +1,10 @@
 name: CI
-# Fast, dependency-light gate that runs on every push/PR — catches Python syntax
-# and Jinja template-syntax breakage before it can reach the server (deploy.sh
-# only runs tests AFTER the code is already live). Needs no database and no
-# cross-repo secrets, so it never false-fails. Python 3.10 matches the server.
+# Runs on every push/PR (Python 3.10, matching the server):
+#   1. py_compile every tracked .py     — syntax
+#   2. parse every Jinja template        — template syntax
+#   3. install deps + the shared phronon_common package, then pytest
+# The DB-backed and live-email tests skip automatically when no database / SMTP
+# is present (as they do off-server), so no secrets or services are needed here.
 on:
   push:
   pull_request:
@@ -35,3 +37,11 @@ jobs:
               print("TEMPLATE SYNTAX ERRORS:"); print("\n".join(errs)); sys.exit(1)
           print("all templates parse")
           PY
+      - name: Install dependencies and run the test suite
+        run: |
+          if [ ! -d tests ]; then echo "no tests/ directory — skipping pytest"; exit 0; fi
+          python -m pip install --quiet --upgrade pip
+          if [ -f requirements.txt ]; then pip install --quiet -r requirements.txt; fi
+          if [ -f requirements-test.txt ]; then pip install --quiet -r requirements-test.txt; fi
+          pip install --quiet pytest "phronon_common @ git+https://github.com/umuelle/phronon-common.git"
+          pytest tests/ -q -p no:cacheprovider
