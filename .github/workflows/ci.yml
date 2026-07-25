@@ -1,0 +1,37 @@
+name: CI
+# Fast, dependency-light gate that runs on every push/PR — catches Python syntax
+# and Jinja template-syntax breakage before it can reach the server (deploy.sh
+# only runs tests AFTER the code is already live). Needs no database and no
+# cross-repo secrets, so it never false-fails. Python 3.10 matches the server.
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Compile every tracked .py (syntax)
+        run: |
+          files=$(git ls-files '*.py')
+          if [ -n "$files" ]; then python -m py_compile $files; echo "compiled OK"; else echo "no .py files"; fi
+      - name: Parse every Jinja template (syntax)
+        run: |
+          python -m pip install --quiet jinja2
+          python - <<'PY'
+          import glob, sys, jinja2
+          env = jinja2.Environment()
+          errs = []
+          for pattern in ("templates/**/*.html", "templates/**/*.txt"):
+              for p in glob.glob(pattern, recursive=True):
+                  try:
+                      env.parse(open(p, encoding="utf-8").read())
+                  except jinja2.TemplateSyntaxError as e:
+                      errs.append(f"{p}:{e.lineno}: {e.message}")
+          if errs:
+              print("TEMPLATE SYNTAX ERRORS:"); print("\n".join(errs)); sys.exit(1)
+          print("all templates parse")
+          PY
