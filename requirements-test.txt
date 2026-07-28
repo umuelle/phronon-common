@@ -1,0 +1,20 @@
+# Test-only dependencies. Not runtime dependencies of the package.
+#
+# phronon_common is deliberately framework-agnostic — pyproject declares only
+# itsdangerous, and the tools bring their own FastAPI/Starlette. But csrf.py,
+# rate_limit.py and security_headers.py ship Starlette middleware, and the only
+# honest way to test middleware is to mount it on a real ASGI app and drive it
+# with a real client.
+#
+# Without this file the CSRF tests fail to import and CI goes red — which is how
+# it went red the first time. Worse would be a version of that failure that
+# SKIPS instead: the suite guarding the fleet-wide catch-all exemption check
+# would silently stop running. Pinned to the versions the fleet runs, so the
+# middleware is tested against the Starlette the tools actually deploy.
+fastapi==0.139.2
+starlette==1.3.1
+
+# httpx is REQUIRED by fastapi.testclient.TestClient. Pinned for the same reason
+# it is pinned in the tools: an unpinned resolve once picked up a starlette that
+# demanded a different httpx and silently disabled the route tests.
+httpx==0.28.1
