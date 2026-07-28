@@ -191,6 +191,57 @@ def test_ajax_callers_get_json():
     assert r.json()["success"] is False
 
 
+def test_the_handler_still_receives_the_form_body():
+    """The middleware must put the body back after reading the token out of it.
+
+    Regression (2026-07-28, found in production): BaseHTTPMiddleware hands the
+    route handler the same receive stream the middleware reads from, so calling
+    request.form() here consumed the body and the handler saw nothing — every
+    backoffice login answered 422 "Field required" instead of logging in.
+
+    The stand-in route in the other tests takes no arguments, so it could not
+    catch this. This one reads the fields the way a real handler does.
+    """
+    from fastapi import Form
+
+    app = FastAPI()
+    protection = CSRFProtection(secret_key=SECRET)
+    app.add_middleware(CSRFMiddleware, csrf_protection=protection, session_cookie=None)
+
+    @app.post("/backoffice")
+    async def login(email: str = Form(...), password: str = Form(...)):
+        return {"email": email, "password_len": len(password)}
+
+    client = TestClient(app)
+    r = client.post("/backoffice", data={
+        "email": "educator@example.org",
+        "password": "hunter2hunter2",
+        "csrf_token": protection.generate_token(None),
+    })
+    assert r.status_code == 200, f"handler did not receive the form: {r.text[:300]}"
+    assert r.json() == {"email": "educator@example.org", "password_len": 14}
+
+
+def test_the_handler_still_receives_a_json_body():
+    """Same re-injection, non-form content type: the token comes from the header."""
+    app = FastAPI()
+    protection = CSRFProtection(secret_key=SECRET)
+    app.add_middleware(CSRFMiddleware, csrf_protection=protection, session_cookie=None)
+
+    @app.post("/backoffice/api")
+    async def api(payload: dict):
+        return {"got": payload}
+
+    client = TestClient(app)
+    r = client.post(
+        "/backoffice/api",
+        json={"ids": [1, 2, 3]},
+        headers={"X-CSRF-Token": protection.generate_token(None)},
+    )
+    assert r.status_code == 200, f"handler did not receive the JSON body: {r.text[:300]}"
+    assert r.json() == {"got": {"ids": [1, 2, 3]}}
+
+
 def test_safe_methods_are_never_checked():
     app = FastAPI()
     protection = CSRFProtection(secret_key=SECRET)

@@ -9,6 +9,7 @@ import hmac
 import hashlib
 import secrets
 import logging
+from urllib.parse import parse_qs
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
@@ -123,13 +124,42 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         if any(path.startswith(exempt) for exempt in self.EXEMPT_PATHS):
             return await call_next(request)
 
+        # Read the RAW body and put it back.
+        #
+        # BaseHTTPMiddleware hands the route handler the same receive stream this
+        # middleware reads from, so consuming the body here (via request.form())
+        # leaves nothing for the handler: every field arrives as None and FastAPI
+        # answers 422 "Field required". It stayed invisible while a catch-all "/"
+        # exemption meant the middleware returned before ever touching the body.
+        # Re-injecting a fresh stream containing the cached bytes is what makes
+        # the handler see the form again.
         csrf_token = None
-        if request.method == "POST":
-            try:
-                form = await request.form()
-                csrf_token = form.get("csrf_token")
-            except Exception:
-                pass
+        if request.method in ("POST", "PUT", "PATCH"):
+            body = await request.body()
+
+            content_type = request.headers.get("content-type", "")
+            if content_type.startswith("application/x-www-form-urlencoded"):
+                try:
+                    values = parse_qs(body.decode("utf-8", errors="replace")).get("csrf_token", [])
+                    if values:
+                        csrf_token = values[0]
+                except Exception:
+                    pass
+            # Deliberately not parsing multipart here: it would need an extra
+            # dependency and a full parse of an upload just to find one field.
+            # Multipart callers send the token as the X-CSRF-Token header.
+
+            sent = False
+
+            async def receive_with_cached_body():
+                nonlocal sent
+                if not sent:
+                    sent = True
+                    return {"type": "http.request", "body": body, "more_body": False}
+                return {"type": "http.disconnect"}
+
+            request._receive = receive_with_cached_body
+
         if not csrf_token:
             csrf_token = request.headers.get("X-CSRF-Token")
 

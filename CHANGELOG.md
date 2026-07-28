@@ -4,6 +4,27 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.2.1 — 2026-07-28
+**Fix — the middleware ate the request body.**
+
+Every protected POST answered 422 "Field required" with input null, including
+backoffice logins, for requests carrying a perfectly valid CSRF token.
+
+BaseHTTPMiddleware gives the route handler the same receive stream the
+middleware reads from, so `await request.form()` in dispatch() drained it and
+the handler saw no fields at all. Latent since the middleware was written; it
+only surfaced in 1.2.0, because until the catch-all "/" exemption was refused
+the middleware returned before it ever touched the body.
+
+The raw body is now read once, the token parsed out of it, and a fresh receive
+channel carrying the cached bytes put back before call_next. Multipart bodies
+pass through untouched — those callers send the X-CSRF-Token header.
+
+The 1.2.0 tests all drove a stand-in route taking no arguments, which is exactly
+why they missed it. Two new tests read a real Form body and a real JSON body;
+both fail against the 1.2.0 implementation. Verified on python 3.10 /
+starlette 1.3.1: 20 pass with the fix, 1 fails without.
+
 ## 1.2.0 — 2026-07-28
 **Security — CSRF middleware hardened; roadmap N1 (CSRF API reconciliation).**
 
