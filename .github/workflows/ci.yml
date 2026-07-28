@@ -45,8 +45,18 @@ jobs:
           if [ -f requirements-test.txt ]; then pip install --quiet -r requirements-test.txt; fi
           pip install --quiet pytest "phronon_common @ git+https://github.com/umuelle/phronon-common.git@v1.1.0"
           pip install --quiet pip-audit
-          audit_args=""
-          if [ -f requirements.txt ]; then audit_args="$audit_args -r requirements.txt"; fi
-          if [ -f requirements-test.txt ]; then audit_args="$audit_args -r requirements-test.txt"; fi
-          if [ -n "$audit_args" ]; then pip-audit $audit_args || echo "::warning::pip-audit reported advisories (non-blocking)"; fi
+          # BLOCKING. This used to downgrade findings to a warning, which meant a
+          # known-vulnerable package could sail through unnoticed. Audit the
+          # checksum-locked graph when there is one — that is what actually gets
+          # installed in production, and it covers indirect packages too.
+          if [ -f requirements.lock ]; then
+            pip-audit -r requirements.lock
+          else
+            audit_args=""
+            if [ -f requirements.txt ]; then audit_args="$audit_args -r requirements.txt"; fi
+            if [ -f requirements-test.txt ]; then audit_args="$audit_args -r requirements-test.txt"; fi
+            if [ -n "$audit_args" ]; then pip-audit $audit_args; fi
+          fi
+          # A skipped security test looks exactly like a passing one, so make the
+          # count visible in the log and fail if the suite itself did not run.
           python -m pytest tests/ -q -ra -p no:cacheprovider
