@@ -11,7 +11,7 @@ import secrets
 import logging
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, JSONResponse
 
 logger = logging.getLogger(__name__)
 
@@ -59,22 +59,67 @@ class CSRFProtection:
 
 
 class CSRFMiddleware(BaseHTTPMiddleware):
-    """Validate CSRF tokens on state-changing requests."""
+    """Validate CSRF tokens on state-changing requests.
+
+    Exemptions come in two flavours, and the difference matters:
+
+    ``exempt_paths``
+        PREFIX matches (``path.startswith(entry)``). Good for whole subtrees
+        such as ``/static/`` or ``/withdraw/``.
+
+    ``exempt_exact``
+        EXACT matches (``path == entry``). This is the only safe way to exempt
+        a bare ``"/"`` — a tool whose participant flow POSTs to the site root.
+
+    Putting ``"/"`` in ``exempt_paths`` prefixes every URL on the site and turns
+    CSRF off everywhere, backoffice included. That is not hypothetical: it
+    shipped in two tools and went unnoticed for months, because nothing fails
+    visibly — every request simply sails through. The constructor now refuses
+    it outright, so the mistake cannot be made again anywhere in the fleet.
+
+    On failure the middleware RETURNS a response; it never raises. User
+    middleware sits outside Starlette's ExceptionMiddleware, so an
+    ``HTTPException`` raised here would bypass the app's 403 handler and
+    surface as a 500. Content negotiation keeps AJAX callers getting JSON.
+    """
 
     PROTECTED_METHODS = {"POST", "PUT", "DELETE", "PATCH"}
 
+    #: Entries that would match every path on the site.
+    _CATCH_ALL = ("", "/")
+
     def __init__(self, app, csrf_protection: CSRFProtection,
-                 session_cookie: str = "backoffice", exempt_paths: list = None):
+                 session_cookie: str = "backoffice", exempt_paths: list = None,
+                 exempt_exact=None):
+        """
+        Args:
+            session_cookie: Cookie whose value tokens are bound to. Pass ``None``
+                to disable session binding — correct for tools that refresh the
+                cookie on every response (a rolling value would never match).
+            exempt_paths: Path PREFIXES exempt from CSRF. Never ``"/"``.
+            exempt_exact: Exact paths exempt from CSRF. Use this for ``"/"``.
+        """
         super().__init__(app)
         self.csrf = csrf_protection
         self.session_cookie = session_cookie
-        self.EXEMPT_PATHS = ["/static/"] + (exempt_paths or [])
+        self.EXEMPT_PATHS = ["/static/"] + list(exempt_paths or [])
+        self.EXEMPT_EXACT = frozenset(exempt_exact or ())
+
+        catch_all = [p for p in self.EXEMPT_PATHS if p in self._CATCH_ALL]
+        if catch_all:
+            raise ValueError(
+                f"CSRFMiddleware: exempt_paths entry {catch_all!r} is a prefix of "
+                f"every URL, which disables CSRF for the whole app. If the site "
+                f"root really does accept a POST, pass exempt_exact={{'/'}} instead."
+            )
 
     async def dispatch(self, request: Request, call_next):
         if request.method not in self.PROTECTED_METHODS:
             return await call_next(request)
 
         path = request.url.path
+        if path in self.EXEMPT_EXACT:
+            return await call_next(request)
         if any(path.startswith(exempt) for exempt in self.EXEMPT_PATHS):
             return await call_next(request)
 
@@ -88,11 +133,31 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         if not csrf_token:
             csrf_token = request.headers.get("X-CSRF-Token")
 
-        session_id = request.cookies.get(self.session_cookie)
+        session_id = (
+            request.cookies.get(self.session_cookie) if self.session_cookie else None
+        )
         if not csrf_token or not self.csrf.validate_token(csrf_token, session_id):
             logger.warning(f"CSRF validation failed for {request.method} {path}")
+            if "application/json" in request.headers.get("accept", ""):
+                return JSONResponse(
+                    {"success": False, "error": "CSRF validation failed",
+                     "detail": "Please refresh the page and try again."},
+                    status_code=403,
+                )
             return HTMLResponse(
                 content="<h1>403 Forbidden</h1><p>CSRF validation failed. Please go back and try again.</p>",
                 status_code=403,
             )
         return await call_next(request)
+
+
+def get_csrf_token(request: Request, csrf_protection: CSRFProtection,
+                   session_cookie: str = None) -> str:
+    """Token for use in templates.
+
+    Pass the same ``session_cookie`` the middleware was given, or leave it
+    ``None`` when the middleware runs unbound — the two must agree or every
+    token fails validation.
+    """
+    session_id = request.cookies.get(session_cookie) if session_cookie else None
+    return csrf_protection.generate_token(session_id)

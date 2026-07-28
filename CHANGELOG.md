@@ -4,6 +4,36 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.2.0 — 2026-07-28
+**Security — CSRF middleware hardened; roadmap N1 (CSRF API reconciliation).**
+
+`CSRFMiddleware` now **refuses a catch-all prefix**. `exempt_paths` entries are
+matched with `path.startswith(...)`, so a bare `"/"` exempts every URL on the
+site. That had shipped in two tools (LSR-profiler and ControversyGenerator),
+disabling CSRF app-wide — including backoffice login, class management and user
+administration — and it went unnoticed because nothing fails visibly when CSRF
+is off. Passing `"/"` (or `""`) in `exempt_paths` now raises `ValueError`, which
+surfaces at app boot. New in this release:
+
+- `exempt_exact` — a set of EXACT paths, the supported way to exempt a site root
+  that genuinely serves a POST (ControversyGenerator's student homepage).
+- `session_cookie=None` — disables token/session binding, for tools whose cookie
+  value is refreshed on every response (a bound token would never match).
+- Failure **returns** a 403 instead of raising. User middleware sits outside
+  Starlette's `ExceptionMiddleware`, so a raised `HTTPException` bypassed the
+  app's 403 handler and surfaced as a 500. Content-negotiated: JSON when the
+  caller sends `Accept: application/json`, HTML otherwise.
+- `get_csrf_token(request, csrf_protection, session_cookie=None)` helper, so a
+  tool's template global and its middleware cannot disagree about binding.
+- First `tests/` in this repo (18 tests) — CI now runs them.
+
+Adopted by: ControversyGenerator (replaces its deleted `services/csrf.py`).
+LSR-profiler still ships its own copy, fixed in place.
+
+## 1.1.0 — 2026-07-26
+Timed session signatures. Tagged without a CHANGELOG entry or a `pyproject`
+version bump — recorded here after the fact; `version` jumped 1.0.0 → 1.2.0.
+
 ## 1.0.0 — 2026-07-25
 First versioned + pinned release. Repo made public; installable via
 `pip install "phronon_common @ git+https://github.com/umuelle/phronon-common.git@v1.0.0"`.
