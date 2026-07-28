@@ -69,6 +69,45 @@
   color: #d6d6d6;
 }
 
+/* ── Buttons ──────────────────────────────────────────────
+   The card is shared across tools that do and do not load Bootstrap (Layoff and
+   Whiteout ship their own button systems), so it cannot rely on .btn existing.
+   .share-btn is fully self-contained; put it on every button inside the card. */
+
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  padding: .4rem .9rem;
+  font: 600 .85rem/1.2 inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  border-radius: 7px;
+  border: 1px solid #c9ced6;
+  background: #fff;
+  color: #2c3e50;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.share-btn:hover { background: #eef1f5; border-color: #aab2bd; }
+.share-btn:focus-visible { outline: 2px solid #1e3a5f; outline-offset: 2px; }
+
+/* On the near-black header the same button inverts to an outline. */
+.share-card__header .share-btn {
+  background: transparent;
+  color: #f3f3f3;
+  border-color: rgba(255, 255, 255, .55);
+}
+
+.share-card__header .share-btn:hover {
+  background: rgba(255, 255, 255, .12);
+  border-color: #fff;
+  color: #fff;
+}
+
+.share-card__header .share-btn:focus-visible { outline-color: #fff; }
+
 /* The header sits on near-black, so its buttons have to be inverted outlines.
    Tools that load Bootstrap get a solid grey .btn-secondary by default, which
    is why background is set explicitly and the selector is doubled — it has to
@@ -93,10 +132,19 @@
 
 .share-card__body {
   display: grid;
-  grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 330px) minmax(0, 1fr);
   gap: var(--ph-space-xl, 2rem);
   padding: var(--ph-space-lg, 1.5rem);
+  /* The card is used full-width on a standalone slide AND inside a narrower
+     backoffice column, so its type has to scale to the CARD, not the viewport.
+     Without this the join code sized off 7vw and overflowed the card. */
+  container-type: inline-size;
 }
+
+/* Grid and flex children default to min-width:auto, which stops them shrinking
+   below their content and is what lets a long URL or a large code push the
+   card wider than its container. */
+.share-column { min-width: 0; }
 
 .share-column h2 {
   font-size: 1.05rem;
@@ -156,13 +204,18 @@
 }
 
 .share-class-code {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
   min-height: 92px;
   padding: .5rem 1rem;
-  /* Readable from the back of a lecture theatre. */
-  font-size: clamp(2.7rem, 7vw, 4.4rem);
+  /* Readable from the back of a lecture theatre, but sized against the card
+     (cqi) so it also fits a narrow backoffice column. */
+  font-size: clamp(1.9rem, 11cqi, 4.4rem);
   line-height: 1;
   font-weight: 800;
   /* text-indent cancels the trailing letter-space so the code stays centred. */
@@ -204,7 +257,8 @@
 }
 
 .share-url {
-  flex: 1 1 360px;
+  flex: 1 1 240px;
+  min-width: 0;
   font-family: "SF Mono", "Fira Code", var(--ph-font-mono, monospace);
   font-size: .95rem;
   line-height: 1.45;
