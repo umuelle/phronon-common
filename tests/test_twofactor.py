@@ -115,3 +115,36 @@ def test_backup_codes_are_accepted_however_they_are_typed():
 def test_a_wrong_backup_code_changes_nothing():
     hashes = tf.hash_backup_codes(tf.generate_backup_codes(), _FakeBcrypt)
     assert tf.consume_backup_code("NOPE1-NOPE2", hashes, _FakeBcrypt) is None
+
+
+# ── the per-tool helpers ─────────────────────────────────────────────────────
+
+def test_second_factor_is_required_for_admins_only():
+    """The scope decision, pinned: admins must, educators may."""
+    assert tf.is_required("ADMIN")
+    assert tf.is_required("admin"), "three tools spell the role in lower case"
+    assert not tf.is_required("EDUCATOR")
+    assert not tf.is_required("educator")
+    assert not tf.is_required("") and not tf.is_required(None)
+
+
+def test_check_code_accepts_a_totp_code_without_spending_a_recovery_code():
+    secret = tf.generate_secret()
+    hashes = tf.hash_backup_codes(tf.generate_backup_codes(), _FakeBcrypt)
+    ok, remaining = tf.check_code(secret, tf.current_code(secret), hashes, _FakeBcrypt)
+    assert ok and remaining is None, "a TOTP login must not consume a recovery code"
+
+
+def test_check_code_falls_back_to_a_recovery_code_and_reports_the_remainder():
+    secret = tf.generate_secret()
+    codes = tf.generate_backup_codes()
+    hashes = tf.hash_backup_codes(codes, _FakeBcrypt)
+    ok, remaining = tf.check_code(secret, codes[2], hashes, _FakeBcrypt)
+    assert ok and remaining is not None and len(remaining) == len(hashes) - 1
+
+
+def test_check_code_refuses_rubbish():
+    secret = tf.generate_secret()
+    hashes = tf.hash_backup_codes(tf.generate_backup_codes(), _FakeBcrypt)
+    ok, remaining = tf.check_code(secret, "000000", hashes, _FakeBcrypt)
+    assert not ok and remaining is None

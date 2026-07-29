@@ -15,11 +15,12 @@ is smaller than its own installation instructions. The same reasoning already
 applied to the accessibility checker. Correctness is pinned by tests using the
 published RFC 6238 test vectors, so this cannot silently drift from the spec.
 
-SCOPE — ADMINS ONLY (the user's decision, 29 July 2026)
-Educators are not asked for a second factor. They are numerous, often
-first-time users on a teaching day, and a lockout mid-class is a worse outcome
-than the risk it removes. Admins can change other people's accounts and see
-every class, so they carry the requirement.
+SCOPE (the owner's decision, 29 July 2026)
+REQUIRED for admin accounts, OFFERED to educators. Educators are numerous,
+often first-time users on a teaching day, and a lockout mid-class is a worse
+outcome than the risk it removes — but any of them may switch it on. Admins can
+change other people's accounts and see every class, so they carry the
+requirement. See `is_required`.
 
 RECOVERY
 Ten single-use backup codes are issued at enrolment and stored as bcrypt
@@ -134,3 +135,55 @@ def consume_backup_code(code: str, hashes: list[str], bcrypt_module):
         except (ValueError, TypeError):
             continue
     return None
+
+
+# ── per-tool helpers ─────────────────────────────────────────────────────────
+# The eight teaching tools each have their own database layer, template engine
+# wiring and session mechanism, so the ROUTES stay in each app. What is
+# identical everywhere lives here, so eight copies of the fiddly parts cannot
+# drift apart.
+
+def qr_svg(uri: str) -> str:
+    """Inline SVG QR for an otpauth URI, or "" if qrcode is unavailable.
+
+    SVG rather than a PNG data-URI: no image library needed, scales cleanly,
+    and it is markup rather than script, so it passes the strict content
+    policy untouched. The setup key can always be typed by hand instead.
+    """
+    try:
+        import io
+        import qrcode
+        import qrcode.image.svg
+        buf = io.BytesIO()
+        qrcode.make(uri, image_factory=qrcode.image.svg.SvgPathImage).save(buf)
+        return buf.getvalue().decode("utf-8")
+    except Exception:  # noqa: BLE001 — the manual key is the fallback
+        return ""
+
+
+def is_required(role: str) -> bool:
+    """Is a second factor MANDATORY for this account?
+
+    Admins yes, educators no (the owner's decision, 29 July 2026): educators
+    are numerous, often first-time users on a teaching day, and a lockout
+    mid-class is a worse outcome than the risk it removes. Educators may still
+    switch it on for themselves — `is_required` governs enforcement, never
+    availability. Role spellings differ across the fleet ("ADMIN"/"admin"), so
+    the comparison is case-insensitive.
+    """
+    return str(role or "").strip().upper() == "ADMIN"
+
+
+def check_code(secret: str, code: str, stored_hashes, bcrypt_module):
+    """Verify a login code — a TOTP code first, then a recovery code.
+
+    Returns (ok, remaining_hashes_or_None). `remaining` is not None only when a
+    RECOVERY code was spent, in which case the caller must persist it: that is
+    what makes recovery codes single-use.
+    """
+    if verify(secret or "", code):
+        return True, None
+    remaining = consume_backup_code(code, stored_hashes or [], bcrypt_module)
+    if remaining is not None:
+        return True, remaining
+    return False, None

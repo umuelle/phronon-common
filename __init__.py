@@ -21,4 +21,4 @@ copy-pasting (and slowly diverging) the same plumbing:
 Keep tool-specific logic OUT of here — only what is identical everywhere.
 """
 
-__version__ = "1.6.0"
+__version__ = "1.7.0"
