@@ -1,0 +1,160 @@
+/* Educator backoffice navigation bar — ONE definition for the whole fleet.
+ *
+ * WHY THIS FILE EXISTS (2026-07-29)
+ * Every tool had its own copy of these rules, and they had drifted just enough
+ * to be visible when you open several backoffices in a row: the bar was 58px
+ * tall in seven tools and 56px in Whiteout, the brand logo was 26px, 28px or
+ * 30px depending on the tool, link text was .9rem except .88rem in Whiteout,
+ * and the gap between the brand and the links was a flex `gap` in some tools
+ * and a `margin-right` on the brand in others. None of it was wrong; it simply
+ * never matched.
+ *
+ * Master copy lives in phronon_common and is pushed to every tool by
+ * server-ops/sync_shared_assets.py, which also FAILS A DEPLOY if a tool's copy
+ * has fallen out of step — the same arrangement as the share card, and for the
+ * same reason: silent drift is what produced the problem in the first place.
+ *
+ * Load it AFTER the tool's own backoffice.css so it wins any leftover rule.
+ *
+ * The two colours are deliberate and stay: navy for an educator, dark red for
+ * an administrator, so it is obvious at a glance which kind of account is
+ * signed in.
+ */
+
+:root {
+  --bo-nav-h: 58px;          /* one height everywhere */
+  --bo-nav-bg: #1e3a5f;      /* educator */
+  --bo-nav-bg-admin: #7b1d1d;/* administrator */
+}
+
+.bo-nav {
+  height: var(--bo-nav-h);
+  background: var(--bo-nav-bg);
+  color: #fff;
+  display: flex;
+  align-items: center;       /* vertical centring for EVERY child, including the logo */
+  padding: 0 1.5rem;
+  gap: 2rem;                 /* brand → links. Never a margin on the brand: mixing
+                                the two is what made the spacing differ per tool. */
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.bo-nav--admin { background: var(--bo-nav-bg-admin); }
+
+.bo-nav__brand {
+  color: #fff;
+  font-weight: 700;
+  font-size: .95rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  white-space: nowrap;       /* a two-word product name must not wrap the bar */
+  flex: 0 0 auto;
+}
+
+/* The logo. Sized HERE rather than with an inline style on each <img>, which is
+ * how three different sizes ended up in three different tools. `width:auto`
+ * keeps wide horizontal lockups (OrgDesignSim) in proportion instead of
+ * squashing them into a square. */
+.bo-nav__mark {
+  height: 26px;
+  width: auto;
+  max-width: 160px;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.bo-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex: 1 1 auto;
+  min-width: 0;              /* lets the row shrink instead of overflowing */
+  flex-wrap: wrap;
+}
+
+.bo-nav__links a {
+  color: rgba(255, 255, 255, .8);
+  text-decoration: none;
+  font-size: .9rem;
+  font-weight: 500;
+  line-height: var(--bo-nav-h);  /* full-height hit area, and no baseline drift */
+  transition: color .15s;
+  white-space: nowrap;
+}
+
+.bo-nav__links a:hover,
+.bo-nav__links a.active { color: #fff; }
+
+.bo-nav__user {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  flex: 0 0 auto;
+  margin-left: auto;         /* pinned right regardless of how many links precede */
+}
+
+/* The signed-in account. `.bo-nav__user-email` and `.bo-nav__username` are the
+ * two older per-tool names for the same element, kept as aliases so a template
+ * that still uses one is not left unstyled. New markup uses .bo-nav__name. */
+.bo-nav__name,
+.bo-nav__user-email,
+.bo-nav__username {
+  color: rgba(255, 255, 255, .7);
+  font-size: .82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;          /* a long address must not shove the links leftwards */
+}
+
+/* Bare links and buttons inside the user area are covered as well as the
+ * explicit class: deleting a tool's own copy of these rules must never be able
+ * to leave a default blue underlined link sitting on a dark bar. */
+.bo-nav__user a,
+.bo-nav__user button,
+.bo-nav__action {
+  color: rgba(255, 255, 255, .82);
+  text-decoration: none;
+  font-size: .82rem;
+  font-weight: 500;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+  transition: color .15s;
+  white-space: nowrap;
+}
+
+.bo-nav__user a:hover,
+.bo-nav__user button:hover,
+.bo-nav__action:hover { color: #fff; text-decoration: none; }
+
+/* A logout button is often wrapped in a <form> for CSRF. The form is layout
+ * scaffolding only and must not add a line box of its own, or that one tool's
+ * bar sits a pixel or two off from the others. */
+.bo-nav__user form {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+/* Narrow screens: let the bar grow rather than clip, and stop pinning it so a
+ * wrapped two-line bar cannot eat the top of the page. */
+@media (max-width: 720px) {
+  .bo-nav {
+    height: auto;
+    min-height: var(--bo-nav-h);
+    flex-wrap: wrap;
+    gap: .75rem 1rem;
+    padding: .6rem 1rem;
+    position: static;
+  }
+  .bo-nav__links a { line-height: 1.6; }
+  .bo-nav__user { margin-left: 0; }
+}
