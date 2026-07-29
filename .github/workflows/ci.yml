@@ -43,7 +43,7 @@ jobs:
           python -m pip install --quiet --upgrade pip
           if [ -f requirements.txt ]; then pip install --quiet -r requirements.txt; fi
           if [ -f requirements-test.txt ]; then pip install --quiet -r requirements-test.txt; fi
-          pip install --quiet pytest "phronon_common @ git+https://github.com/umuelle/phronon-common.git@v1.5.0"
+          pip install --quiet pytest "phronon_common @ git+https://github.com/umuelle/phronon-common.git@v1.6.0"
           pip install --quiet pip-audit
           # BLOCKING. This used to downgrade findings to a warning, which meant a
           # known-vulnerable package could sail through unnoticed. Audit the
