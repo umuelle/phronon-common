@@ -4,6 +4,19 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.3.0 — 2026-07-29
+**New module `exports`** — `csv_safe` / `csv_safe_row`, the spreadsheet
+formula-injection escaping (audit G2). One definition instead of the four
+private copies the tools grew on 29 July.
+
+Adoption wave (harmonization, TO DO D6/G7): LSR-profiler, Inequality and
+Orgdesignsim replaced their private `services/csrf.py` with this package's
+`csrf` module; Drawbridge's `generate_token`/`validate_token` are now thin
+wrappers around `CSRFProtection`; CG/Inequality/LSR lockout went DB-backed via
+`lockout`. Whiteout's CSRF stays its own (signed double-submit cookie — it
+protects PRE-LOGIN participant POSTs, which the token scheme here does not
+cover; recorded as deliberate).
+
 ## 1.2.1 — 2026-07-28
 **Fix — the middleware ate the request body.**
 

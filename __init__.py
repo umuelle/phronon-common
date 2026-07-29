@@ -10,9 +10,13 @@ copy-pasting (and slowly diverging) the same plumbing:
   * security_headers — SecurityHeadersMiddleware
   * csrf             — CSRF protection + middleware
   * rate_limit       — in-memory sliding-window rate limiter
+  * lockout          — account-lockout policy (DB-backed pattern + memory fallback)
+  * passwords        — the fleet password policy (min 12, no composition rules)
+  * emails           — branded transactional-email building
+  * provisioning     — hub→tool account-provisioning contract
+  * exports          — spreadsheet formula-injection escaping (csv_safe)
 
-Moral Mirror is the first consumer; migrate the other tools opportunistically.
 Keep tool-specific logic OUT of here — only what is identical everywhere.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.3.0"
