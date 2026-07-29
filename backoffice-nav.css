@@ -27,6 +27,16 @@
   --bo-nav-bg-admin: #7b1d1d;/* administrator */
 }
 
+/* THE ROOT FONT SIZE IS PART OF THE SHARED CONTRACT. Every size in this file
+ * (and in the footer and two-factor sheets) is in rem, so identical shared CSS
+ * still renders differently if the tools disagree on the root. They did: seven
+ * set 15px in their own stylesheet and Moral Mirror set nothing, so its whole
+ * backoffice — including this very nav — ran ~7% larger and looked "slightly
+ * off" next to the others. Pinned HERE, on the sheet every backoffice loads
+ * last, so no tool can drift again by forgetting (or overriding) the rule.
+ * Backoffice pages only — participant pages do not load this file. */
+html { font-size: 15px; }
+
 .bo-nav {
   height: var(--bo-nav-h);
   background: var(--bo-nav-bg);
