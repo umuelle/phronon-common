@@ -4,6 +4,27 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.5.0 — 2026-07-29 (A2: revocable sessions)
+**New module `sessions`** — instantly revocable admin sessions via a
+`session_epoch` integer on the account row, signed into the session cookie and
+compared on every request. Revoking is one UPDATE (`session_epoch + 1`), which
+invalidates every cookie already issued for that account, on every device, with
+no sweep job.
+
+Chosen over a sessions TABLE deliberately: the table costs a write per request
+(or stale data), a cleanup job, and another thing that can fail during login,
+and buys only per-device revocation, which nothing here has asked for. The
+epoch delivers the whole of A2 — "cut off the sessions this person already
+has" — for one column. Adding the table later is still possible; the epoch
+remains the "revoke everything" switch alongside it.
+
+Existing cookies carry no epoch and read as 0, which is the migration default,
+so adopting this does NOT log anyone out by itself. 5 tests.
+
+Adopted by all nine, wired at each tool's single session chokepoint, with
+revocation on: password change/reset (self-service and admin-set), account
+deactivation, and role change.
+
 ## 1.4.0 — 2026-07-29 (second harmonization wave)
 **`rate_limit` rewritten as the superset of the five private copies.** It had
 been the *smallest* of them, so adopting it as written would have weakened four

@@ -15,8 +15,9 @@ copy-pasting (and slowly diverging) the same plumbing:
   * emails           — branded transactional-email building
   * provisioning     — hub→tool account-provisioning contract
   * exports          — spreadsheet formula-injection escaping (csv_safe)
+  * sessions         — instantly revocable admin sessions (session_epoch)
 
 Keep tool-specific logic OUT of here — only what is identical everywhere.
 """
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
