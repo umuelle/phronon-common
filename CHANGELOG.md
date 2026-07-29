@@ -4,6 +4,30 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.4.0 — 2026-07-29 (second harmonization wave)
+**`rate_limit` rewritten as the superset of the five private copies.** It had
+been the *smallest* of them, so adopting it as written would have weakened four
+tools. Brought over first:
+- **Trusted proxies** — it believed `X-Forwarded-For` from anyone, so a client
+  could spoof its IP past the limit. Now honoured only behind a configured
+  proxy. An EMPTY trusted list falls back to the default instead of meaning
+  "trust nobody", which would have collapsed every visitor behind nginx into a
+  single shared bucket (two tools' `.env` had it unset — a live latent bug).
+- **Exact-match rules** — `("/backoffice", 5, 300, True)` no longer leaks the
+  strict login limit onto every `/backoffice/...` page.
+- `SlidingWindow` + `is_allowed(key, ...)` for in-route limits (Drawbridge,
+  Whiteout), `Retry-After` on the 429, and it RETURNS rather than raises (a
+  raised HTTPException in user middleware surfaces as a 500).
+- The original `rules=[(prefix, max, window)]` call shape still works, so
+  Layoff's existing wiring is untouched. 13 tests.
+
+**`emails` is now the only copy of the reset e-mail.** The eight per-tool
+`services/email.py` modules are 12-line wrappers supplying just TOOL_NAME and
+DEFAULT_FROM; markup and SMTP handling live here.
+
+Adopted by: all nine (rate limiting in CG/Inequality/LSR/Whiteout/Drawbridge/
+Layoff; e-mail in all eight tools; security headers now including the hub).
+
 ## 1.3.0 — 2026-07-29
 **New module `exports`** — `csv_safe` / `csv_safe_row`, the spreadsheet
 formula-injection escaping (audit G2). One definition instead of the four
