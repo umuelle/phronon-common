@@ -41,7 +41,19 @@ jobs:
         run: |
           if [ ! -d tests ]; then echo "no tests/ directory — skipping pytest"; exit 0; fi
           python -m pip install --quiet --upgrade pip
-          if [ -f requirements.txt ]; then pip install --quiet -r requirements.txt; fi
+          # Install what PRODUCTION installs (G5). The deploy installs
+          # requirements.lock with --require-hashes; CI used to install
+          # requirements.txt instead, so the environment the tests ran in was
+          # not the environment that ships — and the audit below, which reads
+          # the lock, described a set nothing here had actually installed.
+          # Test-only packages come in a SECOND pip call on purpose: pip
+          # applies --require-hashes per invocation, so mixing a hashed file
+          # with an unhashed one in one call is refused outright.
+          if [ -f requirements.lock ]; then
+            pip install --quiet --require-hashes -r requirements.lock
+          elif [ -f requirements.txt ]; then
+            pip install --quiet -r requirements.txt
+          fi
           if [ -f requirements-test.txt ]; then pip install --quiet -r requirements-test.txt; fi
           pip install --quiet pytest "phronon_common @ git+https://github.com/umuelle/phronon-common.git@v1.6.0"
           pip install --quiet pip-audit
@@ -51,6 +63,9 @@ jobs:
           # installed in production, and it covers indirect packages too.
           if [ -f requirements.lock ]; then
             pip-audit -r requirements.lock
+            # requirements-test.txt is installed above, so audit it too — it was
+            # previously invisible to the scan on every tool that has a lock.
+            if [ -f requirements-test.txt ]; then pip-audit -r requirements-test.txt; fi
           else
             audit_args=""
             if [ -f requirements.txt ]; then audit_args="$audit_args -r requirements.txt"; fi

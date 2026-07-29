@@ -18,8 +18,10 @@ from __future__ import annotations
 
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
-# 8 hours, matching the admin session length used across the fleet.
-DEFAULT_MAX_AGE = 60 * 60 * 8
+# 4 hours, matching the admin session length used across the fleet
+# (reduced from 8 on 2026-07-29 — a shorter window is a smaller one for a
+# stolen or borrowed session to be used in).
+DEFAULT_MAX_AGE = 60 * 60 * 4
 
 
 class CookieSigner:
