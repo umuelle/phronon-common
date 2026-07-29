@@ -43,7 +43,12 @@
 
 .bo-nav--admin { background: var(--bo-nav-bg-admin); }
 
-.bo-nav__brand {
+.bo-nav__brand,
+.bo-nav__brand:hover,
+.bo-nav__brand:focus {
+  /* :hover/:focus spelled out: a tool's own `a:hover` (0,1,1) outweighs a bare
+   * class (0,1,0), which turned the brand Bootstrap-blue on hover in CG and
+   * Inequality. */
   color: #fff;
   font-weight: 700;
   font-size: .95rem;
