@@ -16,8 +16,9 @@ copy-pasting (and slowly diverging) the same plumbing:
   * provisioning     — hub→tool account-provisioning contract
   * exports          — spreadsheet formula-injection escaping (csv_safe)
   * sessions         — instantly revocable admin sessions (session_epoch)
+  * twofactor        — TOTP second factor for admin logins (stdlib only)
 
 Keep tool-specific logic OUT of here — only what is identical everywhere.
 """
 
-__version__ = "1.5.0"
+__version__ = "1.6.0"

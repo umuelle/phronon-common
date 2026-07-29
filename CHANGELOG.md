@@ -4,6 +4,21 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.6.0 — 2026-07-29 (A1: two-factor login)
+**New module `twofactor`** — TOTP (RFC 6238) plus single-use recovery codes,
+**standard library only**. `pyotp` was the obvious choice and was rejected: the
+algorithm is ~20 lines of HMAC, while a new dependency means nine checksum-lock
+rebuilds and nine more things to audit. Correctness is pinned to the RFC's own
+published test vectors, so it cannot silently drift from what phone apps do.
+
+Scope is ADMIN accounts only, by the owner's decision — educators are numerous,
+often first-time users on a teaching day, and a lockout mid-class is worse than
+the risk it removes.
+
+Includes ±30 s clock-drift tolerance, constant-time comparison, and recovery
+codes hashed with bcrypt (passed in, so this module imports nothing external).
+16 tests, six of them the RFC vectors.
+
 ## 1.5.0 — 2026-07-29 (A2: revocable sessions)
 **New module `sessions`** — instantly revocable admin sessions via a
 `session_epoch` integer on the account row, signed into the session cookie and
