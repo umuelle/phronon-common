@@ -90,7 +90,7 @@ TOOLS = {
 <h3>From survey participants</h3>
 <ul>
   <li><strong>Name or username</strong> — as entered by you; a pseudonym is fine.</li>
-  <li><strong>E-mail address</strong> — optional, only if you choose to provide it.</li>
+  <li><strong>E-mail address</strong> — <strong>optional unless your educator turns it on</strong> for a particular survey, in which case it is required to submit. Each survey says which applies.</li>
   <li><strong>Survey code</strong> — attributes your response to the correct survey.</li>
   <li><strong>Survey responses</strong> — your answers to the opinion statements, stored as numerical values. Depending on the statements chosen by your educator, your answers can reveal personal views.</li>
   <li><strong>Submission timestamp.</strong></li>
@@ -135,14 +135,23 @@ person and can no longer be individually located.</p>""",
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
 requirement. A name (which may be a pseudonym) is needed to take part so that
-your educator can attribute responses; the e-mail address is optional, and not
-providing it has no consequence beyond not receiving e-mail from the tool.</p>""",
+your educator can attribute responses. The e-mail address is optional by
+default; an educator can make it required for their own survey, and where they
+have, you cannot submit without it.</p>""",
         },
         "provenance": {
             "en": """<p>The Controversy Generator concept, pairing algorithm, and
 site design are original works. Statement banks configured by educators remain
 the responsibility of the educator who writes them.</p>""",
         },
+        # NOTE on dismiss_anonymize_until (added to the table 2026-07-30): it is a
+        # PREFERENCE cookie, and the blueprint warns that a preference is not
+        # automatically covered by the § 25(2) Nr. 2 TDDDG exemption. The position
+        # taken here is that it IS covered, because it is written only when the
+        # educator clicks "dismiss" — remembering that click is precisely the
+        # service they just requested, not a convenience we decided for them. If
+        # it ever becomes a default or a silent setting, that reasoning collapses
+        # and the no-banner conclusion must be revisited.
         "cookies": [
             ("student_session", "Keeps your survey progress and marks your submission (signed, HTTP-only).", "2 hours", "participants"),
             ("quiz_code / answers / user", "Carry the survey code and your in-progress answers between pages.", "browser session / 2 hours", "participants"),
@@ -150,6 +159,7 @@ the responsibility of the educator who writes them.</p>""",
             ("withdrawal_token", "Lets you withdraw your submission right after submitting.", "5–10 minutes", "participants"),
             ("backoffice_user", "Keeps educators and administrators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
             ("cg_pending_totp", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
+            ("dismiss_anonymize_until", "Remembers that an educator dismissed the \"these surveys need anonymising\" reminder, so it is not shown again for a week. Set only when the educator clicks dismiss.", "7 days", "backoffice"),
         ],
     },
 
@@ -230,6 +240,7 @@ works.</p>""",
         },
         "cookies": [
             ("drawbridge_session", "Signed, HTTP-only session cookie: holds the anonymous session and CSRF value so your pass through the story stays consistent.", "4 hours", "participants"),
+            ("drawbridge_progress", "Remembers how far you have read through the story, so returning to the page does not restart it (signed, HTTP-only). Cleared when you finish.", "4 hours", "participants"),
             ("drawbridge_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
             ("bo_csrf", "Protects backoffice forms against cross-site request forgery (signed, HTTP-only).", "1 hour", "backoffice"),
             ("bo_flash", "Carries a one-off status message between two backoffice pages.", "10 seconds", "backoffice"),
@@ -288,7 +299,7 @@ works.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>Automatic anonymisation is currently not working.</strong> The tool is meant to strip names and e-mail addresses 30 days after a session's last response, but on 2026-07-30 we found that the routine fails against the database schema and has therefore never removed anything. We are stating this rather than repeating a promise our own database disproves. Until it is fixed and verified, treat responses as retained until an educator deletes or anonymises them by hand — which works today and can be requested at any time.</li>
+  <li><strong>Automatic anonymisation:</strong> 30 days after a response is submitted, the participant's name and e-mail address are removed and the row is marked anonymised; the numerical answers and demographics are kept for aggregate analysis. This had been broken since the feature was written — the database rejected the deletion every time — and was repaired on 2026-07-30; a test now runs the deletion itself on every deploy rather than merely checking that the code exists.</li>
   <li><strong>Manual anonymisation:</strong> educators can anonymise or archive a session at any time before the 30-day window ends.</li>
 </ul>""",
         },
@@ -543,7 +554,8 @@ design are original works created for executive teaching.</p>""",
         },
         "cookies": [
             ("participant_session", "Keeps your progress through the questionnaire (signed, HTTP-only).", "2 hours", "participants"),
-            ("scenario_answers / response_id / withdrawal_raw", "Carry your in-progress answers, your submission reference and your withdrawal link between pages (signed, HTTP-only).", "2 hours", "participants"),
+            ("repertoire_answers / scenario_answers / context_answers / demographics_data", "Carry your in-progress answers from page to page so you do not lose them mid-questionnaire (signed, HTTP-only).", "2 hours", "participants"),
+            ("response_id / withdrawal_raw", "Your submission reference and your withdrawal link, so the results page can offer withdrawal (signed, HTTP-only).", "2 hours", "participants"),
             ("backoffice", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
             ("lsr_pending_totp", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
         ],

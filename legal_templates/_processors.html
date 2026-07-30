@@ -1,16 +1,56 @@
 {# Recipients disclosure (Art. 13(1)(e)) + third-country transfers.
-   Blueprint Part 4.2 — replaces every "no third parties" claim (Tier 1 #1). #}
+   Blueprint Part 4.2 — replaces every "no third parties" claim (Tier 1 #1).
+
+   BACKUP AND MONITORING PROVIDERS WERE ADDED 2026-07-30 after an external
+   review pointed out that server-ops/BACKUPS.md already named them and said
+   they belonged here. Encryption is a security measure; it does not remove a
+   processor relationship or the duty to disclose it. If a backup destination
+   or monitoring service changes, change it HERE in the same commit. #}
 {% if lang == 'de' %}
 <p>Wir setzen keine Dritten für Werbung, Analyse oder Tracking ein und
-verkaufen oder teilen keine personenbezogenen Daten zu Marketingzwecken. Unser
-Hosting- und E-Mail-Anbieter, die IONOS SE (Deutschland), verarbeitet Daten in
-unserem Auftrag als Auftragsverarbeiter auf Grundlage eines
-Auftragsverarbeitungs­vertrags nach Art. 28 DSGVO. Es werden keine
-personenbezogenen Daten in Länder außerhalb der EU/des EWR übermittelt.</p>
+verkaufen oder teilen keine personenbezogenen Daten zu Marketingzwecken.
+Folgende Dienstleister verarbeiten Daten in unserem Auftrag als
+Auftragsverarbeiter auf Grundlage eines Auftragsverarbeitungs­vertrags nach
+Art. 28 DSGVO:</p>
+<ul>
+  <li><strong>IONOS SE</strong> (Deutschland) — Hosting und E-Mail-Versand.</li>
+  <li><strong>Microsoft Ireland Operations Ltd. (OneDrive)</strong> — Ablage
+    der wöchentlichen Sicherungskopien außerhalb des Servers. Diese
+    Sicherungen sind <strong>vor dem Hochladen verschlüsselt</strong>; der
+    private Schlüssel liegt ausschließlich auf einem Rechner des Betreibers,
+    niemals beim Anbieter. Microsoft speichert also ausschließlich
+    verschlüsselte Daten und kann sie nicht lesen.</li>
+  <li><strong>healthchecks.io</strong> — Überwachung, ob der Sicherungslauf
+    stattgefunden hat. Übertragen werden nur Statusmeldungen
+    („Lauf erfolgreich/fehlgeschlagen“), keine Inhalts- oder
+    Teilnehmendendaten.</li>
+</ul>
+<p>Es werden keine personenbezogenen Daten in Länder außerhalb der EU/des EWR
+übermittelt.</p>
+<p><strong>Auswirkung auf die Löschung:</strong> Wird ein Datensatz gelöscht,
+kann er noch bis zu 14 Tage in den Sicherungskopien enthalten sein, bis diese
+turnusmäßig überschrieben werden. Sicherungen werden ausschließlich zur
+Wiederherstellung nach einem Ausfall verwendet, nie zur normalen
+Datenverarbeitung.</p>
 {% else %}
 <p>We use no third parties for advertising, analytics or tracking, and we do
-not sell or share personal data for marketing purposes. Our hosting and e-mail
-provider, IONOS SE (Germany), processes data on our behalf as a processor
-under a data processing agreement pursuant to Art. 28 GDPR. No personal data
-is transferred outside the EU/EEA.</p>
+not sell or share personal data for marketing purposes. The following
+providers process data on our behalf as processors under a data processing
+agreement pursuant to Art. 28 GDPR:</p>
+<ul>
+  <li><strong>IONOS SE</strong> (Germany) — hosting and outgoing e-mail.</li>
+  <li><strong>Microsoft Ireland Operations Ltd. (OneDrive)</strong> — storage
+    of the weekly off-site backup copies. Those backups are
+    <strong>encrypted before they leave the server</strong>, and the private
+    key exists only on the operator's own machine — never at the provider. So
+    Microsoft holds ciphertext it cannot read.</li>
+  <li><strong>healthchecks.io</strong> — monitoring that the backup run
+    happened. Only status pings are sent ("run succeeded / failed"); no
+    content and no participant data.</li>
+</ul>
+<p>No personal data is transferred outside the EU/EEA.</p>
+<p><strong>What this means for erasure:</strong> when a record is deleted, a
+copy may remain inside backups for up to 14 days until those are rotated out.
+Backups are used only to restore the service after a failure, never for
+ordinary processing.</p>
 {% endif %}
