@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phronon_common"
-version = "1.7.0"
+version = "1.8.0"
 description = "Shared framework-agnostic helpers for the Phronon teaching tools"
 requires-python = ">=3.10"
 dependencies = [
@@ -14,3 +14,9 @@ dependencies = [
 [tool.setuptools]
 packages = ["phronon_common"]
 package-dir = { "phronon_common" = "." }
+
+[tool.setuptools.package-data]
+# The shared legal pages render from these Jinja partials; a pip install
+# without them (CI) would make every tool's legal tests fail on a missing
+# template rather than a real defect.
+phronon_common = ["legal_templates/*.html"]

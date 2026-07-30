@@ -4,6 +4,17 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.8.0
+Shared legal pages (phronon-legal-blueprint.md): `legal.py` (router factory +
+`render_legal`), `legal_conf.py` (all nine tools' per-tool config in ONE file)
+and `legal_templates/` (bilingual EN/DE partials). Route map: /impressum
+(German § 5 DDG canonical), /legal-notice, /privacy, /cookies, /terms, /legal,
+/imprint→301 /legal, plus /de/privacy + /de/cookies on German-UI tools.
+tests/test_legal.py enforces the anti-regression register (no TMG/TTDSG/RStV/
+VSBG/BFSG/ODR citations, no "5 business days", no "fully anonymous", no
+"SHA-256", recipients/logging blocks byte-identical). footer.html now links
+Impressum · Privacy · Cookies · Terms · Accessibility.
+
 ## 1.6.0 — 2026-07-29 (A1: two-factor login)
 **New module `twofactor`** — TOTP (RFC 6238) plus single-use recovery codes,
 **standard library only**. `pyotp` was the obvious choice and was rejected: the
