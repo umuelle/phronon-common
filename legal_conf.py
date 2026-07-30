@@ -24,6 +24,33 @@ our own database):
   drawbridge   no job — retention reviewed periodically (stated as such)
   whiteout     no job — facilitator-deleted (stated as such)
 
+CORRECTION 2026-07-30 (second pass, after an external review). The first pass
+checked retention claims against the code but NOT the "what we collect" claims,
+and that is exactly where the false statements were:
+
+  whiteout    the notice said no name/e-mail was collected. /join REQUIRES an
+              e-mail, stores it on participants.email, and shows it to the
+              facilitator. Corrected.
+  lsr         the notice called the e-mail optional; the form marks it required
+              and the handler rejects a submission without it. It also called
+              the benchmarking tick-box "optional consent" while the handler
+              refuses to continue unless it is ticked. Both corrected.
+  inequality  art9 was False; the demographics page asks two political-opinion
+              items (pol_redistribution, pol_regulation) and stores them.
+              Political opinion is Art. 9(1) data. Corrected to True.
+  inequality  the advertised 30-day auto-anonymisation CANNOT RUN: it sets
+              responses.student_name = NULL, but that column is NOT NULL and
+              the server runs STRICT_TRANS_TABLES. Verified on production:
+              "ERROR 1048: Column 'student_name' cannot be null", 0 of 9 rows
+              anonymised. The notice now states this instead of promising it.
+  phronon     the hub notice said it processes only logs, contact and admin
+              credentials; its fleet overview reads class titles, join codes,
+              educator e-mail, status and counts from all nine tools. Disclosed.
+
+LESSON: verify every claim against the code that implements it, not just the
+ones that look risky. A "we do not collect X" sentence is the easiest kind of
+claim to get wrong and the most damaging to publish.
+
 ART9 flags below are the Part 3.3 question-3 determinations. They currently
 carry no name/date — that sign-off is an OPEN DECISION for the operator
 (blueprint Part 9 #3 recommends one lawyer-hour on exactly this).
@@ -215,7 +242,9 @@ works.</p>""",
         "domain": "inequality-explorer.org",
         "tool_name": "Wealth Inequality Explorer",
         "languages": ["en"],
-        "art9": False,  # numerical estimates of wealth distribution
+        "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
+                       # items (pol_redistribution, pol_regulation), stored as enums.
+                       # Political opinions are Art. 9(1) data — the earlier False was wrong.
         "purpose": {
             "en": "The Wealth Inequality Explorer collects numerical estimates of "
                   "wealth distribution and compares them with real data, to "
@@ -229,7 +258,8 @@ works.</p>""",
   <li><strong>E-mail address</strong> — optional, only if provided.</li>
   <li><strong>Session code</strong> — links your response to a specific session.</li>
   <li><strong>Responses</strong> — your numerical estimates of wealth distribution.</li>
-  <li><strong>Optional demographics</strong> — e.g. age range, field of study.</li>
+  <li><strong>Optional demographics</strong> — age range, gender, income bracket.</li>
+  <li><strong>Two optional political-opinion questions</strong> — your level of agreement with statements on wealth redistribution and market regulation. These reveal a <strong>political opinion</strong>, a special category of data under Art. 9(1) GDPR. They are optional: you can complete the exercise without answering them.</li>
   <li><strong>Submission timestamp.</strong></li>
 </ul>
 <h3>From educators</h3>
@@ -243,6 +273,7 @@ works.</p>""",
             "en": """
 <ul>
   <li><strong>Running the survey and the class debrief</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
+  <li><strong>The two political-opinion questions</strong> — these are special-category data, for which legitimate interest is not by itself a sufficient basis. Until the tool asks for explicit consent under Art. 9(2)(a), <strong>please leave these two questions unanswered</strong>; they are optional and skipping them does not affect the exercise or the class debrief.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
@@ -257,14 +288,14 @@ works.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>Automatic anonymisation:</strong> 30 days after the last response in a session, names, pseudonyms and e-mail addresses are removed automatically; numerical responses and demographics are kept in anonymised form. The job runs in the application itself.</li>
+  <li><strong>Automatic anonymisation is currently not working.</strong> The tool is meant to strip names and e-mail addresses 30 days after a session's last response, but on 2026-07-30 we found that the routine fails against the database schema and has therefore never removed anything. We are stating this rather than repeating a promise our own database disproves. Until it is fixed and verified, treat responses as retained until an educator deletes or anonymises them by hand — which works today and can be requested at any time.</li>
   <li><strong>Manual anonymisation:</strong> educators can anonymise or archive a session at any time before the 30-day window ends.</li>
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Before anonymisation, ask your educator (who can delete
-individual entries) or write to us naming the session and the name or pseudonym
-you used. After anonymisation, responses are no longer linked to a person.</p>""",
+            "en": """<p>Ask your educator (who can delete individual entries) or
+write to us naming the session and the name or pseudonym you used; because the
+name is stored, your entry can be found and removed on request.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
@@ -417,7 +448,7 @@ original works created for teaching.</p>""",
             "en": """
 <h3>From participants</h3>
 <ul>
-  <li><strong>E-mail address</strong> — optional. If provided, it is used to send your PDF report and include you in the class comparison; if not, responses are stored without a personal identifier.</li>
+  <li><strong>E-mail address</strong> — <strong>required</strong> to take part. It is used to send your PDF report, to include you in the class comparison, and to give you a withdrawal link.</li>
   <li><strong>Questionnaire responses</strong> — point allocations, context answers, derived style scores.</li>
   <li><strong>Optional demographics</strong> — only fields you fill in; used for aggregate analysis only.</li>
   <li><strong>Submission timestamp.</strong></li>
@@ -431,7 +462,7 @@ original works created for teaching.</p>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
 <ul>
-  <li><strong>E-Mail-Adresse</strong> — freiwillig. Falls angegeben, wird sie verwendet, um Ihnen Ihren PDF-Bericht zu senden und Sie in den Klassenvergleich einzubeziehen; andernfalls werden Ihre Antworten ohne persönliches Kennzeichen gespeichert.</li>
+  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong> für die Teilnahme. Sie wird verwendet, um Ihnen Ihren PDF-Bericht zu senden, Sie in den Klassenvergleich einzubeziehen und Ihnen einen Widerrufslink bereitzustellen.</li>
   <li><strong>Fragebogen­antworten</strong> — Punktverteilungen, Kontextantworten, abgeleitete Stilwerte.</li>
   <li><strong>Freiwillige demografische Angaben</strong> — nur Felder, die Sie ausfüllen; ausschließlich für aggregierte Auswertungen.</li>
   <li><strong>Zeitstempel der Abgabe.</strong></li>
@@ -447,14 +478,14 @@ original works created for teaching.</p>""",
             "en": """
 <ul>
   <li><strong>Running the profiler, generating the class aggregate, sending the PDF report</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the executive-education programme in which participants are enrolled.</li>
-  <li><strong>Research and cross-class benchmark use</strong> — your separate, optional consent (Art. 6(1)(a) GDPR), asked as its own unticked checkbox; declining changes nothing about your participation.</li>
+  <li><strong>Research and cross-class benchmark use</strong> — an unticked checkbox on the first page, which at present must be ticked to continue. Because it cannot currently be declined while still taking part, we do <strong>not</strong> claim it as freely-given consent under Art. 6(1)(a); this processing rests on the same legitimate interest as above, and making the choice genuinely optional is a change we have identified and intend to make.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
             "de": """
 <ul>
   <li><strong>Durchführung des Profilers, Klassen­aggregat, Versand des PDF-Berichts</strong> — Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an der Unterstützung des Weiterbildungs­programms, in dem die Teilnehmenden eingeschrieben sind.</li>
-  <li><strong>Forschungs- und klassen­übergreifende Benchmark-Nutzung</strong> — Ihre gesonderte, freiwillige Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), als eigenes, nicht vorangekreuztes Kästchen; eine Ablehnung ändert nichts an Ihrer Teilnahme.</li>
+  <li><strong>Forschungs- und klassen­übergreifende Benchmark-Nutzung</strong> — ein nicht vorangekreuztes Kästchen auf der ersten Seite, das derzeit angekreuzt werden muss, um fortzufahren. Da es sich gegenwärtig nicht ablehnen lässt, ohne die Teilnahme abzubrechen, stützen wir diese Verarbeitung <strong>nicht</strong> auf eine freiwillige Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, sondern auf dasselbe berechtigte Interesse wie oben; die Wahlmöglichkeit tatsächlich freiwillig zu machen, ist eine erkannte und beabsichtigte Änderung.</li>
   <li><strong>Konten von Lehrenden</strong> — Art. 6 Abs. 1 lit. b DSGVO.</li>
   <li><strong>Sicherheit, Rate-Limiting und Missbrauchs­abwehr</strong> — Art. 6 Abs. 1 lit. f DSGVO.</li>
 </ul>""",
@@ -476,14 +507,12 @@ original works created for teaching.</p>""",
 <ul>
   <li><strong>Live-class mode:</strong> report access and withdrawal expire 14 days after the class is closed; educators can postpone this in limited 7-day steps. At the deadline your e-mail address, name, withdrawal token and class linkage are removed; pseudonymised response data may be kept for aggregate analysis where you consented.</li>
   <li><strong>Self-guided mode:</strong> the same 14-day window, counted from submission.</li>
-  <li><strong>Participants without e-mail:</strong> responses carry no personal identifier from the moment of submission.</li>
   <li><strong>Educator accounts:</strong> retained until deleted by the administrator.</li>
 </ul>""",
             "de": """
 <ul>
   <li><strong>Kursmodus:</strong> Berichtszugriff und Widerruf enden 14 Tage nach Schließung der Klasse; Lehrende können dies in begrenzten 7-Tage-Schritten aufschieben. Zum Stichtag werden E-Mail-Adresse, Name, Widerrufstoken und Klassenzuordnung entfernt; pseudonymisierte Antwortdaten können für aggregierte Auswertungen aufbewahrt werden, soweit Sie eingewilligt haben.</li>
   <li><strong>Selbststudium:</strong> dieselbe 14-Tage-Frist, gerechnet ab der Abgabe.</li>
-  <li><strong>Teilnehmende ohne E-Mail:</strong> Antworten tragen von der Abgabe an kein persönliches Kennzeichen.</li>
   <li><strong>Konten von Lehrenden:</strong> bis zur Löschung durch den Administrator.</li>
 </ul>""",
         },
@@ -500,13 +529,13 @@ Antwort mit Ihnen verknüpft.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
-requirement. The e-mail address is optional: without it you can still complete
-the profiler and see your results on screen, but you cannot receive the PDF
-report or appear in the class comparison.</p>""",
+requirement, but an e-mail address is <strong>technically required</strong> to
+start the profiler — without it a response cannot be recorded. The demographic
+questions are genuinely optional.</p>""",
             "de": """<p>Die Bereitstellung von Daten ist weder gesetzlich noch
-vertraglich vorgeschrieben. Die E-Mail-Adresse ist freiwillig: Auch ohne sie
-können Sie den Profiler abschließen und Ihre Ergebnisse am Bildschirm sehen,
-erhalten jedoch keinen PDF-Bericht und erscheinen nicht im Klassenvergleich.</p>""",
+vertraglich vorgeschrieben; eine E-Mail-Adresse ist jedoch <strong>technisch
+erforderlich</strong>, um den Profiler zu starten — ohne sie kann keine Antwort
+gespeichert werden. Die demografischen Fragen sind tatsächlich freiwillig.</p>""",
         },
         "provenance": {
             "en": """<p>The LSR framework, scenarios, scoring model and report
@@ -692,20 +721,26 @@ original works created for teaching organisational design.</p>""",
   <li><strong>E-mail contact</strong> — if you write to us, the details you provide are stored to handle your enquiry and are not passed on.</li>
   <li><strong>Administrator credentials</strong> — for the private administration area; the password is stored only as a bcrypt hash.</li>
 </ul>
-<p>This umbrella site does not collect questionnaire responses, demographic
-data or participant e-mails — that processing happens inside the individual
-tools, each of which has its own privacy notice describing it.</p>""",
+<ul>
+  <li><strong>Fleet overview (administration area only)</strong> — when a signed-in administrator opens the overview, this site queries each tool over the server's own loopback interface and displays that tool's class/session titles, join codes, the <strong>educator e-mail address</strong> that owns each one, its status, response count and last activity. This data is read live and shown on screen; the hub does not store it.</li>
+</ul>
+<p>This umbrella site does not collect questionnaire responses or participant
+demographics — that processing happens inside the individual tools, each of
+which has its own privacy notice describing it.</p>""",
         },
         "basis": {
             "en": """
 <ul>
   <li><strong>Operating and securing the site, answering enquiries</strong> — Art. 6(1)(f) GDPR, our legitimate interest in providing and securing the service.</li>
+  <li><strong>The fleet overview</strong> — Art. 6(1)(f) GDPR, our legitimate interest in operating the nine tools as one service: seeing which sessions are running, and where, is what makes support and capacity planning possible.</li>
   <li><strong>Administrator accounts</strong> — Art. 6(1)(b) GDPR.</li>
 </ul>""",
         },
         "access": {
             "en": """<p>Only the administrator has access to the administration
-area. No participant-facing data exists on this site.</p>""",
+area, including the fleet overview described above. No participant responses
+are shown there — class titles, join codes, counts and the owning educator's
+e-mail address are.</p>""",
         },
         "retention": {
             "en": """
@@ -748,10 +783,9 @@ linked from this site are original works.</p>""",
         "collect": {
             "en": """
 <h3>From participants</h3>
-<p>We do not ask for your name, e-mail address, phone number or any account.
-We store, per submission:</p>
 <ul>
-  <li><strong>A pseudonymous session token</strong> in a cookie, linking your responses within one session. Because such a token exists, the data is pseudonymous rather than anonymous.</li>
+  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your facilitator in the session's participant list.</li>
+  <li><strong>A pseudonymous session token</strong> in a cookie, linking your responses within one session.</li>
   <li><strong>Session code</strong> — attributes your response to the correct group session.</li>
   <li><strong>Your item rankings</strong> — individual and, where applicable, the group ranking.</li>
   <li><strong>Second-stage response</strong> — your choice in the optional text-message challenge, if activated.</li>
@@ -764,10 +798,9 @@ We store, per submission:</p>
 </ul>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
-<p>Wir fragen weder Namen noch E-Mail-Adresse, Telefonnummer oder ein Konto ab.
-Wir speichern, je Abgabe:</p>
 <ul>
-  <li><strong>Ein pseudonymes Sitzungstoken</strong> in einem Cookie, das Ihre Antworten innerhalb einer Sitzung verknüpft. Weil dieses Token existiert, sind die Daten pseudonym, nicht anonym.</li>
+  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong>, um an einer Sitzung teilzunehmen. Sie wird zusammen mit Ihrer Reihung gespeichert und ist für die moderierende Person in der Teilnehmendenliste sichtbar.</li>
+  <li><strong>Ein pseudonymes Sitzungstoken</strong> in einem Cookie, das Ihre Antworten innerhalb einer Sitzung verknüpft.</li>
   <li><strong>Sitzungscode</strong> — ordnet Ihre Antwort der richtigen Gruppensitzung zu.</li>
   <li><strong>Ihre Reihungen</strong> — individuell und ggf. die Gruppenreihung.</li>
   <li><strong>Antwort der zweiten Stufe</strong> — Ihre Wahl in der optionalen Textnachrichten-Aufgabe, falls aktiviert.</li>
@@ -796,12 +829,12 @@ Wir speichern, je Abgabe:</p>
         "access": {
             "en": """
 <ul>
-  <li><strong>Facilitators</strong> see aggregate scores and the pseudonymous response-level data for their own sessions. No stored field identifies a participant directly.</li>
+  <li><strong>Facilitators</strong> see, for their own sessions, the participant list <strong>including each participant's e-mail address</strong>, alongside the individual and group rankings.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Moderierende</strong> sehen aggregierte Ergebnisse und die pseudonymen Antwortdaten ihrer eigenen Sitzungen. Kein gespeichertes Feld identifiziert eine teilnehmende Person direkt.</li>
+  <li><strong>Moderierende</strong> sehen für ihre eigenen Sitzungen die Teilnehmendenliste <strong>einschließlich der E-Mail-Adressen</strong> sowie die individuellen und die Gruppenreihungen.</li>
   <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit.</li>
 </ul>""",
         },
@@ -818,23 +851,23 @@ Wir speichern, je Abgabe:</p>
 </ul>""",
         },
         "erasure": {
-            "en": """<p>We store no name or e-mail address, so we usually cannot
-locate a specific response after the fact. Within the lifetime of your session
-cookie your submission can still be identified via the session token — contact
-us promptly from the same browser session and we will delete it. Facilitators
-can delete whole sessions at any time.</p>""",
-            "de": """<p>Wir speichern weder Namen noch E-Mail-Adressen und können
-eine einzelne Antwort daher nachträglich in der Regel nicht auffinden. Innerhalb
-der Lebensdauer Ihres Sitzungscookies lässt sich Ihre Abgabe jedoch über das
-Sitzungstoken zuordnen — melden Sie sich zeitnah aus derselben Browsersitzung,
-und wir löschen sie. Moderierende können ganze Sitzungen jederzeit löschen.</p>""",
+            "en": """<p>Your e-mail address identifies your submission, so we can
+always find and delete it: write to us, or ask your facilitator, naming the
+session code and the address you joined with. Facilitators can also delete a
+whole session at any time.</p>""",
+            "de": """<p>Ihre E-Mail-Adresse identifiziert Ihre Abgabe, wir können
+sie also jederzeit finden und löschen: Schreiben Sie uns oder Ihrer
+moderierenden Person unter Angabe des Sitzungscodes und der verwendeten
+Adresse. Moderierende können außerdem ganze Sitzungen jederzeit löschen.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
-requirement. Nothing identifying is collected at all.</p>""",
+requirement, but an e-mail address is <strong>technically required</strong> to
+join a session — without it a submission cannot be recorded.</p>""",
             "de": """<p>Die Bereitstellung von Daten ist weder gesetzlich noch
-vertraglich vorgeschrieben. Es werden keinerlei identifizierende Daten
-erhoben.</p>""",
+vertraglich vorgeschrieben; eine E-Mail-Adresse ist jedoch <strong>technisch
+erforderlich</strong>, um an einer Sitzung teilzunehmen — ohne sie kann keine
+Abgabe gespeichert werden.</p>""",
         },
         "provenance": {
             "en": """<p>The Whiteout scenario, benchmark ranking, trap-item design,
