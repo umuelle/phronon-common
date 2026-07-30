@@ -35,7 +35,12 @@
  * off" next to the others. Pinned HERE, on the sheet every backoffice loads
  * last, so no tool can drift again by forgetting (or overriding) the rule.
  * Backoffice pages only — participant pages do not load this file. */
-html { font-size: 15px; }
+html {
+  font-size: 15px;
+  /* The bar is position:sticky, so without this offset keyboard focus can
+   * scroll to rest UNDERNEATH it (WCAG 2.4.11, focus not obscured). */
+  scroll-padding-top: calc(var(--bo-nav-h) + 12px);
+}
 
 .bo-nav {
   height: var(--bo-nav-h);
@@ -172,4 +177,18 @@ html { font-size: 15px; }
   }
   .bo-nav__links a { line-height: 1.6; }
   .bo-nav__user { margin-left: 0; }
+}
+
+
+/* Reduced motion (WCAG 2.3.3): when the OS asks for less movement, collapse
+ * every animation and transition to effectively zero. Declared centrally so
+ * the accessibility statement's claim holds on every page that loads this
+ * sheet — a per-page opt-in would drift. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -333,3 +333,17 @@
   outline-offset: 1px;
 }
 .rank-a11y-btn:disabled { opacity: 0.35; cursor: default; }
+
+
+/* Reduced motion (WCAG 2.3.3): when the OS asks for less movement, collapse
+ * every animation and transition to effectively zero. Declared centrally so
+ * the accessibility statement's claim holds on every page that loads this
+ * sheet — a per-page opt-in would drift. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
