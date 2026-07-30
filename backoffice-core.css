@@ -1,0 +1,59 @@
+/* Phronon backoffice core typography — the fleet reference look (H3½).
+ *
+ * Master: phronon_common/backoffice-core.css. Synced to every tool as
+ * static/css/backoffice-core.css by server-ops/sync_shared_assets.py and
+ * loaded AFTER the per-tool stylesheet in backoffice/base.html, so these
+ * rules win where the shared class vocabulary is used.
+ *
+ * Scope: the shared bo-* vocabulary only. Layout (flex, spacing, widths)
+ * stays per-tool; this sheet pins the *look* that used to drift — Moral
+ * Mirror needed four such rules realigned on 29 July 2026 after everything
+ * already-shared matched. Values below ARE that reference look:
+ *
+ *   table headers   .78rem  uppercase muted
+ *   form labels     .825rem uppercase muted
+ *   page headings   1.4rem / 700
+ *   state badges    uppercase pills
+ *   role badges     lowercase rectangles
+ *
+ * The root font size (15px) is pinned in backoffice-nav.css. Colors fall
+ * back sensibly where a tool does not define --bo-muted. */
+
+.bo-page-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.bo-table th {
+  font-size: .78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--bo-muted, #6b7280);
+}
+
+.bo-field label {
+  font-size: .825rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--bo-muted, #6b7280);
+}
+
+.state-badge {
+  display: inline-block;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: .15rem .5rem;
+  border-radius: 4px;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
