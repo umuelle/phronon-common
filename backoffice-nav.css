@@ -192,3 +192,25 @@ html {
     scroll-behavior: auto !important;
   }
 }
+
+/* Sticky footer — ONE fleet rule (2026-07-30). The legal footer is exactly
+ * its natural height, sits at the bottom of the viewport when the page is
+ * short, and scrolls away normally when content is long. Before this rule
+ * every tool solved it differently: some footers floated mid-viewport under
+ * a two-row table, some were stretched to fill the remaining screen.
+ *
+ * Works on every backoffice DOM in the fleet because .ph-footer is always a
+ * direct child of either <body> or Whiteout's .bo-layout wrapper, and both
+ * become flex columns here. The auto top margin absorbs the free space, so
+ * the content above keeps its natural height and the footer keeps its own.
+ * Loaded LAST in every backoffice base, so it wins per-tool leftovers. */
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.bo-layout { flex: 1 0 auto; }
+.ph-footer {
+  margin-top: auto !important;
+  flex: 0 0 auto;
+}
