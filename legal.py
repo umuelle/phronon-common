@@ -76,23 +76,26 @@ def build_legal_router(tool_key: str) -> APIRouter:
             return HTMLResponse(render_legal(tool_key, doc, lang))
         return _page
 
-    router.add_api_route("/impressum", page("impressum", "de"),
+    # Every route is NAMED so templates can url_path_for() it — Phronon's
+    # base.html does exactly that for 'legal', and an unnamed route turns
+    # every page render into a NoMatchFound 500 (found the hard way in CI).
+    router.add_api_route("/impressum", page("impressum", "de"), name="impressum",
                          response_class=HTMLResponse, include_in_schema=False)
-    router.add_api_route("/legal-notice", page("legal_notice"),
+    router.add_api_route("/legal-notice", page("legal_notice"), name="legal_notice",
                          response_class=HTMLResponse, include_in_schema=False)
-    router.add_api_route("/privacy", page("privacy"),
+    router.add_api_route("/privacy", page("privacy"), name="privacy",
                          response_class=HTMLResponse, include_in_schema=False)
-    router.add_api_route("/cookies", page("cookies"),
+    router.add_api_route("/cookies", page("cookies"), name="cookies",
                          response_class=HTMLResponse, include_in_schema=False)
-    router.add_api_route("/terms", page("terms"),
+    router.add_api_route("/terms", page("terms"), name="terms",
                          response_class=HTMLResponse, include_in_schema=False)
-    router.add_api_route("/legal", page("index"),
+    router.add_api_route("/legal", page("index"), name="legal",
                          response_class=HTMLResponse, include_in_schema=False)
 
     if "de" in cfg["languages"]:
-        router.add_api_route("/de/privacy", page("privacy", "de"),
+        router.add_api_route("/de/privacy", page("privacy", "de"), name="privacy_de",
                              response_class=HTMLResponse, include_in_schema=False)
-        router.add_api_route("/de/cookies", page("cookies", "de"),
+        router.add_api_route("/de/cookies", page("cookies", "de"), name="cookies_de",
                              response_class=HTMLResponse, include_in_schema=False)
 
     async def _imprint_redirect():
@@ -100,6 +103,7 @@ def build_legal_router(tool_key: str) -> APIRouter:
         # It must keep working forever; /legal orients whoever follows it.
         return RedirectResponse("/legal", status_code=301)
 
-    router.add_api_route("/imprint", _imprint_redirect, include_in_schema=False)
+    router.add_api_route("/imprint", _imprint_redirect, name="imprint",
+                         include_in_schema=False)
 
     return router

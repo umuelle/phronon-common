@@ -4,6 +4,11 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.8.1
+Name every legal route (impressum, legal_notice, privacy, cookies, terms,
+legal, imprint, privacy_de, cookies_de) so templates can url_path_for() them;
+Phronon's base template does, and unnamed routes 500ed every page render.
+
 ## 1.8.0
 Shared legal pages (phronon-legal-blueprint.md): `legal.py` (router factory +
 `render_legal`), `legal_conf.py` (all nine tools' per-tool config in ONE file)
