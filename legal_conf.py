@@ -204,6 +204,7 @@ works.</p>""",
         "cookies": [
             ("drawbridge_session", "Signed, HTTP-only session cookie: holds the anonymous session and CSRF value so your pass through the story stays consistent.", "4 hours", "participants"),
             ("drawbridge_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
+            ("bo_csrf", "Protects backoffice forms against cross-site request forgery (signed, HTTP-only).", "1 hour", "backoffice"),
             ("bo_flash", "Carries a one-off status message between two backoffice pages.", "10 seconds", "backoffice"),
             ("db_pending_totp / drawbridge_pending2fa", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
         ],
