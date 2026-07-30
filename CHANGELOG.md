@@ -4,6 +4,11 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.8.2
+Legal routes answer HEAD explicitly (methods=[GET, HEAD]) — routes nested
+via include_router do not get Starlette's automatic GET->HEAD, and corporate
+web filters probe HEAD first.
+
 ## 1.8.1
 Name every legal route (impressum, legal_notice, privacy, cookies, terms,
 legal, imprint, privacy_de, cookies_de) so templates can url_path_for() them;
