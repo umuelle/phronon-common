@@ -1,0 +1,33 @@
+{# Renders the per-tool cookie table from config: (name, purpose, lifetime,
+   audience). The table must match the cookies the app actually sets —
+   legal_check.py asserts observed Set-Cookie names appear here. #}
+<div class="lp-table-scroll">
+<table>
+  <thead>
+    <tr>
+      {% if lang == 'de' %}
+      <th>Name</th><th>Zweck</th><th>Lebensdauer</th><th>Betrifft</th>
+      {% else %}
+      <th>Name</th><th>Purpose</th><th>Lifetime</th><th>Who it affects</th>
+      {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for name, purpose, lifetime, audience in cfg.cookies %}
+    <tr>
+      <td><code>{{ name|safe }}</code></td>
+      <td>{{ purpose }}</td>
+      <td>{{ lifetime }}</td>
+      <td>{{ audience }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if lang == 'de' %}
+<p>Alle Cookies werden von dieser Website selbst gesetzt
+(Erstanbieter-Cookies). Es gibt keine Cookies von Dritten.</p>
+{% else %}
+<p>All cookies are set by this site itself (first-party). There are no
+third-party cookies.</p>
+{% endif %}

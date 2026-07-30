@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+{# Full Art. 13 privacy notice. Structure follows the blueprint's Part 1.2
+   checklist; fleet-constant blocks come from partials, per-tool prose from
+   legal_conf.py via L(). #}
+{% block content %}
+{% if lang == 'de' %}
+<h1>Datenschutzerklärung</h1>
+<p>{{ L(cfg.purpose) }}</p>
+
+<h2>Verantwortlicher</h2>
+{% include "_controller.html" %}
+
+<h2>Welche Daten wir verarbeiten</h2>
+{{ L(cfg.collect)|safe }}
+
+<h2>Rechtsgrundlagen</h2>
+{{ L(cfg.basis)|safe }}
+
+<h2>Empfänger und Drittlandübermittlung</h2>
+{% include "_processors.html" %}
+
+<h2>Speicherdauer</h2>
+{{ L(cfg.retention)|safe }}
+
+<h2>Wer Ihre Daten sieht</h2>
+{{ L(cfg.access)|safe }}
+
+<h2>Datensicherheit</h2>
+{% include "_security.html" %}
+
+<h2>Server-Logdateien</h2>
+{% include "_logging.html" %}
+
+<h2>Ihre Rechte</h2>
+{% include "_rights.html" %}
+
+<h3>Löschung und Widerruf bei diesem Tool</h3>
+{{ L(cfg.erasure)|safe }}
+
+<h2>Pflicht zur Bereitstellung</h2>
+{{ L(cfg.provision)|safe }}
+
+<h2>Aufsichtsbehörde</h2>
+{% include "_authority.html" %}
+
+<h2>Automatisierte Entscheidungsfindung</h2>
+{% include "_no_adm.html" %}
+
+{% else %}
+<h1>Privacy Policy</h1>
+<p>{{ L(cfg.purpose) }}</p>
+
+<h2>Controller</h2>
+{% include "_controller.html" %}
+
+<h2>What data we process</h2>
+{{ L(cfg.collect)|safe }}
+
+<h2>Legal bases</h2>
+{{ L(cfg.basis)|safe }}
+
+<h2>Recipients and third-country transfers</h2>
+{% include "_processors.html" %}
+
+<h2>How long we keep data</h2>
+{{ L(cfg.retention)|safe }}
+
+<h2>Who can see your data</h2>
+{{ L(cfg.access)|safe }}
+
+<h2>Data security</h2>
+{% include "_security.html" %}
+
+<h2>Server log files</h2>
+{% include "_logging.html" %}
+
+<h2>Your rights</h2>
+{% include "_rights.html" %}
+
+<h3>Erasure and withdrawal on this tool</h3>
+{{ L(cfg.erasure)|safe }}
+
+<h2>Whether you must provide data</h2>
+{{ L(cfg.provision)|safe }}
+
+<h2>Supervisory authority</h2>
+{% include "_authority.html" %}
+
+<h2>Automated decision-making</h2>
+{% include "_no_adm.html" %}
+
+{% if 'de' in cfg.languages %}
+<p>Diese Datenschutzerklärung ist auch
+<a href="/de/privacy">auf Deutsch</a> verfügbar.</p>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,21 @@
+{# The one honest server-log statement (Tier 1 #2). Verified against the real
+   nginx config: /var/log/nginx/access.log, logrotate daily × 14. If the
+   rotation policy changes, change legal_conf.LOG_RETENTION_DAYS with it. #}
+{% if lang == 'de' %}
+<p>Unser Webserver zeichnet Standard-Zugriffsprotokolle auf: IP-Adresse, Datum
+und Uhrzeit, die angeforderte Ressource, HTTP-Status, Referrer und
+Browser-Kennung. Diese Protokolle dienen ausschließlich dem Betrieb und der
+Absicherung des Dienstes, werden nicht mit anderen Daten zusammengeführt, nicht
+zur Identifizierung von Personen oder zur Profilbildung verwendet und nach
+<strong>{{ cfg.log_retention_days }} Tagen</strong> rotiert und gelöscht.
+Für das Rate-Limiting verarbeitete IP-Adressen werden nur im Arbeitsspeicher
+gehalten und nie in die Datenbank geschrieben.</p>
+{% else %}
+<p>Our web server records standard access log entries: IP address, date and
+time, the resource requested, HTTP status, referrer and browser identifier.
+These logs are used solely to operate and secure the service, are not combined
+with other data, are not used to identify individuals or build profiles, and
+are rotated and deleted after <strong>{{ cfg.log_retention_days }} days</strong>.
+IP addresses processed for rate-limiting are held in memory only and never
+written to the database.</p>
+{% endif %}

@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{# /legal — thin index. Also the landing point for the legacy /imprint 301,
+   so it must briefly orient a visitor who followed an old link. #}
+{% block content %}
+<h1>Legal information</h1>
+<p>The legal documents for {{ cfg.tool_name }} ({{ cfg.domain }}):</p>
+<ul>
+  <li><a href="/impressum">Impressum</a> — provider identification under
+    § 5 DDG (German; legally authoritative).</li>
+  <li><a href="/legal-notice">Legal Notice</a> — the same operator
+    information in English.</li>
+  <li><a href="/privacy">Privacy Policy</a> — what data this tool processes,
+    on what basis, for how long, and your rights.
+    {%- if 'de' in cfg.languages %} Also available in
+    <a href="/de/privacy">German</a>.{% endif %}</li>
+  <li><a href="/cookies">Cookies</a> — the cookies this site sets and why no
+    consent banner is required.
+    {%- if 'de' in cfg.languages %} Also available in
+    <a href="/de/cookies">German</a>.{% endif %}</li>
+  <li><a href="/terms">Terms of Use</a> — permitted use, educator
+    responsibilities, liability, governing law.</li>
+  <li><a href="/accessibility">Accessibility</a> — our voluntary
+    accessibility commitment and known gaps.</li>
+</ul>
+<p>For any legal or data-protection matter, write to
+<a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>.</p>
+{% endblock %}

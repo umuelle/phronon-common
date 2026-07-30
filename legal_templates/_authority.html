@@ -1,0 +1,15 @@
+{# Supervisory authority — full postal address, one format fleet-wide. #}
+{% if lang == 'de' %}
+<p>Sie haben außerdem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu
+beschweren. Zuständig für unseren Sitz ist:</p>
+{% else %}
+<p>You also have the right to lodge a complaint with a data protection
+supervisory authority. The authority competent for our location is:</p>
+{% endif %}
+<p>
+  Berliner Beauftragte für Datenschutz und Informationsfreiheit<br>
+  Alt-Moabit 59–61<br>
+  10555 Berlin<br>
+  {% if lang == 'de' %}Deutschland{% else %}Germany{% endif %}<br>
+  <a href="https://www.datenschutz-berlin.de">www.datenschutz-berlin.de</a>
+</p>

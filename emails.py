@@ -58,10 +58,14 @@ def password_reset_bodies(tool_name: str, reset_url: str, hours: str = "2"):
 
 
 def build_password_reset_message(tool_name: str, sender: str, to_email: str,
-                                 reset_url: str, hours: str = "2") -> MIMEMultipart:
+                                 reset_url: str, hours: str = "2",
+                                 subject_prefix: str = "") -> MIMEMultipart:
+    # subject_prefix exists for the test samples ("[TEST] "), so a sample in
+    # the inbox can never be mistaken for a real reset. Production callers
+    # leave it empty.
     text, html = password_reset_bodies(tool_name, reset_url, hours)
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"{tool_name} — password reset"
+    msg["Subject"] = f"{subject_prefix}{tool_name} — password reset"
     msg["From"] = sender
     msg["To"] = to_email
     msg.attach(MIMEText(text, "plain"))
@@ -70,7 +74,7 @@ def build_password_reset_message(tool_name: str, sender: str, to_email: str,
 
 
 def send_password_reset(tool_name: str, default_from: str, to_email: str,
-                        reset_url: str) -> None:
+                        reset_url: str, subject_prefix: str = "") -> None:
     """Send the branded reset email. No-op (logs the link) if SMTP unconfigured."""
     hours = os.getenv("RESET_TOKEN_HOURS", "2")
     if not os.getenv("SMTP_PASSWORD"):
@@ -89,7 +93,8 @@ def send_password_reset(tool_name: str, default_from: str, to_email: str,
             )
         return
     sender = os.getenv("EMAIL_FROM") or os.getenv("SMTP_FROM") or default_from
-    msg = build_password_reset_message(tool_name, sender, to_email, reset_url, hours)
+    msg = build_password_reset_message(tool_name, sender, to_email, reset_url,
+                                       hours, subject_prefix)
     with smtplib.SMTP(
         os.getenv("SMTP_HOST", "smtp.ionos.de"),
         int(os.getenv("SMTP_PORT", "587")),

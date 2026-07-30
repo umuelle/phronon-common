@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{# Cookie notice: § 25(2) Nr. 2 TDDDG exemption + the per-tool cookie table. #}
+{% block content %}
+{% if lang == 'de' %}
+<h1>Cookies</h1>
+{% include "_cookies_intro.html" %}
+<h2>Welche Cookies diese Website setzt</h2>
+{% include "_cookie_table.html" %}
+<p>Sie können Cookies in Ihren Browser-Einstellungen blockieren; da die hier
+aufgeführten Cookies für den Dienst erforderlich sind, funktioniert die
+Anwendung dann jedoch nicht mehr korrekt.</p>
+{% if 'de' in cfg.languages %}
+<p>This cookie notice is also available <a href="/cookies">in English</a>.</p>
+{% endif %}
+{% else %}
+<h1>Cookies</h1>
+{% include "_cookies_intro.html" %}
+<h2>Cookies this site sets</h2>
+{% include "_cookie_table.html" %}
+<p>You can block cookies in your browser settings; since the cookies listed
+here are required to run the service, the application will then no longer work
+correctly.</p>
+{% if 'de' in cfg.languages %}
+<p>Diese Cookie-Erklärung ist auch <a href="/de/cookies">auf Deutsch</a>
+verfügbar.</p>
+{% endif %}
+{% endif %}
+{% endblock %}

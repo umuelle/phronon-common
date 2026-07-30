@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{# English convenience mirror of the operator data. The § 5 DDG duty is
+   discharged by /impressum; this page exists for English-speaking visitors.
+   Never label it "Imprint" (Tier 2 #15). #}
+{% block content %}
+<h1>Legal Notice</h1>
+
+<p>This service is operated by:</p>
+
+{% include "_operator.html" %}
+
+<p>Responsible for the content: Urs Müller (address as above).</p>
+
+<p>The legally authoritative provider identification under § 5 DDG is the
+German <a href="/impressum">Impressum</a>.</p>
+
+<p><strong>Response time.</strong> We aim to respond to enquiries promptly.
+Requests concerning your personal data are answered within the period required
+by Art. 12(3) GDPR (one month at the latest).</p>
+
+<p><strong>External links:</strong> despite careful review, we assume no
+liability for the content of external links; the operators of linked pages are
+solely responsible for their content.</p>
+{% endblock %}

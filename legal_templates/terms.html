@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+{# Terms of use. English only for now (contracting counterparty is an
+   institution or educator; German version is a recorded open decision).
+   §§ 305–310 BGB constraints observed: no blanket as-is disclaimer; the
+   liability clause below is an INTERIM drafting pending review by a German
+   IT-law practitioner (blueprint Part 9 #1). Deliberately absent, and to
+   stay absent: EU ODR platform link (repealed; platform shut down 20 July
+   2025) and any § 36 VSBG arbitration statement (exempt at <=10 employees;
+   a voluntary statement would CREATE an obligation). #}
+{% block content %}
+<h1>Terms of Use</h1>
+
+<h2>Scope and parties</h2>
+<p>These terms govern the use of {{ cfg.tool_name }} at
+<strong>{{ cfg.domain }}</strong>, operated by Urs Müller, Gotenstr. 21,
+10829 Berlin, Germany (see the <a href="/impressum">Impressum</a>). Where an
+institution or educator arranges use of the tool for a course, that
+arrangement is with the institution or educator; participants use the tool
+within their programme.</p>
+
+<h2>The service</h2>
+<p>{{ L(cfg.purpose) }}</p>
+
+<div class="lp-box">
+<p><strong>Not an assessment instrument.</strong> {{ cfg.tool_name }} and the
+other Phronon tools are teaching and discussion aids. They are
+<strong>not</strong> psychometric, diagnostic, clinical or employment-selection
+instruments, and they must not be used for hiring, selection, promotion or any
+other personnel decision-making. Results have no diagnostic value and must not
+be relied on as scientific measurement of an individual.</p>
+</div>
+
+<h2>Acceptable use</h2>
+<ul>
+  <li>Use the tool honestly and in good faith; do not submit deliberately false or misleading responses to skew group results.</li>
+  <li>Do not attempt automated submissions, duplicate entries, unauthorised access, probing for vulnerabilities, or disruption of the service.</li>
+  <li>Do not attempt to identify or de-anonymise other participants.</li>
+  <li>Do not use the tool for commercial purposes without prior written permission.</li>
+</ul>
+
+<h2>Educator responsibilities</h2>
+<ul>
+  <li>Inform participants what the exercise involves and how results will be used in the debrief.</li>
+  <li>Handle participant data responsibly and in line with your institution's data-protection policies.</li>
+  <li>Do not share individual participant data outside the educational context, and delete or anonymise data when it is no longer needed.</li>
+</ul>
+
+<h2>Accounts</h2>
+<p>Educator and administrator accounts are personal. Keep credentials
+confidential; we may suspend or terminate accounts used in breach of these
+terms, and remove content that is unlawful or harmful.</p>
+
+<h2>Intellectual property</h2>
+<p>The Phronon name, wordmark and logo, and this tool's design and software
+are protected works. The web fonts used are licensed under the SIL Open Font
+License.</p>
+{{ L(cfg.provenance)|safe }}
+
+<h2>Availability</h2>
+<p>The tool is provided without any guarantee of uninterrupted availability.
+We may perform maintenance, and may modify or discontinue features; where a
+change materially affects ongoing courses we try to give notice to registered
+educators.</p>
+
+<h2>Liability</h2>
+<p>We are liable without limitation for damage caused intentionally or by
+gross negligence, and for injury to life, body or health. In cases of slight
+negligence we are liable only for the breach of essential contractual
+obligations (obligations whose fulfilment makes the proper performance of the
+service possible in the first place and on whose fulfilment users may
+regularly rely), and only up to the damage that is foreseeable and typical for
+a service of this kind. Liability under mandatory statutory provisions remains
+unaffected. Nothing in these terms excludes or limits liability that cannot be
+excluded or limited by law.</p>
+
+<h2>Changes to these terms</h2>
+<p>We may update these terms; the version date below identifies the current
+text. Material changes are communicated to registered educators by e-mail.</p>
+
+<h2>Governing law and venue</h2>
+<p>These terms are governed by the law of the Federal Republic of Germany.
+For merchants and entities without a general venue in Germany, the place of
+jurisdiction is Berlin. If you use the service as a consumer, the mandatory
+consumer-protection rules of your country of habitual residence remain
+unaffected by this choice of law and venue.</p>
+{% endblock %}

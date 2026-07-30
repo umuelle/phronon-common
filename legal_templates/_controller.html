@@ -1,0 +1,44 @@
+{# GDPR controller identity + the Part 0.1 controller/processor split. #}
+{% if lang == 'de' %}
+<p>Verantwortlicher im Sinne des Art. 4 Nr. 7 DSGVO ist<br>
+  Urs Müller, Gotenstr. 21, 10829 Berlin, Deutschland —
+  <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>.</p>
+{% if not cfg.is_hub %}
+<p><strong>Wer wofür verantwortlich ist.</strong> Für Konten von Lehrenden und
+Administratoren, für Sicherheit und Missbrauchs­abwehr sowie für den
+anonymisierten, aggregierten Auswertungsdatensatz sind wir selbst
+Verantwortlicher. Hat eine Institution uns beauftragt, dieses Tool für ihr
+eigenes Programm zu betreiben, ist <strong>die Institution</strong> für die
+identifizierbaren Daten dieser Kohorte Verantwortlicher, und wir verarbeiten
+sie in ihrem Auftrag (Art. 28 DSGVO). Praktisch heißt das: Bei Anliegen zu den
+identifizierbaren Daten Ihrer Kohorte wenden Sie sich zuerst an Ihre Lehrperson
+oder Institution; bei allem, was Konten, Sicherheit oder den aggregierten
+Datensatz betrifft, an uns. Wir unterstützen die Institution in beiden Fällen
+bei der Beantwortung (Art. 28 Abs. 3 lit. e DSGVO).</p>
+{% endif %}
+<p><strong>Datenschutzbeauftragte:r:</strong> Es ist keine
+Datenschutzbeauftragte und kein Datenschutzbeauftragter benannt — § 38 BDSG
+verlangt dies erst, wenn in der Regel mindestens 20 Personen ständig mit der
+automatisierten Verarbeitung beschäftigt sind; dieser Dienst wird von einer
+einzelnen Person betrieben.</p>
+{% else %}
+<p>The controller within the meaning of Art. 4(7) GDPR is<br>
+  Urs Müller, Gotenstr. 21, 10829 Berlin, Germany —
+  <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>.</p>
+{% if not cfg.is_hub %}
+<p><strong>Who is responsible for what.</strong> For educator and administrator
+accounts, for security and abuse prevention, and for the anonymised, aggregated
+analysis dataset, we are the controller. Where an institution has contracted us
+to run this tool for its own programme, <strong>the institution</strong> is the
+controller for the identifiable data of that cohort, and we process it on the
+institution's behalf (Art. 28 GDPR). In practice: for a request concerning your
+cohort's identifiable data, please approach your educator or institution first;
+for anything concerning accounts, security or the aggregate dataset, contact
+us. We assist the institution in answering requests in either case
+(Art. 28(3)(e) GDPR).</p>
+{% endif %}
+<p><strong>Data protection officer:</strong> no data protection officer is
+appointed, and none is required — § 38 BDSG requires one only where at least
+20 persons are constantly engaged in automated processing; this service is
+operated by a single person.</p>
+{% endif %}

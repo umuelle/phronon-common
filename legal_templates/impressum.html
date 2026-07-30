@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{# Canonical § 5 DDG page — German, always, on every domain. NOT a redirect.
+   Blueprint Part 4.1. No § 18(2) MStV line (not journalistic-editorial
+   content); no VAT line until a USt-IdNr. or W-IdNr. exists. #}
+{% block content %}
+<h1>Impressum</h1>
+
+<p><strong>Angaben gemäß § 5 DDG</strong></p>
+
+{% include "_operator.html" %}
+
+<p>Verantwortlich für den Inhalt: Urs Müller (Anschrift wie oben)</p>
+
+<p><strong>Datenschutz:</strong> Verantwortlicher im Sinne der DSGVO ist
+Urs Müller (Anschrift wie oben).
+{% if 'de' in cfg.languages %}
+Die vollständige Datenschutzerklärung finden Sie hier:
+<a href="/de/privacy">Datenschutzerklärung</a>.
+{% else %}
+Die vollständige Datenschutzerklärung ist in englischer Sprache verfügbar:
+<a href="/privacy">Privacy Policy</a>.
+{% endif %}</p>
+
+<p><strong>Antwortzeit.</strong> Wir bemühen uns, Anfragen zeitnah zu
+beantworten. Anfragen zu personenbezogenen Daten beantworten wir innerhalb der
+Frist des Art. 12 Abs. 3 DSGVO (spätestens innerhalb eines Monats).</p>
+
+<p><strong>Hinweis zu externen Links:</strong> Trotz sorgfältiger inhaltlicher
+Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den
+Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber
+verantwortlich.</p>
+{% endblock %}
