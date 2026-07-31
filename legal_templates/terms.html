@@ -10,6 +10,28 @@
 {% block content %}
 <h1>Terms of Use</h1>
 
+{% if 'de' in cfg.languages %}
+{# B10, decided 2026-07-31: the terms stay English-only for now. The
+   contracting counterparty is the institution or educator, not the
+   participant, so English is defensible — and the liability clause is about
+   to be redrafted by a German lawyer (TO DO B2), so translating now would
+   mean translating twice. What is NOT defensible is leaving a German reader
+   with no signpost at all, hence this note. Replace it with a real German
+   version once the clause is final. #}
+<div class="lp-box" lang="de">
+  <p><strong>Hinweis zur Sprache.</strong> Diese Nutzungsbedingungen liegen
+  derzeit nur auf Englisch vor. Vertragspartner ist in der Regel die
+  Institution oder die Lehrperson, die das Tool einsetzt — nicht die
+  teilnehmende Person. <strong>Impressum, Datenschutzerklärung und
+  Cookie-Hinweis sind auf Deutsch verfügbar</strong>
+  (<a href="/impressum">Impressum</a> ·
+  <a href="/de/privacy">Datenschutzerklärung</a> ·
+  <a href="/de/cookies">Cookies</a>). Bei Fragen zu diesen Bedingungen
+  schreiben Sie uns gerne auf Deutsch an
+  <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>.</p>
+</div>
+{% endif %}
+
 <h2>Scope and parties</h2>
 <p>These terms govern the use of {{ cfg.tool_name }} at
 <strong>{{ cfg.domain }}</strong>, operated by Urs Müller, Gotenstr. 21,
