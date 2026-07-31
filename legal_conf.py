@@ -270,7 +270,8 @@ works.</p>""",
   <li><strong>Session code</strong> — links your response to a specific session.</li>
   <li><strong>Responses</strong> — your numerical estimates of wealth distribution.</li>
   <li><strong>Optional demographics</strong> — age range, gender, income bracket.</li>
-  <li><strong>Two optional political-opinion questions</strong> — your level of agreement with statements on wealth redistribution and market regulation. These reveal a <strong>political opinion</strong>, a special category of data under Art. 9(1) GDPR. They are optional: you can complete the exercise without answering them.</li>
+  <li><strong>Two optional political-opinion questions</strong> — your level of agreement with statements on wealth redistribution and on regulating personal lifestyle choices. These reveal a <strong>political opinion</strong>, a special category of data under Art. 9(1) GDPR. They are stored <strong>only if you tick the separate box giving explicit consent</strong>; if you do not, the answers are discarded and never written to the database, even if you filled them in. Skipping them changes nothing else about your participation.</li>
+  <li><strong>Your consent choices</strong> — whether you agreed to research use and to the political questions, with the date and the version of the wording you were shown. This is what makes a consent provable, and it is kept for as long as the data it covers.</li>
   <li><strong>Submission timestamp.</strong></li>
 </ul>
 <h3>From educators</h3>
@@ -284,7 +285,8 @@ works.</p>""",
             "en": """
 <ul>
   <li><strong>Running the survey and the class debrief</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
-  <li><strong>The two political-opinion questions</strong> — these are special-category data, for which legitimate interest is not by itself a sufficient basis. Until the tool asks for explicit consent under Art. 9(2)(a), <strong>please leave these two questions unanswered</strong>; they are optional and skipping them does not affect the exercise or the class debrief.</li>
+  <li><strong>The two political-opinion questions</strong> — <strong>Art. 9(2)(a) explicit consent</strong>, given by ticking the dedicated box on the demographics page. This is a separate box from the research one on purpose: you can help with research and still decline the political questions. Without that tick the answers are not stored at all.</li>
+  <li><strong>Keeping demographics for research beyond this class</strong> — your separate consent (Art. 6(1)(a)), also its own unticked box. If you decline, your demographic answers are used for your class's results and then deleted.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
@@ -299,20 +301,28 @@ works.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>Automatic anonymisation:</strong> 30 days after a response is submitted, the participant's name and e-mail address are removed and the row is marked anonymised; the numerical answers and demographics are kept for aggregate analysis. This had been broken since the feature was written — the database rejected the deletion every time — and was repaired on 2026-07-30; a test now runs the deletion itself on every deploy rather than merely checking that the code exists.</li>
+  <li><strong>After 30 days, what happens depends on your consent.</strong> In every case your name and e-mail address are removed. If you did <em>not</em> consent to research use, your demographic answers are <strong>deleted outright</strong> at the same moment. If you did consent, they are kept — but the record is <strong>cut loose from your class</strong>: the link to the session is removed and the timestamp is reduced to the month, so the answers sit in a large cross-class pool instead of a group of twenty where a combination of age, gender and income could point at one person.</li>
+  <li><strong>What that means for you:</strong> once the 30 days have passed we can no longer find your individual response, so a withdrawal request has to reach us before then. Until then, write to us and we will delete it.</li>
+  <li>This routine had been broken since the feature was written — the database rejected the deletion every time, and it only ran at start-up — and was repaired on 2026-07-30/31. A test now executes the deletion itself on every deploy rather than merely checking that the code exists.</li>
   <li><strong>Manual anonymisation:</strong> educators can anonymise or archive a session at any time before the 30-day window ends.</li>
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Ask your educator (who can delete individual entries) or
-write to us naming the session and the name or pseudonym you used; because the
-name is stored, your entry can be found and removed on request.</p>""",
+            "en": """<p>Within the first 30 days, ask your educator (who can delete
+individual entries) or write to us naming the session and the name you used —
+your entry can be found and removed. After 30 days the record has been
+anonymised and, if you consented to research use, detached from your class, so
+we genuinely cannot identify which row was yours. You can also withdraw a
+consent you gave at any time by writing to us; that stops any further use,
+though it cannot reach a record we can no longer locate.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
 requirement. A name or pseudonym is needed so your educator can see who has
-responded; the e-mail address and all demographic fields are optional and
-leaving them out has no consequence.</p>""",
+responded. Everything on the demographics page is voluntary: every field
+offers &ldquo;prefer not to say&rdquo;, the whole page can be skipped, and
+neither consent box has to be ticked. Declining any of it does not affect your
+results, the class discussion, or anything else.</p>""",
         },
         "provenance": {
             "en": """<p>The comparison data on real wealth distributions is drawn
