@@ -499,14 +499,14 @@ original works created for teaching.</p>""",
             "en": """
 <ul>
   <li><strong>Running the profiler, generating the class aggregate, sending the PDF report</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the executive-education programme in which participants are enrolled.</li>
-  <li><strong>Research and cross-class benchmark use</strong> — an unticked checkbox on the first page, which at present must be ticked to continue. Because it cannot currently be declined while still taking part, we do <strong>not</strong> claim it as freely-given consent under Art. 6(1)(a); this processing rests on the same legitimate interest as above, and making the choice genuinely optional is a change we have identified and intend to make.</li>
+  <li><strong>Research and cross-class benchmark use</strong> — your consent (Art. 6(1)(a)), offered on your results page once you have seen what your answers produced. It is entirely optional and separate from taking part: declining changes nothing about your report or your place in the class comparison, and you can give or withdraw it at any time from that page. The tick-box on the first page is a different thing — it confirms you have read this notice, and is not a consent to research use.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
             "de": """
 <ul>
   <li><strong>Durchführung des Profilers, Klassen­aggregat, Versand des PDF-Berichts</strong> — Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an der Unterstützung des Weiterbildungs­programms, in dem die Teilnehmenden eingeschrieben sind.</li>
-  <li><strong>Forschungs- und klassen­übergreifende Benchmark-Nutzung</strong> — ein nicht vorangekreuztes Kästchen auf der ersten Seite, das derzeit angekreuzt werden muss, um fortzufahren. Da es sich gegenwärtig nicht ablehnen lässt, ohne die Teilnahme abzubrechen, stützen wir diese Verarbeitung <strong>nicht</strong> auf eine freiwillige Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, sondern auf dasselbe berechtigte Interesse wie oben; die Wahlmöglichkeit tatsächlich freiwillig zu machen, ist eine erkannte und beabsichtigte Änderung.</li>
+  <li><strong>Forschungs- und klassen­übergreifende Benchmark-Nutzung</strong> — Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die Ihnen auf Ihrer Ergebnisseite angeboten wird, nachdem Sie gesehen haben, was Ihre Antworten ergeben. Sie ist vollkommen freiwillig und von der Teilnahme unabhängig: Eine Ablehnung ändert nichts an Ihrem Bericht oder Ihrem Platz im Klassenvergleich, und Sie können sie dort jederzeit erteilen oder widerrufen. Das Kästchen auf der ersten Seite ist etwas anderes — es bestätigt, dass Sie diese Erklärung gelesen haben, und ist keine Einwilligung in die Forschungsnutzung.</li>
   <li><strong>Konten von Lehrenden</strong> — Art. 6 Abs. 1 lit. b DSGVO.</li>
   <li><strong>Sicherheit, Rate-Limiting und Missbrauchs­abwehr</strong> — Art. 6 Abs. 1 lit. f DSGVO.</li>
 </ul>""",
