@@ -55,7 +55,15 @@ jobs:
             pip install --quiet -r requirements.txt
           fi
           if [ -f requirements-test.txt ]; then pip install --quiet -r requirements-test.txt; fi
-          pip install --quiet pytest "phronon_common @ git+https://github.com/umuelle/phronon-common.git@v1.6.0"
+          # THIS repo installs ITSELF from the checkout — never from a tag.
+          # It used to `pip install phronon_common@git+...@v1.6.0`, and because
+          # GitHub checks out into a directory named `phronon-common` (hyphen),
+          # the tests' `sys.path.insert(parents[2])` found no `phronon_common`
+          # package beside it and fell through to site-packages. So the 92 legal
+          # tests were validating the published v1.6.0 while the repo was on
+          # v1.8.x — green, and proving nothing about the code being pushed.
+          pip install --quiet pytest
+          pip install --quiet -e .
           pip install --quiet pip-audit
           # BLOCKING. This used to downgrade findings to a warning, which meant a
           # known-vulnerable package could sail through unnoticed. Audit the
