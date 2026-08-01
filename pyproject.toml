@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phronon_common"
-version = "1.8.2"
+version = "1.9.0"
 description = "Shared framework-agnostic helpers for the Phronon teaching tools"
 requires-python = ">=3.10"
 dependencies = [

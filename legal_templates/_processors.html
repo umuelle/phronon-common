@@ -25,11 +25,19 @@ Art. 28 DSGVO:</p>
     („Lauf erfolgreich/fehlgeschlagen“), keine Inhalts- oder
     Teilnehmendendaten.</li>
 </ul>
-<p>Es werden keine personenbezogenen Daten in Länder außerhalb der EU/des EWR
-übermittelt.</p>
+<p><strong>Drittlandübermittlung:</strong> Die Verarbeitung findet in der EU
+statt; Server und Datenbanken stehen in Deutschland. Zwei Punkte sind der
+Vollständigkeit halber zu nennen: Microsoft (OneDrive) sieht für seine Dienste
+Übermittlungen außerhalb des EWR mit Garantien nach Art. 46 DSGVO
+(EU-Standardvertragsklauseln) vor — dorthin gelangen ausschließlich die vor dem
+Verlassen des Servers verschlüsselten Sicherungskopien, deren Schlüssel wir
+nicht herausgeben; und healthchecks.io betreibt Infrastruktur in der EU und in
+den USA, erhält jedoch nur Statusmeldungen des Sicherungslaufs, keine
+Teilnehmenden- oder Inhaltsdaten.</p>
 <p><strong>Auswirkung auf die Löschung:</strong> Wird ein Datensatz gelöscht,
-kann er noch bis zu 14 Tage in den Sicherungskopien enthalten sein, bis diese
-turnusmäßig überschrieben werden. Sicherungen werden ausschließlich zur
+kann er noch in den Sicherungskopien enthalten sein, bis diese turnusmäßig
+auslaufen: <strong>bis zu 14 Tage</strong> in den Sicherungen auf dem Server
+und <strong>bis zu 30 Tage</strong> in den verschlüsselten Kopien außer Haus. Sicherungen werden ausschließlich zur
 Wiederherstellung nach einem Ausfall verwendet, nie zur normalen
 Datenverarbeitung.</p>
 {% else %}
@@ -48,9 +56,18 @@ agreement pursuant to Art. 28 GDPR:</p>
     happened. Only status pings are sent ("run succeeded / failed"); no
     content and no participant data.</li>
 </ul>
-<p>No personal data is transferred outside the EU/EEA.</p>
+<p><strong>Transfers outside the EU/EEA:</strong> processing takes place in
+the EU; the servers and databases are in Germany. Two things are worth stating
+in full. Microsoft (OneDrive) provides for transfers outside the EEA under
+Art. 46 GDPR safeguards (EU standard contractual clauses) — what reaches it is
+only the backup copies, encrypted before they leave the server, whose key we do
+not hand over. And healthchecks.io runs infrastructure in the EU and the US,
+but receives only backup-run status pings: no participant data and no
+content.</p>
 <p><strong>What this means for erasure:</strong> when a record is deleted, a
-copy may remain inside backups for up to 14 days until those are rotated out.
+copy may remain inside backups until those expire: <strong>up to 14 days</strong>
+in the backups held on the server, and <strong>up to 30 days</strong> in the
+encrypted off-site copies.
 Backups are used only to restore the service after a failure, never for
 ordinary processing.</p>
 {% endif %}

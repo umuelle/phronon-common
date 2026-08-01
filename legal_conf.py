@@ -158,7 +158,7 @@ the responsibility of the educator who writes them.</p>""",
             ("norms_&lt;code&gt; / privacy_&lt;code&gt;", "Record that the survey's ground-rules and privacy note were shown.", "1 hour", "participants"),
             ("withdrawal_token", "Lets you withdraw your submission right after submitting.", "5–10 minutes", "participants"),
             ("backoffice_user", "Keeps educators and administrators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
-            ("cg_pending_totp", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
+            ("cg_pending_totp / cg_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
             ("dismiss_anonymize_until", "Remembers that an educator dismissed the \"these surveys need anonymising\" reminder, so it is not shown again for a week. Set only when the educator clicks dismiss.", "7 days", "backoffice"),
         ],
     },
@@ -244,7 +244,7 @@ works.</p>""",
             ("drawbridge_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
             ("bo_csrf", "Protects backoffice forms against cross-site request forgery (signed, HTTP-only).", "1 hour", "backoffice"),
             ("bo_flash", "Carries a one-off status message between two backoffice pages.", "10 seconds", "backoffice"),
-            ("db_pending_totp / drawbridge_pending2fa", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
+            ("db_pending_totp / drawbridge_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
 
@@ -271,6 +271,7 @@ works.</p>""",
   <li><strong>Responses</strong> — your numerical estimates of wealth distribution.</li>
   <li><strong>Optional demographics</strong> — age range, gender, income bracket.</li>
   <li><strong>Two optional political-opinion questions</strong> — your level of agreement with statements on wealth redistribution and on regulating personal lifestyle choices. These reveal a <strong>political opinion</strong>, a special category of data under Art. 9(1) GDPR. They are stored <strong>only if you tick the separate box giving explicit consent</strong>; if you do not, the answers are discarded and never written to the database, even if you filled them in. Skipping them changes nothing else about your participation.</li>
+  <li><strong>Reflection answers</strong> — an optional page after your results asks how confident you were beforehand, what surprised you most, whether your view of an ideal distribution changed, and offers a <strong>free-text box</strong>. Only what you type is stored. Please do not put names or anything sensitive in the free-text box: unlike the other fields it can contain anything, so <strong>it is emptied for everyone at the anonymisation deadline</strong>, whatever you chose about research use.</li>
   <li><strong>Your consent choices</strong> — whether you agreed to research use and to the political questions, with the date and the version of the wording you were shown. This is what makes a consent provable, and it is kept for as long as the data it covers.</li>
   <li><strong>Submission timestamp.</strong></li>
 </ul>
@@ -286,7 +287,7 @@ works.</p>""",
 <ul>
   <li><strong>Running the survey and the class debrief</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
   <li><strong>The two political-opinion questions</strong> — <strong>Art. 9(2)(a) explicit consent</strong>, given by ticking the dedicated box on the demographics page. This is a separate box from the research one on purpose: you can help with research and still decline the political questions. Without that tick the answers are not stored at all.</li>
-  <li><strong>Keeping demographics for research beyond this class</strong> — your separate consent (Art. 6(1)(a)), also its own unticked box. If you decline, your demographic answers are used for your class's results and then deleted.</li>
+  <li><strong>Keeping demographics and reflection answers past the 30-day window, and using them outside your own educator's teaching</strong> — your separate consent (Art. 6(1)(a)), also its own unticked box. Within the window and within your educator's own courses, those answers feed the session debrief and your educator's cross-session summary on Art. 6(1)(f); that is the teaching the session is part of. If you decline, they are <strong>deleted</strong> at the 30-day mark instead of being kept.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
@@ -294,17 +295,17 @@ works.</p>""",
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see who responded (names or pseudonyms) but not individual response values linked to a person; responses are shown in aggregate or anonymised form. Educators can delete erroneous entries in their own sessions.</li>
+  <li><strong>Educators</strong> see who responded (names or pseudonyms) but not individual response values linked to a person; responses are shown in aggregate or anonymised form. The session summary does quote <strong>reflection notes</strong> back to the educator, without a name attached — so please write nothing there you would not want the room to read. Educators can delete erroneous entries in their own sessions, and see a summary across their own sessions.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
         },
         "retention": {
             "en": """
 <ul>
-  <li><strong>After 30 days, what happens depends on your consent.</strong> In every case your name and e-mail address are removed. If you did <em>not</em> consent to research use, your demographic answers are <strong>deleted outright</strong> at the same moment. If you did consent, they are kept — but the record is <strong>cut loose from your class</strong>: the link to the session is removed and the timestamp is reduced to the month, so the answers sit in a large cross-class pool instead of a group of twenty where a combination of age, gender and income could point at one person.</li>
+  <li><strong>After 30 days, what happens depends on your consent.</strong> In every case your name and e-mail address are removed, and the <strong>free-text reflection box is emptied for everyone</strong>. If you did <em>not</em> consent to research use, your demographic and reflection answers are <strong>deleted outright</strong> at the same moment. If you did consent, they are kept — but the record is <strong>cut loose from your class</strong>: the link to the session is removed and the timestamp is reduced to the month, so the answers sit in a large cross-class pool instead of a group of twenty where a combination of age, gender and income could point at one person.</li>
   <li><strong>What that means for you:</strong> once the 30 days have passed we can no longer find your individual response, so a withdrawal request has to reach us before then. Until then, write to us and we will delete it.</li>
   <li>This routine had been broken since the feature was written — the database rejected the deletion every time, and it only ran at start-up — and was repaired on 2026-07-30/31. A test now executes the deletion itself on every deploy rather than merely checking that the code exists.</li>
-  <li><strong>Manual anonymisation:</strong> educators can anonymise or archive a session at any time before the 30-day window ends.</li>
+  <li><strong>Manual anonymisation:</strong> educators can anonymise or archive a session at any time before the 30-day window ends. Doing so applies exactly the steps described above, immediately — it is the same routine, not a lighter version of it.</li>
 </ul>""",
         },
         "erasure": {
@@ -331,7 +332,7 @@ from published public sources; the survey design and site are original works.</p
         "cookies": [
             ("survey_state", "Keeps your in-progress estimates as you move through the survey (signed, HTTP-only).", "2 hours", "participants"),
             ("backoffice", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
-            ("wee_pending_totp", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
+            ("wee_pending_totp / pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
 
@@ -365,6 +366,7 @@ from published public sources; the survey design and site are original works.</p
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
   <li><strong>Class data</strong> — names, codes, configuration, responses.</li>
+  <li><strong>An audit record of backoffice actions</strong> — the educator's e-mail address and the <strong>IP address</strong> an action came from, written to a log file. This is a security record: it is how an account compromise is reconstructed. The file rotates monthly and is kept for <strong>12 months</strong>.</li>
 </ul>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
@@ -380,6 +382,7 @@ from published public sources; the survey design and site are original works.</p
   <li><strong>E-Mail-Adresse</strong> — für die Anmeldung im Backoffice.</li>
   <li><strong>Passwort</strong> — ausschließlich als bcrypt-Hash gespeichert.</li>
   <li><strong>Klassendaten</strong> — Namen, Codes, Konfiguration, Antworten.</li>
+  <li><strong>Protokoll der Backoffice-Aktionen</strong> — die E-Mail-Adresse der Lehrperson und die <strong>IP-Adresse</strong>, von der eine Aktion ausging, in einer Protokolldatei. Dies ist eine Sicherheitsaufzeichnung: Damit lässt sich eine Kontokompromittierung nachvollziehen. Die Datei wird monatlich rotiert und nach <strong>12 Monaten</strong> gelöscht.</li>
 </ul>""",
         },
         "basis": {
@@ -413,11 +416,13 @@ from published public sources; the survey design and site are original works.</p
 <ul>
   <li><strong>Automatic anonymisation:</strong> classes whose responses are older than 60 days are anonymised automatically (hourly check) — e-mail addresses are deleted; rankings are kept for aggregate analysis.</li>
   <li><strong>Educator-triggered anonymisation:</strong> educators are asked to anonymise a class as soon as the session is finished, and can do so at any time.</li>
+  <li><strong>Backoffice audit log:</strong> rotated monthly and deleted after <strong>12 months</strong>.</li>
 </ul>""",
             "de": """
 <ul>
   <li><strong>Automatische Anonymisierung:</strong> Klassen, deren Antworten älter als 60 Tage sind, werden automatisch anonymisiert (stündliche Prüfung) — E-Mail-Adressen werden gelöscht; die Reihungen bleiben für aggregierte Auswertungen erhalten.</li>
   <li><strong>Anonymisierung durch Lehrende:</strong> Lehrende werden gebeten, eine Klasse unmittelbar nach der Sitzung zu anonymisieren, und können dies jederzeit tun.</li>
+  <li><strong>Backoffice-Protokoll:</strong> monatlich rotiert und nach <strong>12 Monaten</strong> gelöscht.</li>
 </ul>""",
         },
         "erasure": {
@@ -447,7 +452,7 @@ original works created for teaching.</p>""",
             ("layoff_participant", "Carries your e-mail and class code between the exercise steps (signed, HTTP-only).", "24 hours", "participants"),
             ("layoff_flash", "Carries a one-off status message between two pages.", "10 minutes", "all"),
             ("layoff_admin", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
-            ("lo_pending_totp / layoff_pending2fa", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
+            ("lo_pending_totp / layoff_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
 
@@ -526,13 +531,13 @@ original works created for teaching.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>Live-class mode:</strong> report access and withdrawal expire 14 days after the class is closed; educators can postpone this in limited 7-day steps. At the deadline your e-mail address, name, withdrawal token and class linkage are removed; pseudonymised response data may be kept for aggregate analysis where you consented.</li>
+  <li><strong>Live-class mode:</strong> report access and withdrawal expire 14 days after the class is closed; educators can postpone this in limited 7-day steps. At that deadline your e-mail address, name, withdrawal token and class linkage are removed. What happens to the answers themselves depends on the research choice on your results page: <strong>if you consented</strong>, the pseudonymised answers, scores and demographics are kept for aggregate analysis and research; <strong>if you did not</strong>, the entire response — answers, scores and demographics — is deleted at that deadline. Not choosing counts as not consenting.</li>
   <li><strong>Self-guided mode:</strong> the same 14-day window, counted from submission.</li>
   <li><strong>Educator accounts:</strong> retained until deleted by the administrator.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Kursmodus:</strong> Berichtszugriff und Widerruf enden 14 Tage nach Schließung der Klasse; Lehrende können dies in begrenzten 7-Tage-Schritten aufschieben. Zum Stichtag werden E-Mail-Adresse, Name, Widerrufstoken und Klassenzuordnung entfernt; pseudonymisierte Antwortdaten können für aggregierte Auswertungen aufbewahrt werden, soweit Sie eingewilligt haben.</li>
+  <li><strong>Kursmodus:</strong> Berichtszugriff und Widerruf enden 14 Tage nach Schließung der Klasse; Lehrende können dies in begrenzten 7-Tage-Schritten aufschieben. Zu diesem Stichtag werden E-Mail-Adresse, Name, Widerrufstoken und Klassenzuordnung entfernt. Was mit den Antworten selbst geschieht, hängt von der Forschungs-Entscheidung auf Ihrer Ergebnisseite ab: <strong>Haben Sie eingewilligt</strong>, bleiben die pseudonymisierten Antworten, Werte und demografischen Angaben für aggregierte Auswertungen und Forschung erhalten; <strong>haben Sie nicht eingewilligt</strong>, wird die gesamte Antwort — Antworten, Werte und demografische Angaben — zu diesem Stichtag gelöscht. Keine Entscheidung zu treffen gilt als Nicht-Einwilligung.</li>
   <li><strong>Selbststudium:</strong> dieselbe 14-Tage-Frist, gerechnet ab der Abgabe.</li>
   <li><strong>Konten von Lehrenden:</strong> bis zur Löschung durch den Administrator.</li>
 </ul>""",
@@ -564,10 +569,10 @@ design are original works created for executive teaching.</p>""",
         },
         "cookies": [
             ("participant_session", "Keeps your progress through the questionnaire (signed, HTTP-only).", "2 hours", "participants"),
-            ("repertoire_answers / scenario_answers / context_answers / demographics_data", "Carry your in-progress answers from page to page so you do not lose them mid-questionnaire (signed, HTTP-only).", "2 hours", "participants"),
+            ("repertoire_answers / scenario_answers / context_answers / demographics_data", "Carry your in-progress answers from page to page so you do not lose them mid-questionnaire (HTTP-only; held in your browser, not signed).", "2 hours", "participants"),
             ("response_id / withdrawal_raw", "Your submission reference and your withdrawal link, so the results page can offer withdrawal (signed, HTTP-only).", "2 hours", "participants"),
             ("backoffice", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
-            ("lsr_pending_totp", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
+            ("lsr_pending_totp / lsr_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
 
@@ -646,7 +651,7 @@ teaching.</p>""",
         "cookies": [
             ("moralmirror_pax", "Pseudonymous session token: keeps your answers within one session together (signed, HTTP-only).", "24 hours", "participants"),
             ("moralmirror_admin", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
-            ("mm_pending_totp / moralmirror_pending2fa", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
+            ("mm_pending_totp / moralmirror_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
 
@@ -676,6 +681,7 @@ teaching.</p>""",
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
   <li><strong>Session data</strong> — names, codes, configuration, participant results.</li>
+  <li><strong>An audit record of backoffice actions</strong> — which account did what (creating, editing, closing, archiving or deleting a scenario), when, and the <strong>IP address</strong> it came from. This is a security record: it is how an account compromise or an accidental deletion is reconstructed. It is kept for <strong>12 months</strong> and then deleted automatically.</li>
 </ul>""",
         },
         "basis": {
@@ -699,6 +705,7 @@ teaching.</p>""",
   <li><strong>Abandoned sessions</strong> are deleted automatically by an hourly job.</li>
   <li><strong>Completed sessions</strong> are anonymised automatically 90 days after completion — the personal identifiers are removed; the score is kept for educator statistics.</li>
   <li><strong>Login sessions</strong> expire automatically after 24 hours.</li>
+  <li><strong>The backoffice audit record</strong> (educator account, action and IP address) is deleted automatically after <strong>12 months</strong>, by the same hourly job.</li>
   <li><strong>Educators</strong> can delete or archive a session at any time.</li>
 </ul>""",
         },
@@ -717,9 +724,9 @@ without it you cannot take part. The display name is optional.</p>""",
 original works created for teaching organisational design.</p>""",
         },
         "cookies": [
-            ("orgdesignsim_participant", "Keeps your simulation session while you play (HTTP-only).", "24 hours", "participants"),
+            ("orgdesignsim_participant", "Keeps your simulation session while you play (signed, HTTP-only).", "24 hours", "participants"),
             ("orgdesignsim_backoffice", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
-            ("os_pending_totp / orgdesignsim_pending2fa", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
+            ("os_pending_totp / orgdesignsim_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
 
@@ -900,7 +907,7 @@ draws on established facilitation methodology.</p>""",
             ("whiteout_p", "Pseudonymous participant token: keeps your ranking consistent across pages (signed, HTTP-only).", "8 hours", "participants"),
             ("whiteout_csrf", "Protects forms against cross-site request forgery (signed, HTTP-only).", "8 hours", "all"),
             ("whiteout_session", "Keeps facilitators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
-            ("wo_pending_totp / whiteout_pending2fa", "Carries the intermediate step of two-factor sign-in.", "5 minutes", "backoffice"),
+            ("wo_pending_totp / whiteout_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
 }

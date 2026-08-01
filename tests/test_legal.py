@@ -100,8 +100,15 @@ def test_shared_blocks_render_identically():
     variants = set()
     for key in TOOLS:
         html = render_legal(key, "privacy", "en")
-        m = re.search(r"We use no third parties for advertising.*?outside the EU/EEA\.",
+        m = re.search(r"We use no third parties for advertising.*?no participant data and no\s*content\.",
                       html, re.S)
-        assert m, key
+        assert m, (
+            f"{key}: the shared recipients + third-country block could not be "
+            f"found. Its closing sentence changed on 2026-08-01 (the flat "
+            f"'No personal data is transferred outside the EU/EEA' became a "
+            f"paragraph naming the Microsoft Art. 46 safeguards and "
+            f"healthchecks.io's EU/US infrastructure); if it moved again, "
+            f"re-anchor this test rather than deleting it"
+        )
         variants.add(m.group(0))
     assert len(variants) == 1, "recipients block drifted between tools"
