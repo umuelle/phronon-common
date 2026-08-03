@@ -809,8 +809,8 @@ linked from this site are original works.</p>""",
         # than the one earlier participants consented to, so it needs its own
         # version — theirs stays stamped 2026-07. The other eight tools have not
         # changed a word and keep the default.
-        "notice_version": "2026-08",
-        "last_updated": "2026-08-03",
+        "notice_version": "2026-08-b",
+        "last_updated": "2026-08-04",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
@@ -872,11 +872,13 @@ linked from this site are original works.</p>""",
             "en": """
 <ul>
   <li><strong>Facilitators</strong> see, for their own sessions, the participant list <strong>including each participant's e-mail address</strong>, alongside the individual and group rankings. Demographics are shown to them <strong>only as averages over at least five people</strong> — never next to a name. Answers given by fewer than five people are not shown separately; they are either withheld or combined with other rare answers into a single "everyone else" figure that also covers at least five people.</li>
+  <li><strong>Your class</strong> may be shown those same demographic averages during the debrief, and they may be included in a written summary your facilitator hands out afterwards. That is part of the discussion the answers are collected for. The five-person floor and the "everyone else" pooling apply exactly as above, so nothing is shown that stands for fewer than five people — but be aware that <strong>five people in a room where everyone knows each other are not anonymous in the way five strangers would be</strong>. If you would rather your answers were not part of that, skip the questions, or ask your facilitator to delete them.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
             "de": """
 <ul>
   <li><strong>Moderierende</strong> sehen für ihre eigenen Sitzungen die Teilnehmendenliste <strong>einschließlich der E-Mail-Adressen</strong> sowie die individuellen und die Gruppenreihungen. Demografische Angaben sehen sie <strong>ausschließlich als Durchschnittswerte über mindestens fünf Personen</strong> — nie neben einem Namen. Antworten, die weniger als fünf Personen gegeben haben, werden nicht einzeln ausgewiesen; sie werden entweder zurückgehalten oder mit anderen seltenen Antworten zu einem einzigen Wert „alle Übrigen“ zusammengefasst, der ebenfalls mindestens fünf Personen umfasst.</li>
+  <li><strong>Ihr Kurs</strong> bekommt diese demografischen Durchschnittswerte unter Umständen ebenfalls zu sehen, und sie können in einer schriftlichen Zusammenfassung enthalten sein, die Ihre Kursleitung im Anschluss austeilt. Das ist Teil der Auswertung, für die die Angaben erhoben werden. Die Fünf-Personen-Grenze und die Zusammenfassung zu „alle Übrigen“ gelten dabei unverändert, es wird also nichts angezeigt, was für weniger als fünf Personen steht — bedenken Sie aber, dass <strong>eine Gruppe von fünf Personen in einem Raum, in dem man sich kennt, nicht in demselben Sinne anonym ist wie fünf Fremde</strong>. Wenn Sie das nicht möchten, überspringen Sie die Fragen oder bitten Sie Ihre Kursleitung, Ihre Angaben zu löschen.</li>
   <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit.</li>
 </ul>""",
         },
