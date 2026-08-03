@@ -802,6 +802,15 @@ linked from this site are original works.</p>""",
         "domain": "whiteout-exercise.org",
         "tool_name": "The Whiteout Exercise",
         "languages": ["en", "de"],
+        # Ahead of the fleet default since 3 August 2026: the demographic
+        # breakdown gained a combined "everyone else" row, so the promise about
+        # what a facilitator can see is no longer "five people gave the same
+        # answer" but "an average over at least five people". A weaker promise
+        # than the one earlier participants consented to, so it needs its own
+        # version — theirs stays stamped 2026-07. The other eight tools have not
+        # changed a word and keep the default.
+        "notice_version": "2026-08",
+        "last_updated": "2026-08-03",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
@@ -864,12 +873,12 @@ linked from this site are original works.</p>""",
         "access": {
             "en": """
 <ul>
-  <li><strong>Facilitators</strong> see, for their own sessions, the participant list <strong>including each participant's e-mail address</strong>, alongside the individual and group rankings. Demographics are shown to them <strong>only as group averages, and only where at least five people gave the same answer</strong> — never next to a name.</li>
+  <li><strong>Facilitators</strong> see, for their own sessions, the participant list <strong>including each participant's e-mail address</strong>, alongside the individual and group rankings. Demographics are shown to them <strong>only as averages over at least five people</strong> — never next to a name. Answers given by fewer than five people are not shown separately; they are either withheld or combined with other rare answers into a single "everyone else" figure that also covers at least five people.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Moderierende</strong> sehen für ihre eigenen Sitzungen die Teilnehmendenliste <strong>einschließlich der E-Mail-Adressen</strong> sowie die individuellen und die Gruppenreihungen. Demografische Angaben sehen sie <strong>ausschließlich als Gruppendurchschnitte und nur, wenn mindestens fünf Personen dieselbe Antwort gegeben haben</strong> — nie neben einem Namen.</li>
+  <li><strong>Moderierende</strong> sehen für ihre eigenen Sitzungen die Teilnehmendenliste <strong>einschließlich der E-Mail-Adressen</strong> sowie die individuellen und die Gruppenreihungen. Demografische Angaben sehen sie <strong>ausschließlich als Durchschnittswerte über mindestens fünf Personen</strong> — nie neben einem Namen. Antworten, die weniger als fünf Personen gegeben haben, werden nicht einzeln ausgewiesen; sie werden entweder zurückgehalten oder mit anderen seltenen Antworten zu einem einzigen Wert „alle Übrigen“ zusammengefasst, der ebenfalls mindestens fünf Personen umfasst.</li>
   <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit.</li>
 </ul>""",
         },
