@@ -829,7 +829,7 @@ linked from this site are original works.</p>""",
   <li><strong>Session code</strong> — attributes your response to the correct group session.</li>
   <li><strong>Your item rankings</strong> — individual and, where applicable, the group ranking.</li>
     <li><strong>Submission timestamp.</strong></li>
-  <li><strong>Optional demographics</strong> — age band, gender, years of work experience, experience leading a team, field of study or work, and country. <strong>Every one of these is optional, the whole page can be skipped, and nothing is stored unless you tick the consent box.</strong> They are shown to your facilitator only as group averages, and never for a group of fewer than five people. We record when you consented and which version of this notice and of the consent wording you saw.</li>
+  <li><strong>Optional demographics</strong> — age band, gender, years of work experience, experience leading a team, field of study or work, and country. <strong>Every one of these is optional, the whole page can be skipped, and nothing is stored unless you tick the consent box.</strong> They are shown to your facilitator only as group averages, and never for a group of fewer than five people. Your country answer is also shown grouped into a world region. We record when you consented and which version of this notice and of the consent wording you saw.</li>
 </ul>
 <h3>From facilitators</h3>
 <ul>
@@ -844,7 +844,7 @@ linked from this site are original works.</p>""",
   <li><strong>Sitzungscode</strong> — ordnet Ihre Antwort der richtigen Gruppensitzung zu.</li>
   <li><strong>Ihre Reihungen</strong> — individuell und ggf. die Gruppenreihung.</li>
     <li><strong>Zeitstempel der Abgabe.</strong></li>
-  <li><strong>Freiwillige demografische Angaben</strong> — Altersgruppe, Geschlecht, Jahre Berufserfahrung, Erfahrung in der Teamleitung, Studien- oder Tätigkeitsfeld sowie Land. <strong>Jede dieser Angaben ist freiwillig, die gesamte Seite kann übersprungen werden, und ohne Ihr angekreuztes Einverständnis wird nichts gespeichert.</strong> Der moderierenden Person werden sie ausschließlich als Gruppendurchschnitte angezeigt, und nie für Gruppen mit weniger als fünf Personen. Wir erfassen, wann Sie eingewilligt haben und welche Fassung dieser Erklärung und des Einwilligungstextes Ihnen angezeigt wurde.</li>
+  <li><strong>Freiwillige demografische Angaben</strong> — Altersgruppe, Geschlecht, Jahre Berufserfahrung, Erfahrung in der Teamleitung, Studien- oder Tätigkeitsfeld sowie Land. <strong>Jede dieser Angaben ist freiwillig, die gesamte Seite kann übersprungen werden, und ohne Ihr angekreuztes Einverständnis wird nichts gespeichert.</strong> Der moderierenden Person werden sie ausschließlich als Gruppendurchschnitte angezeigt, und nie für Gruppen mit weniger als fünf Personen. Ihre Länderangabe wird zusätzlich zu einer Weltregion zusammengefasst angezeigt. Wir erfassen, wann Sie eingewilligt haben und welche Fassung dieser Erklärung und des Einwilligungstextes Ihnen angezeigt wurde.</li>
 </ul>
 <h3>Von Moderierenden</h3>
 <ul>
