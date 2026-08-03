@@ -821,6 +821,7 @@ linked from this site are original works.</p>""",
   <li><strong>Your item rankings</strong> — individual and, where applicable, the group ranking.</li>
   <li><strong>Second-stage response</strong> — your choice in the optional text-message challenge, if activated.</li>
   <li><strong>Submission timestamp.</strong></li>
+  <li><strong>Optional demographics</strong> — age band, gender, years of work experience, experience leading a team, field of study or work, and country. <strong>Every one of these is optional, the whole page can be skipped, and nothing is stored unless you tick the consent box.</strong> They are shown to your facilitator only as group averages, and never for a group of fewer than five people. We record when you consented and which version of this notice and of the consent wording you saw.</li>
 </ul>
 <h3>From facilitators</h3>
 <ul>
@@ -836,6 +837,7 @@ linked from this site are original works.</p>""",
   <li><strong>Ihre Reihungen</strong> — individuell und ggf. die Gruppenreihung.</li>
   <li><strong>Antwort der zweiten Stufe</strong> — Ihre Wahl in der optionalen Textnachrichten-Aufgabe, falls aktiviert.</li>
   <li><strong>Zeitstempel der Abgabe.</strong></li>
+  <li><strong>Freiwillige demografische Angaben</strong> — Altersgruppe, Geschlecht, Jahre Berufserfahrung, Erfahrung in der Teamleitung, Studien- oder Tätigkeitsfeld sowie Land. <strong>Jede dieser Angaben ist freiwillig, die gesamte Seite kann übersprungen werden, und ohne Ihr angekreuztes Einverständnis wird nichts gespeichert.</strong> Der moderierenden Person werden sie ausschließlich als Gruppendurchschnitte angezeigt, und nie für Gruppen mit weniger als fünf Personen. Wir erfassen, wann Sie eingewilligt haben und welche Fassung dieser Erklärung und des Einwilligungstextes Ihnen angezeigt wurde.</li>
 </ul>
 <h3>Von Moderierenden</h3>
 <ul>
@@ -847,12 +849,14 @@ linked from this site are original works.</p>""",
             "en": """
 <ul>
   <li><strong>Running the exercise and producing group results</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
+  <li><strong>Optional demographics</strong> — Art. 6(1)(a) GDPR, your consent. You give it by ticking a box that is not ticked for you, you can skip the page entirely without any effect on the exercise, and you may withdraw it at any time by writing to us, after which the answers are deleted.</li>
   <li><strong>Facilitator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
             "de": """
 <ul>
   <li><strong>Durchführung der Übung und Erstellung der Gruppenergebnisse</strong> — Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an der Unterstützung des Bildungsprogramms, an dem die Teilnehmenden teilnehmen.</li>
+  <li><strong>Freiwillige demografische Angaben</strong> — Art. 6 Abs. 1 lit. a DSGVO, Ihre Einwilligung. Sie erteilen sie durch Ankreuzen eines nicht vorausgewählten Kästchens, Sie können die Seite folgenlos überspringen und Ihre Einwilligung jederzeit widerrufen; die Angaben werden dann gelöscht.</li>
   <li><strong>Konten von Moderierenden</strong> — Art. 6 Abs. 1 lit. b DSGVO.</li>
   <li><strong>Sicherheit, Rate-Limiting und Missbrauchs­abwehr</strong> — Art. 6 Abs. 1 lit. f DSGVO.</li>
 </ul>""",
@@ -860,12 +864,12 @@ linked from this site are original works.</p>""",
         "access": {
             "en": """
 <ul>
-  <li><strong>Facilitators</strong> see, for their own sessions, the participant list <strong>including each participant's e-mail address</strong>, alongside the individual and group rankings.</li>
+  <li><strong>Facilitators</strong> see, for their own sessions, the participant list <strong>including each participant's e-mail address</strong>, alongside the individual and group rankings. Demographics are shown to them <strong>only as group averages, and only where at least five people gave the same answer</strong> — never next to a name.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Moderierende</strong> sehen für ihre eigenen Sitzungen die Teilnehmendenliste <strong>einschließlich der E-Mail-Adressen</strong> sowie die individuellen und die Gruppenreihungen.</li>
+  <li><strong>Moderierende</strong> sehen für ihre eigenen Sitzungen die Teilnehmendenliste <strong>einschließlich der E-Mail-Adressen</strong> sowie die individuellen und die Gruppenreihungen. Demografische Angaben sehen sie <strong>ausschließlich als Gruppendurchschnitte und nur, wenn mindestens fünf Personen dieselbe Antwort gegeben haben</strong> — nie neben einem Namen.</li>
   <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit.</li>
 </ul>""",
         },
@@ -884,12 +888,17 @@ linked from this site are original works.</p>""",
         "erasure": {
             "en": """<p>Your e-mail address identifies your submission, so we can
 always find and delete it: write to us, or ask your facilitator, naming the
-session code and the address you joined with. Facilitators can also delete a
-whole session at any time.</p>""",
+session code and the address you joined with. Facilitators can delete a single
+participant's response, or a whole session, at any time. If you gave optional
+demographics, withdrawing that consent deletes those answers and nothing
+else — the exercise results are unaffected.</p>""",
             "de": """<p>Ihre E-Mail-Adresse identifiziert Ihre Abgabe, wir können
 sie also jederzeit finden und löschen: Schreiben Sie uns oder Ihrer
 moderierenden Person unter Angabe des Sitzungscodes und der verwendeten
-Adresse. Moderierende können außerdem ganze Sitzungen jederzeit löschen.</p>""",
+Adresse. Moderierende können einzelne Antworten oder ganze Sitzungen jederzeit
+löschen. Wenn Sie freiwillige demografische Angaben gemacht haben, führt der
+Widerruf dieser Einwilligung ausschließlich zur Löschung dieser Angaben; die
+Übungsergebnisse bleiben davon unberührt.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
