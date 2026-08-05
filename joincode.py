@@ -1,15 +1,23 @@
 """
-Collision-checked join-code generation (matches Inequality.generate_session_code /
-Drawbridge join codes). Short, uppercase, human-legible from the back of a room.
+Collision-checked join-code generation — the fleet's one definition of what a
+join code may contain. Short, uppercase, human-legible from the back of a room.
+
+Used by every tool that hands a code to participants: ControversyGenerator
+(survey codes), Drawbridge, Inequality, LSR Profiler, Layoff, Moral Mirror and
+OrgDesignSim (class/session/scenario codes). Whiteout keeps its own copy of the
+alphabet because it pairs it with a look-alike rescue lookup; the two must stay
+in step.
 """
 from __future__ import annotations
 
 import secrets
-import string
 from typing import Callable
 
-# Avoid visually ambiguous characters (0/O, 1/I) for codes read off a projector.
-ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+# O/0 and I/1 are indistinguishable in most sans-serif faces, and a join code is
+# read off a projected slide at the back of a room, then typed on a phone. This
+# governs GENERATION only — an educator may still type a custom code containing
+# them, and codes already in the database keep working.
+ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"   # no I, O, 0, 1
 
 
 def generate_join_code(
