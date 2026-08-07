@@ -126,6 +126,27 @@
       }
     }
 
+    /* The accessible name of a move button, e.g. "Move up: Steel wool".
+     *
+     * The comment here used to promise the name identified the ROW, while the
+     * line below set only "Move up" / "Move down" — so a screen-reader user
+     * tabbing a sixteen-item list met thirty-two controls with two names
+     * between them, and could not tell which row a button belonged to.
+     * (External review, 7 August 2026.)
+     *
+     * Word order is the translator's, not ours: if the localised string
+     * contains {name} it is substituted in place, which is what German and
+     * RTL locales need. Only when it does not do we append.
+     */
+    function buttonLabel(isUp, el, index) {
+      var base = isUp ? upLabel : downLabel;
+      var name = labelOf(el, index);
+      if (!name) return base;
+      return base.indexOf('{name}') !== -1
+        ? base.replace('{name}', name)
+        : base + ': ' + name;
+    }
+
     function makeButton(dir, el) {
       var btn = document.createElement('button');
       btn.type = 'button';   // never submit the surrounding form
@@ -134,7 +155,7 @@
       btn.innerHTML = '<span aria-hidden="true">' + (isUp ? '▲' : '▼') + '</span>';
       // The visible glyph is decorative; the real name comes from aria-label so
       // it names the ROW being moved, not just the direction.
-      btn.setAttribute('aria-label', (isUp ? upLabel : downLabel));
+      btn.setAttribute('aria-label', buttonLabel(isUp, el, items().indexOf(el)));
       btn.addEventListener('click', function (ev) {
         ev.preventDefault();
         ev.stopPropagation();
