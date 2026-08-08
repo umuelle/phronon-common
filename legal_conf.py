@@ -809,8 +809,13 @@ linked from this site are original works.</p>""",
         # than the one earlier participants consented to, so it needs its own
         # version — theirs stays stamped 2026-07. The other eight tools have not
         # changed a word and keep the default.
-        "notice_version": "2026-08-c",
-        "last_updated": "2026-08-04",
+        # -d on 8 August (W6): the winter-outdoors bullet now discloses that the
+        # answer is stored on the identifiable participant row, outside the
+        # demographics consent. Nothing about the handling changed — only the
+        # notice's honesty about it — but earlier participants saw a notice
+        # that did not say it, so the stamp moves.
+        "notice_version": "2026-08-d",
+        "last_updated": "2026-08-08",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
@@ -830,7 +835,7 @@ linked from this site are original works.</p>""",
   <li><strong>Your item rankings</strong> — individual and, where applicable, the group ranking.</li>
     <li><strong>Submission timestamp.</strong></li>
   <li><strong>Your prediction</strong> — when you send your ranking you are asked, in one click, how you think it will compare with the rest of the class. It is <strong>required</strong>: the gap between what a class expected and what happened is part of what the exercise teaches. It is stored with your ranking and shown to your facilitator as class totals, never next to your name.</li>
-  <li><strong>How often you are outdoors in winter</strong> — asked on the same screen and <strong>optional</strong>; "prefer not to say" is preselected.</li>
+  <li><strong>How often you are outdoors in winter</strong> — asked on the same screen and <strong>optional</strong>; "prefer not to say" is preselected. If you answer, the answer is stored with your response — on the same record as your e-mail address, like your ranking, <strong>not</strong> behind the demographics consent described below. Your facilitator sees it only as averages over at least five people, never next to your name, and it is not part of the data export.</li>
   <li><strong>Closing questions, in sessions that include them</strong> — some sessions end a group round with two short private questions: which considerations came up in your group's discussion, and what happened to what you yourself knew. <strong>Required in those sessions</strong>, stored with your response, and shown to your facilitator only in combined form — per group as majority counts, and the self-descriptions only as totals over at least five people.</li>
   <li><strong>Optional demographics</strong> — age band, gender, years of work experience, experience leading a team, field of study or work, and country. <strong>Every one of these is optional, the whole page can be skipped, and nothing is stored unless you tick the consent box.</strong> They are shown to your facilitator only as group averages, and never for a group of fewer than five people. Your country answer is also shown grouped into a world region. We record when you consented and which version of this notice and of the consent wording you saw.</li>
 </ul>
@@ -848,7 +853,7 @@ linked from this site are original works.</p>""",
   <li><strong>Ihre Reihungen</strong> — individuell und ggf. die Gruppenreihung.</li>
     <li><strong>Zeitstempel der Abgabe.</strong></li>
   <li><strong>Ihre Einschätzung</strong> — beim Absenden Ihrer Reihung werden Sie mit einem Klick gefragt, wie diese im Vergleich zum Rest des Kurses abschneiden wird. Diese Angabe ist <strong>erforderlich</strong>: der Abstand zwischen Erwartung und Ergebnis gehört zum Lernziel der Übung. Sie wird zusammen mit Ihrer Reihung gespeichert und der Kursleitung als Gesamtwert für den Kurs angezeigt, nie neben Ihrem Namen.</li>
-  <li><strong>Wie oft Sie im Winter draußen sind</strong> — auf demselben Bildschirm gefragt und <strong>freiwillig</strong>; „keine Angabe“ ist voreingestellt.</li>
+  <li><strong>Wie oft Sie im Winter draußen sind</strong> — auf demselben Bildschirm gefragt und <strong>freiwillig</strong>; „keine Angabe“ ist voreingestellt. Wenn Sie antworten, wird die Angabe zusammen mit Ihrer Antwort gespeichert — im selben Datensatz wie Ihre E-Mail-Adresse, wie Ihre Reihung, <strong>nicht</strong> hinter der unten beschriebenen Einwilligung für demografische Angaben. Die moderierende Person sieht sie ausschließlich als Durchschnittswerte über mindestens fünf Personen, nie neben Ihrem Namen; im Datenexport ist sie nicht enthalten.</li>
   <li><strong>Abschlussfragen, in Sessions, die sie enthalten</strong> — manche Sessions beenden eine Gruppenrunde mit zwei kurzen privaten Fragen: welche Überlegungen in der Diskussion Ihrer Gruppe zur Sprache kamen, und was mit dem geschah, was Sie selbst wussten. In diesen Sessions <strong>erforderlich</strong>; gespeichert mit Ihrer Antwort und der Kursleitung ausschließlich zusammengefasst angezeigt — je Gruppe als Mehrheitszählung, die Selbstauskünfte nur als Summen über mindestens fünf Personen.</li>
   <li><strong>Freiwillige demografische Angaben</strong> — Altersgruppe, Geschlecht, Jahre Berufserfahrung, Erfahrung in der Teamleitung, Studien- oder Tätigkeitsfeld sowie Land. <strong>Jede dieser Angaben ist freiwillig, die gesamte Seite kann übersprungen werden, und ohne Ihr angekreuztes Einverständnis wird nichts gespeichert.</strong> Der moderierenden Person werden sie ausschließlich als Gruppendurchschnitte angezeigt, und nie für Gruppen mit weniger als fünf Personen. Ihre Länderangabe wird zusätzlich zu einer Weltregion zusammengefasst angezeigt. Wir erfassen, wann Sie eingewilligt haben und welche Fassung dieser Erklärung und des Einwilligungstextes Ihnen angezeigt wurde.</li>
 </ul>
