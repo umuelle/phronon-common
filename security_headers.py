@@ -18,11 +18,24 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses."""
 
     def __init__(self, app, enable_hsts: bool = False, frame_options: str = "SAMEORIGIN",
-                 private_path_prefix: str = "/backoffice", csp: str = None):
+                 private_path_prefix="/backoffice", csp: str = None):
         super().__init__(app)
         self.enable_hsts = enable_hsts
         self.frame_options = frame_options
-        self.private_path_prefix = private_path_prefix
+        # One prefix or several. It was a single string, which quietly assumed
+        # that the only pages worth keeping out of a cache are the admin's —
+        # untrue for any tool whose PARTICIPANT pages carry an e-mail address,
+        # a personal ranking, or private round material (Whiteout, 9 August
+        # 2026). Accepting a sequence lets a tool name every private area
+        # instead of picking the most important one.
+        #
+        # str.startswith() already accepts a tuple, so the only work is
+        # normalising — and a plain string must keep working, because eight
+        # tools pass one.
+        self.private_path_prefix = (
+            (private_path_prefix,) if isinstance(private_path_prefix, str)
+            else tuple(private_path_prefix)
+        )
         self.csp = csp
 
     def _build_csp(self, nonce: str) -> str:
@@ -62,6 +75,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if self.enable_hsts:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
+        # Tuple-aware: startswith() takes a tuple natively, so one call covers
+        # every private area the tool declared.
         if request.url.path.startswith(self.private_path_prefix):
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, private"
             response.headers["Pragma"] = "no-cache"
