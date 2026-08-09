@@ -94,6 +94,47 @@ def admin_routes(source: str, prefixes: Iterable[str]) -> list[tuple[Route, str]
     return out
 
 
+def _guard_is_narrowed(body: str, guard: str) -> bool:
+    """True when the tool's guard string sits inside an `and`.
+
+    PRESENCE IS NOT ENFORCEMENT, and that cost a live hole. On 9 August 2026
+    Whiteout's `POST /backoffice/users` read
+
+        if sess['fac_role'] != 'admin' and action in ('add', 'delete', …):
+
+    which CONTAINS the role comparison — so a substring check passed it — and
+    stops nobody who sends an action outside that list. The handler then
+    rendered the whole staff directory to an educator. The GET route beside it
+    had been closed the day before; the POST was the same page by another verb.
+
+    The rule is deliberately narrow: **only `and` narrows a guard.** Two
+    earlier attempts at this function were too clever and both produced
+    confident noise —
+
+      * treating every compound condition as suspect flagged the six tools that
+        write `if not admin or admin['role'] != 'ADMIN'`, which is a STRICTER
+        guard (it refuses when either holds), not a weaker one;
+      * looking for any `if` whose test mentions "admin" flagged Inequality's
+        `if user_id == current["id"] and role_val != "ADMIN"` — ordinary
+        business logic that happens to name the role, while its actual guard
+        lives in an assignment on the line above.
+
+    An over-broad security check is not the safe direction to err in: the fix
+    for the noise is to break something. So this asks one question only — is
+    the DECLARED guard being ANDed with something that narrows when it fires?
+    """
+    try:
+        tree = ast.parse(body.lstrip())
+    except SyntaxError:
+        return False        # unparseable: leave the substring result alone
+    for node in ast.walk(tree):
+        if isinstance(node, ast.BoolOp) and isinstance(node.op, ast.And):
+            segment = ast.get_source_segment(body.lstrip(), node) or ''
+            if guard in segment:
+                return True
+    return False
+
+
 def unguarded_admin_routes(source: str,
                            prefixes: Iterable[str],
                            guards: Iterable[str],
@@ -116,7 +157,13 @@ def unguarded_admin_routes(source: str,
     for route, body in admin_routes(source, prefixes):
         if route.handler in allowed:
             continue
-        if not any(g in body for g in guards):
+        matched = [g for g in guards if g in body]
+        if not matched:
+            bad.append(route)
+            continue
+        # The guard is present — but is it unconditional? A role check ANDed
+        # with something else guards only what that something else selects.
+        if all(_guard_is_narrowed(body, g) for g in matched):
             bad.append(route)
     return bad
 
