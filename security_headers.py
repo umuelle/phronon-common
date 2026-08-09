@@ -8,17 +8,45 @@ that request's nonce — this is how a tool moves to `script-src 'self'
 returned unchanged (backward compatible).
 """
 
+import re
 import secrets
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
+# ── What may be cached ───────────────────────────────────────────────────────
+# The fleet's public surface, and it is short: a landing page, the way in, the
+# legal set, the machine-facing files, and static assets. Everything else a
+# Phronon tool serves is somebody's answers.
+#
+# WHY THIS IS AN ALLOWLIST. It began as the opposite — name the private area,
+# default everything else cacheable — and that default was wrong twice over. It
+# assumed the only pages worth protecting are the administrator's, which is
+# untrue of every tool here: participant pages carry e-mail addresses, personal
+# rankings, and in Whiteout's third round private material dealt to one person.
+# And a named-private list rots: Layoff's said `/admin` while its backoffice had
+# moved to `/backoffice`, so for two days the pages listing participants'
+# addresses served no cache header at all, and nothing noticed because the list
+# was still "correct" about a path that still resolved.
+#
+# Inverted, a new route is private until somebody deliberately makes it public.
+# That is the right default for software whose whole job is holding answers.
+PUBLIC_EXACT = frozenset({
+    "/", "/join", "/robots.txt", "/llms.txt", "/favicon.ico", "/health",
+})
+PUBLIC_PREFIXES = (
+    "/static/", "/legal", "/privacy", "/cookies", "/terms", "/impressum",
+    "/legal-notice", "/imprint", "/accessibility", "/about",
+)
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses."""
 
     def __init__(self, app, enable_hsts: bool = False, frame_options: str = "SAMEORIGIN",
-                 private_path_prefix="/backoffice", csp: str = None):
+                 private_path_prefix="/backoffice", csp: str = None,
+                 public_paths=None, locales=()):
         super().__init__(app)
         self.enable_hsts = enable_hsts
         self.frame_options = frame_options
@@ -36,7 +64,31 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             (private_path_prefix,) if isinstance(private_path_prefix, str)
             else tuple(private_path_prefix)
         )
+        # Inverted mode: when `public_paths` is given, EVERYTHING is no-store
+        # except the allowlist. Pass `DEFAULT_PUBLIC` for the fleet's set.
+        self.public_exact, self.public_prefixes = (None, None)
+        if public_paths is not None:
+            exact, prefixes = public_paths
+            self.public_exact = frozenset(exact)
+            self.public_prefixes = tuple(prefixes)
+        # Locales are named, never guessed. Stripping any two-letter first
+        # segment would read Whiteout's `/go` as locale `go` and leave the
+        # phase-gate page public — the tool has real two-letter routes.
+        self.locale_re = (
+            re.compile(r"^/(?:%s)(?=/|$)" % "|".join(re.escape(l) for l in locales))
+            if locales else None
+        )
         self.csp = csp
+
+    def _is_private(self, path: str) -> bool:
+        if self.public_exact is None:
+            return path.startswith(self.private_path_prefix)
+        # /de/privacy is the same page as /privacy for this purpose.
+        if self.locale_re:
+            path = self.locale_re.sub("", path) or "/"
+        if path in self.public_exact:
+            return False
+        return not path.startswith(self.public_prefixes)
 
     def _build_csp(self, nonce: str) -> str:
         if self.csp:
@@ -75,9 +127,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if self.enable_hsts:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
-        # Tuple-aware: startswith() takes a tuple natively, so one call covers
-        # every private area the tool declared.
-        if request.url.path.startswith(self.private_path_prefix):
+        if self._is_private(request.url.path):
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, private"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
@@ -86,3 +136,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             del response.headers["server"]
 
         return response
+
+
+# Passed as `public_paths=DEFAULT_PUBLIC` to switch a tool to the allowlist.
+DEFAULT_PUBLIC = (PUBLIC_EXACT, PUBLIC_PREFIXES)
