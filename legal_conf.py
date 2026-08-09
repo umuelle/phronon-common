@@ -814,8 +814,14 @@ linked from this site are original works.</p>""",
         # demographics consent. Nothing about the handling changed — only the
         # notice's honesty about it — but earlier participants saw a notice
         # that did not say it, so the stamp moves.
-        "notice_version": "2026-08-d",
-        "last_updated": "2026-08-08",
+        # -e on 9 August: the participant's address is now USED to send mail —
+        # a one-time resume link, when someone rejoins from a device that is
+        # not already signed in (migration 027, closing an impersonation hole).
+        # That is a new processing purpose for data already held, not a new
+        # collection, and it is exactly the kind of change a notice must state
+        # rather than let a participant discover from their inbox.
+        "notice_version": "2026-08-e",
+        "last_updated": "2026-08-09",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
@@ -829,7 +835,7 @@ linked from this site are original works.</p>""",
             "en": """
 <h3>From participants</h3>
 <ul>
-  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your facilitator in the session's participant list.</li>
+  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your facilitator in the session's participant list. <strong>We also send mail to it in one case:</strong> if someone tries to rejoin your session with your address from a device that is not already signed in, we send that address a one-time link so that only you can continue. That is the only message the exercise ever sends a participant; there is no newsletter and no other use.</li>
   <li><strong>A pseudonymous session token</strong> in a cookie, linking your responses within one session.</li>
   <li><strong>Session code</strong> — attributes your response to the correct group session.</li>
   <li><strong>Your item rankings</strong> — individual and, where applicable, the group ranking.</li>
@@ -847,7 +853,7 @@ linked from this site are original works.</p>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
 <ul>
-  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong>, um an einer Sitzung teilzunehmen. Sie wird zusammen mit Ihrer Reihung gespeichert und ist für die moderierende Person in der Teilnehmendenliste sichtbar.</li>
+  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong>, um an einer Sitzung teilzunehmen. Sie wird zusammen mit Ihrer Reihung gespeichert und ist für die moderierende Person in der Teilnehmendenliste sichtbar. <strong>In einem Fall senden wir auch eine Nachricht an diese Adresse:</strong> Versucht jemand, mit Ihrer Adresse von einem Gerät aus wieder einzusteigen, das nicht bereits angemeldet ist, schicken wir an diese Adresse einen einmalig gültigen Link, damit nur Sie fortfahren können. Das ist die einzige Nachricht, die die Übung an Teilnehmende versendet; es gibt keinen Newsletter und keine weitere Verwendung.</li>
   <li><strong>Ein pseudonymes Sitzungstoken</strong> in einem Cookie, das Ihre Antworten innerhalb einer Sitzung verknüpft.</li>
   <li><strong>Sitzungscode</strong> — ordnet Ihre Antwort der richtigen Gruppensitzung zu.</li>
   <li><strong>Ihre Reihungen</strong> — individuell und ggf. die Gruppenreihung.</li>
