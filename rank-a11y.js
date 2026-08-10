@@ -54,8 +54,7 @@
     // "{name} moved to position {pos} of {total}"
     var movedTpl = s.moved || '{name}: position {pos} of {total}';
     var labelOf = typeof options.labelOf === 'function' ? options.labelOf : function (el, i) {
-      var t = (el.textContent || '').trim().replace(/\s+/g, ' ');
-      return t.length > 60 ? t.slice(0, 60) : (t || 'Item ' + (i + 1));
+      return rowText(el) || 'Item ' + (i + 1);
     };
 
     // One polite live region per list, so a screen reader announces the new
@@ -126,6 +125,13 @@
       }
     }
 
+    // The row's own words, trimmed and collapsed — the last line of defence for
+    // an accessible name, and the default when no labelOf is supplied.
+    function rowText(el) {
+      var t = (el.textContent || '').trim().replace(/\s+/g, ' ');
+      return t.length > 60 ? t.slice(0, 60) : t;
+    }
+
     /* The accessible name of a move button, e.g. "Move up: Steel wool".
      *
      * The comment here used to promise the name identified the ROW, while the
@@ -137,11 +143,22 @@
      * Word order is the translator's, not ours: if the localised string
      * contains {name} it is substituted in place, which is what German and
      * RTL locales need. Only when it does not do we append.
+     *
+     * NEVER RETURNS A BARE DIRECTION. It used to: `if (!name) return base`,
+     * which regenerated the original bug the moment a caller's labelOf came
+     * back empty — and one of them is a single missing i18n key away, since
+     * Layoff reads `data-a11y-name` with `|| ''` and a mistyped Jinja key
+     * renders as empty without raising. Verified in a browser on 10 August
+     * 2026: with the attribute present both tools name every button; with it
+     * blank, every button collapsed to "Move up"/"Move down" again.
+     *
+     * So an empty name now falls back to the row's own text, and only if that
+     * is also empty to the position. A clumsy name is recoverable for a
+     * screen-reader user; thirty-two identical ones are not.
      */
     function buttonLabel(isUp, el, index) {
       var base = isUp ? upLabel : downLabel;
-      var name = labelOf(el, index);
-      if (!name) return base;
+      var name = labelOf(el, index) || rowText(el) || ('#' + (index + 1));
       return base.indexOf('{name}') !== -1
         ? base.replace('{name}', name)
         : base + ': ' + name;
