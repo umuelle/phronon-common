@@ -35,12 +35,14 @@ MIN_LENGTH = 12
 # below measures the encoded length for that reason — counting characters would
 # accept a password bcrypt then silently truncates, which is the whole bug.
 MAX_BYTES = 72
-# Both bounds. The hint named only the minimum, so when the maximum arrived
-# on 10 August every form went on promising "at least 12" and then
-# rejected a long passphrase for a reason it had never mentioned — worst
-# for accented or emoji-heavy passwords, which hit the byte limit well
-# before 72 visible characters.
-PASSWORD_HINT = f"Between {MIN_LENGTH} and {MAX_BYTES} characters."
+# Both bounds, and they are in DIFFERENT units. The minimum is characters; the
+# maximum is bytes, because that is bcrypt's actual limit. "Between 12 and 72
+# characters" was wrong the other way from the original bug — it now UNDER-states
+# the ceiling for accented or emoji-heavy passphrases, which reach 72 bytes well
+# before 72 visible characters (a "ü" is two bytes, an emoji four). The hint says
+# both in their own units; the validator's error message spells out the byte
+# count when it is what actually bites.
+PASSWORD_HINT = f"At least {MIN_LENGTH} characters, up to {MAX_BYTES} bytes."
 
 
 def validate_password(password: str) -> tuple[bool, str]:
