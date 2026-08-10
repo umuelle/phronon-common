@@ -35,7 +35,12 @@ MIN_LENGTH = 12
 # below measures the encoded length for that reason — counting characters would
 # accept a password bcrypt then silently truncates, which is the whole bug.
 MAX_BYTES = 72
-PASSWORD_HINT = f"At least {MIN_LENGTH} characters."
+# Both bounds. The hint named only the minimum, so when the maximum arrived
+# on 10 August every form went on promising "at least 12" and then
+# rejected a long passphrase for a reason it had never mentioned — worst
+# for accented or emoji-heavy passwords, which hit the byte limit well
+# before 72 visible characters.
+PASSWORD_HINT = f"Between {MIN_LENGTH} and {MAX_BYTES} characters."
 
 
 def validate_password(password: str) -> tuple[bool, str]:
