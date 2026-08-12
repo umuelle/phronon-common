@@ -16,9 +16,25 @@ from email.mime.multipart import MIMEMultipart
 logger = logging.getLogger(__name__)
 
 
-def branded_html(tool_name: str, inner_html: str, card_width: int = 520) -> str:
+def branded_html(tool_name: str, inner_html: str, card_width: int = 520,
+                 subtitle: str = "", footer_note: str = "") -> str:
     """Wrap `inner_html` in the fleet's e-mail shell: navy header carrying the
     tool's name, white card, Phronon footer.
+
+    `tool_name` IS the header title — there is deliberately no separate `title`
+    argument. The header is branding, and a per-mail heading there ("Your
+    results are ready") is how nine tools drift into nine headers again; every
+    template already puts its heading in the body, which is where it belongs.
+    `subtitle` is the optional second line under it — a standing tagline, not a
+    per-mail line: LSR's mails carry "Leadership Style Repertoire" (12 August
+    2026, added so LSR could adopt this shell without losing its header).
+
+    `footer_note` sits above the Phronon line and is for a tool's standing
+    disclaimer. It exists because LSR's mails carry one that matters: "not a
+    psychometric diagnosis or a basis for selection decisions." A shell without
+    a slot for it would have quietly dropped that sentence during the
+    conversion, which is the sort of thing a cosmetic change is not allowed to
+    do. Pass it already localised — this module does no translation.
 
     ONE copy of this markup, for the reason the fleet keeps one of anything: a
     student in two courses gets mail from the same operator and it should look
@@ -43,12 +59,15 @@ def branded_html(tool_name: str, inner_html: str, card_width: int = 520) -> str:
         f'style="width:100%;max-width:{card_width}px;background:#ffffff;border:1px solid #e3e6ea;border-radius:8px;overflow:hidden;">'
         '<tr><td style="background:#1e3a5f;padding:20px 28px;">'
         f'<span style="font-family:Georgia,\'Times New Roman\',serif;font-size:18px;font-weight:600;color:#ffffff;">{tool_name}</span>'
-        '</td></tr>'
+        + (f'<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;'
+           f'font-size:13px;color:#b4cde1;margin-top:6px;">{subtitle}</div>' if subtitle else '')
+        + '</td></tr>'
         '<tr><td style="padding:28px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#222222;">'
         f'{inner_html}'
         '</td></tr>'
         '<tr><td style="padding:18px 28px;border-top:1px solid #e3e6ea;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#888888;text-align:center;">'
-        'Part of <a href="https://phronon.org" style="color:#888888;">Phronon</a> — classroom simulations for practical judgment'
+        + (f'<div style="margin:0 0 10px;line-height:1.5;">{footer_note}</div>' if footer_note else '')
+        + 'Part of <a href="https://phronon.org" style="color:#888888;">Phronon</a> — classroom simulations for practical judgment'
         '</td></tr></table></td></tr></table></body></html>'
     )
 
