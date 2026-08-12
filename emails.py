@@ -16,6 +16,43 @@ from email.mime.multipart import MIMEMultipart
 logger = logging.getLogger(__name__)
 
 
+def branded_html(tool_name: str, inner_html: str, card_width: int = 520) -> str:
+    """Wrap `inner_html` in the fleet's e-mail shell: navy header carrying the
+    tool's name, white card, Phronon footer.
+
+    ONE copy of this markup, for the reason the fleet keeps one of anything: a
+    student in two courses gets mail from the same operator and it should look
+    like it. The design started life inside password_reset_bodies() below and
+    was hand-copied into Controversy Generator as a Jinja template on 12 August
+    2026; that copy is gone and both now render from here (FL/CG-001).
+
+    `tool_name` is the whole of the per-tool branding — the header text — which
+    is why "shared shell" and "each project's own look" are not in tension.
+    `card_width` widens the card for mails that carry a table; 520 suits prose.
+
+    Inline styles and tables, not CSS: mail clients strip <style> blocks, and
+    Outlook needs the table scaffolding.
+    """
+    return (
+        '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+        '<body style="margin:0;padding:0;background:#f4f5f7;">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        'style="background:#f4f5f7;padding:24px 0;"><tr><td align="center">'
+        '<table role="presentation" cellpadding="0" cellspacing="0" '
+        f'style="width:100%;max-width:{card_width}px;background:#ffffff;border:1px solid #e3e6ea;border-radius:8px;overflow:hidden;">'
+        '<tr><td style="background:#1e3a5f;padding:20px 28px;">'
+        f'<span style="font-family:Georgia,\'Times New Roman\',serif;font-size:18px;font-weight:600;color:#ffffff;">{tool_name}</span>'
+        '</td></tr>'
+        '<tr><td style="padding:28px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#222222;">'
+        f'{inner_html}'
+        '</td></tr>'
+        '<tr><td style="padding:18px 28px;border-top:1px solid #e3e6ea;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#888888;text-align:center;">'
+        'Part of <a href="https://phronon.org" style="color:#888888;">Phronon</a> — classroom simulations for practical judgment'
+        '</td></tr></table></td></tr></table></body></html>'
+    )
+
+
 def password_reset_bodies(tool_name: str, reset_url: str, hours: str = "2"):
     """Return (plain_text, html) for a branded password-reset email."""
     text = (
@@ -28,18 +65,7 @@ def password_reset_bodies(tool_name: str, reset_url: str, hours: str = "2"):
         f"— {tool_name}\n"
         "Part of Phronon · https://phronon.org"
     )
-    html = (
-        '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
-        '<body style="margin:0;padding:0;background:#f4f5f7;">'
-        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
-        'style="background:#f4f5f7;padding:24px 0;"><tr><td align="center">'
-        '<table role="presentation" cellpadding="0" cellspacing="0" '
-        'style="width:100%;max-width:520px;background:#ffffff;border:1px solid #e3e6ea;border-radius:8px;overflow:hidden;">'
-        '<tr><td style="background:#1e3a5f;padding:20px 28px;">'
-        f'<span style="font-family:Georgia,\'Times New Roman\',serif;font-size:18px;font-weight:600;color:#ffffff;">{tool_name}</span>'
-        '</td></tr>'
-        '<tr><td style="padding:28px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#222222;">'
+    html = branded_html(tool_name, (
         '<p style="margin:0 0 16px;">Hello,</p>'
         f'<p style="margin:0 0 16px;">Someone requested a password reset for your <strong>{tool_name}</strong> account. '
         'Click the button below to choose a new password.</p>'
@@ -49,11 +75,7 @@ def password_reset_bodies(tool_name: str, reset_url: str, hours: str = "2"):
         'If the button does not work, paste this URL into your browser:<br>'
         f'<a href="{reset_url}" style="color:#1e3a5f;word-break:break-all;">{reset_url}</a></p>'
         '<p style="margin:0;color:#555555;font-size:13px;">If you did not request this, you can safely ignore this email — your password will not change.</p>'
-        '</td></tr>'
-        '<tr><td style="padding:18px 28px;border-top:1px solid #e3e6ea;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#888888;text-align:center;">'
-        'Part of <a href="https://phronon.org" style="color:#888888;">Phronon</a> — classroom simulations for practical judgment'
-        '</td></tr></table></td></tr></table></body></html>'
-    )
+    ))
     return text, html
 
 
