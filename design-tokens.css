@@ -12,7 +12,12 @@
 
 :root {
   /* Brand colors */
-  --ph-color-educator: #1e3a5f;   /* educator navbar */
+  /* ONE navy fleet-wide (owner, 13 August 2026): the educator navbar and the
+     e-mail shell header now use the SAME #0F1B2D as phronon.org's site header
+     (Phronon/static/css/site.css --navy). There were two navies before —
+     #1e3a5f here and #0F1B2D on the public site — which is two ways of saying
+     "this is the same operator" that disagreed with each other. */
+  --ph-color-educator: #0F1B2D;   /* educator navbar — matches phronon.org */
   --ph-color-admin: #8b0000;      /* admin navbar */
   --ph-color-secondary: #2d5a8c;
   --ph-color-success: #28a745;
@@ -80,7 +85,7 @@
 }
 .ph-footer__meta a { text-decoration: underline; }
 .ph-footer__legal a:hover,
-.ph-footer__meta a:hover { color: var(--ph-color-educator, #1e3a5f); }
+.ph-footer__meta a:hover { color: var(--ph-color-educator, #0F1B2D); }
 .ph-footer__meta {
   margin: var(--ph-space-sm, 0.5rem) 0;
   line-height: 1.5;
@@ -92,7 +97,7 @@
  * underline, user section). Add .ph-bo-nav--admin for the admin red.
  */
 .ph-bo-nav {
-  background: var(--ph-color-educator, #1e3a5f);
+  background: var(--ph-color-educator, #0F1B2D);
   color: #fff;
   padding: 0 var(--ph-space-md, 1rem);
   border-bottom: 3px solid var(--ph-color-secondary, #2d5a8c);

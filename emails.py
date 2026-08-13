@@ -57,7 +57,7 @@ def branded_html(tool_name: str, inner_html: str, card_width: int = 520,
         'style="background:#f4f5f7;padding:24px 0;"><tr><td align="center">'
         '<table role="presentation" cellpadding="0" cellspacing="0" '
         f'style="width:100%;max-width:{card_width}px;background:#ffffff;border:1px solid #e3e6ea;border-radius:8px;overflow:hidden;">'
-        '<tr><td style="background:#1e3a5f;padding:20px 28px;">'
+        '<tr><td style="background:#0F1B2D;padding:20px 28px;">'
         f'<span style="font-family:Georgia,\'Times New Roman\',serif;font-size:18px;font-weight:600;color:#ffffff;">{tool_name}</span>'
         + (f'<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;'
            f'font-size:13px;color:#b4cde1;margin-top:6px;">{subtitle}</div>' if subtitle else '')
@@ -89,10 +89,10 @@ def password_reset_bodies(tool_name: str, reset_url: str, hours: str = "2"):
         f'<p style="margin:0 0 16px;">Someone requested a password reset for your <strong>{tool_name}</strong> account. '
         'Click the button below to choose a new password.</p>'
         '<p style="margin:0 0 24px;text-align:center;">'
-        f'<a href="{reset_url}" style="display:inline-block;background:#1e3a5f;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 28px;border-radius:6px;">Reset your password</a></p>'
+        f'<a href="{reset_url}" style="display:inline-block;background:#0F1B2D;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 28px;border-radius:6px;">Reset your password</a></p>'
         f'<p style="margin:0 0 16px;color:#555555;font-size:13px;">This link is valid for {hours} hours. '
         'If the button does not work, paste this URL into your browser:<br>'
-        f'<a href="{reset_url}" style="color:#1e3a5f;word-break:break-all;">{reset_url}</a></p>'
+        f'<a href="{reset_url}" style="color:#0F1B2D;word-break:break-all;">{reset_url}</a></p>'
         '<p style="margin:0;color:#555555;font-size:13px;">If you did not request this, you can safely ignore this email — your password will not change.</p>'
     ))
     return text, html
