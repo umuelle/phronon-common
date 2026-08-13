@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any, Callable, Optional
 
 logger = logging.getLogger(__name__)
@@ -66,9 +67,20 @@ ACTIONS = (
     "password_changed", "password_reset_requested", "password_reset_completed",
     "two_factor_enrolled", "two_factor_disabled",
     "admin_created", "admin_deleted", "admin_role_changed",
-    "class_deleted", "class_anonymised", "responses_deleted",
+    "class_deleted", "class_anonymised", "class_archived", "responses_deleted",
     "data_exported",
 )
+
+
+# The trail prunes itself: at most once per process per day, a write also
+# deletes rows past the retention window. This is what lets four tools that
+# have no background retention worker (Whiteout, Moral Mirror, Drawbridge, the
+# hub) keep the 12-month promise without growing one — every deploy's live
+# login round-trip writes a row, so every tool prunes at least on deploy, and
+# any real sign-in does too. Tools that DO have a worker also call prune()
+# there, belt and braces.
+_PRUNE_EVERY_SECONDS = 24 * 3600
+_last_prune_monotonic: Optional[float] = None
 
 
 def record(get_conn: Callable[[], Any], action: str, *,
@@ -82,6 +94,7 @@ def record(get_conn: Callable[[], Any], action: str, *,
     educator sees, which is a worse outcome than a missing row. Failures are
     logged instead.
     """
+    global _last_prune_monotonic
     conn = None
     try:
         conn = get_conn()
@@ -92,6 +105,13 @@ def record(get_conn: Callable[[], Any], action: str, *,
             (action, admin_id, admin_email, subject,
              json.dumps(details) if details else None, ip),
         )
+        now = time.monotonic()
+        if _last_prune_monotonic is None or now - _last_prune_monotonic >= _PRUNE_EVERY_SECONDS:
+            _last_prune_monotonic = now
+            cur.execute(
+                "DELETE FROM audit_log WHERE created_at < (NOW() - INTERVAL %s DAY)",
+                (RETENTION_DAYS,),
+            )
         conn.commit()
         cur.close()
     except Exception as exc:  # noqa: BLE001 — see the docstring
@@ -132,15 +152,9 @@ def prune(get_conn: Callable[[], Any], days: int = RETENTION_DAYS) -> int:
                 pass
 
 
-def client_ip(request, trusted_proxies=()) -> str:
-    """The caller's address, trusting X-Forwarded-For only behind our proxy.
-
-    Without that check a client sets its own address in the audit log, which
-    makes the log worse than useless — it would launder an attacker's IP into
-    something that looks authoritative.
-    """
-    direct = request.client.host if getattr(request, "client", None) else "unknown"
-    forwarded = request.headers.get("x-forwarded-for") if hasattr(request, "headers") else None
-    if forwarded and direct in tuple(trusted_proxies or ()):
-        return forwarded.split(",")[0].strip()
-    return direct
+# There is deliberately NO client_ip() here. phronon_common.rate_limit.client_ip
+# already answers "whose address is this request really from", including the
+# trusted-proxy rule that stops a caller writing its own address into the log.
+# A second copy in this module is how the fleet ends up with two answers — the
+# same way it ended up with four copies of one e-mail design.
+from phronon_common.rate_limit import client_ip  # noqa: E402,F401 — re-export

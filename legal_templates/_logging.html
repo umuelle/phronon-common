@@ -10,6 +10,22 @@ zur Identifizierung von Personen oder zur Profilbildung verwendet und nach
 <strong>{{ cfg.log_retention_days }} Tagen</strong> rotiert und gelöscht.
 Für das Rate-Limiting verarbeitete IP-Adressen werden nur im Arbeitsspeicher
 gehalten und nie in die Datenbank geschrieben.</p>
+
+{# The admin audit trail — fleet-wide, 12 August 2026 (FL-002, README §11).
+   This paragraph ships in the SAME phronon_common version as the code that
+   writes the rows (v1.13.15): publishing it earlier would have been a claim
+   the code does not honour. It concerns EDUCATORS, not participants, and says
+   so — a participant reading this page should not have to work out that it is
+   not about them. #}
+<p><strong>Protokoll administrativer Vorgänge.</strong> Wenn Sie ein
+Lehrenden-Konto nutzen, zeichnen wir sicherheitsrelevante Vorgänge auf —
+erfolgreiche und fehlgeschlagene Anmeldungen, Passwortänderungen und
+-zurücksetzungen, das Anlegen, Ändern und Löschen von Konten sowie das Löschen
+oder Anonymisieren von Kursdaten — jeweils mit Zeitpunkt, Konto-E-Mail-Adresse
+und IP-Adresse. Grundlage ist unser berechtigtes Interesse (Art. 6 Abs. 1
+lit. f DSGVO), einen unbefugten Zugriff auf ein Konto nachvollziehen zu
+können. Diese Einträge werden nach <strong>12 Monaten</strong> gelöscht.
+Teilnehmende sind davon nicht betroffen.</p>
 {% else %}
 <p>Our web server records standard access log entries: IP address, date and
 time, the resource requested, HTTP status, referrer and browser identifier.
@@ -18,4 +34,13 @@ with other data, are not used to identify individuals or build profiles, and
 are rotated and deleted after <strong>{{ cfg.log_retention_days }} days</strong>.
 IP addresses processed for rate-limiting are held in memory only and never
 written to the database.</p>
+
+{# See the German note above: educators, not participants; ships with v1.13.15. #}
+<p><strong>Administrative audit trail.</strong> If you use an educator account,
+we record security-relevant actions — successful and failed sign-ins, password
+changes and resets, creating, changing and deleting accounts, and deleting or
+anonymising class data — each with the time, the account's e-mail address and
+the IP address. The basis is our legitimate interest (Art. 6(1)(f) GDPR) in
+being able to reconstruct unauthorised access to an account. These entries are
+deleted after <strong>12 months</strong>. Participants are not affected.</p>
 {% endif %}
