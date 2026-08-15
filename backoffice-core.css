@@ -90,12 +90,17 @@
    Generator, a class in Layoff and a session in Whiteout.
 
    The shape, in order:
-     1. .bo-detail-back      a breadcrumb back to the list
-     2. .bo-detail-header    holding:
+     1. .bo-detail-header    holding:
           .bo-detail-title   the join code as the headline, plus state badges
           .bo-detail-meta    one muted line of facts
-     3. .bo-detail-actions   a bar: the main action left, the rest right
-     4. tabs, then content
+     2. .bo-detail-actions   a bar: the main action left, the rest right
+     3. tabs, then content
+
+   NO BREADCRUMB. There was a ".bo-detail-back" link at the top of each page;
+   the owner removed it on 15 August 2026 because the logo already goes to the
+   dashboard, and a back link that duplicates the logo is a second answer to a
+   question nobody was asking. Its rule is deleted rather than left behind — a
+   class no markup uses is how a convention rots.
 
    WHY THE CODE IS THE HEADLINE. It is what an educator reads out loud to a
    room, and what they match against the tab they have open. A tool's own name
@@ -105,12 +110,6 @@
    name centred in white and the actions inside it. It looked like a landing
    page for a page nobody lands on — you arrive from a list, having already
    chosen. */
-.bo-detail-back {
-  display: inline-block; margin-bottom: .75rem;
-  color: var(--bo-muted, #6b7280); text-decoration: none; font-size: .875rem;
-}
-.bo-detail-back:hover { color: var(--bo-text, #171717); }
-
 .bo-detail-header {
   display: flex; flex-direction: column; align-items: flex-start;
   gap: .25rem; margin-bottom: 1rem;
@@ -151,4 +150,27 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
   border: 1.5px solid var(--bo-border, #d4d4d4);
 }
 .btn-ghost:hover { border-color: var(--bo-text, #171717); color: var(--bo-text, #171717); }
-.bo-detail-actions .btn { font-size: .82rem; padding: .4rem .8rem; }
+/* The bar's buttons must LOOK like buttons without depending on the tool
+   happening to define `.btn` somewhere else. Controversy Generator gets that
+   from Bootstrap and Whiteout from its own backoffice.css, but Layoff loads
+   neither on this page — `backoffice-canonical.css` is only pulled in by the
+   user pages — so its action bar rendered as a row of bare text links (owner,
+   15 August 2026). A shared layout that only looks right where a tool happens
+   to supply the base class is the drift this file exists to stop, so the
+   appearance is stated here in full. */
+.bo-detail-actions .btn,
+.bo-detail-actions .btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
+  font-size: .82rem; font-weight: 600; line-height: 1;
+  padding: .45rem .85rem; border-radius: 6px;
+  text-decoration: none; white-space: nowrap; cursor: pointer;
+}
+.bo-detail-actions .btn-ghost {
+  background: var(--bo-surface, #fff);
+  color: var(--bo-text, #171717);
+  border: 1px solid var(--bo-border, #d4d4d4);
+}
+.bo-detail-actions .btn-ghost:hover {
+  background: var(--bo-code-bg, #f5f5f5);
+  border-color: var(--bo-text, #171717);
+}
