@@ -105,7 +105,8 @@ TOOLS = {
         "basis": {
             "en": """
 <ul>
-  <li><strong>Running the survey and pairing discussion partners</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
+  <li><strong>Running the survey and pairing discussion partners</strong> — Art. 6(1)(a) GDPR, your consent, given by ticking the required box before you submit. You can withdraw it at any time until the survey is consolidated (see Retention), using the link on your confirmation page; withdrawing does not affect processing that already happened. Because the statements can ask about political, religious or moral positions, this is explicit consent within the meaning of Art. 9(2)(a).</li>
+  <li><strong>Research and teaching beyond your class</strong> — Art. 6(1)(a) GDPR, a separate optional consent. Declining changes nothing about your participation or your results.</li>
   <li><strong>Educator and administrator accounts</strong> — Art. 6(1)(b) GDPR, performance of the arrangement under which the account was created.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR, our legitimate interest in operating the service securely.</li>
 </ul>""",
@@ -113,24 +114,33 @@ TOOLS = {
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see participant names, e-mail addresses (where provided) and responses for their own surveys only.</li>
+  <li><strong>Educators</strong> see participant names, e-mail addresses (where provided) and individual responses for their own surveys only.</li>
+  <li><strong>Anonymous statement statistics are shared between educators.</strong> Once a survey is consolidated, what remains is a count of how many people chose each point on the scale for each statement, per half-year. Those totals are pooled across all classes and are visible to every educator using the same statement from the shared library. They are shown only where at least two different surveys and at least five responses stand behind the figure, so no single class can be read out of them, and they contain nothing that identifies a person, a class or a date.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security purposes only.</li>
 </ul>""",
         },
         "retention": {
             "en": """
 <ul>
-  <li><strong>Automatic anonymisation:</strong> surveys older than 12 months are anonymised automatically — names and e-mail addresses are removed; numerical responses are kept for aggregate analysis. A daily job enforces this.</li>
-  <li><strong>Educator reminders:</strong> educators are prompted to review surveys inactive for 30 days or more.</li>
-  <li><strong>Manual deletion:</strong> educators and administrators can delete whole surveys or individual submissions at any time.</li>
+  <li><strong>One deadline, set when your survey closes.</strong> Thirty days after your educator closes a survey, it is <em>consolidated</em>: every answer is folded into anonymous per-statement totals and the individual responses are erased — names, e-mail addresses, submission times and the record of who was paired with whom. A daily job enforces this.</li>
+  <li><strong>If a survey is never closed</strong>, it is consolidated 30 days after the last response instead, so nothing can stay open indefinitely.</li>
+  <li><strong>If a survey never receives a response</strong>, it is simply deleted 90 days after it was created.</li>
+  <li><strong>Postponement:</strong> the educator is warned 14 days before the date and can push it back by 30 days, at most three times — never more than 120 days past the original deadline. If you gave an e-mail address, you are warned 7 days before.</li>
+  <li><strong>After consolidation</strong> only anonymous totals remain, and they are kept indefinitely. They cannot be traced back to you, to your class or to a date, which is also why a response cannot be withdrawn once that day has passed.</li>
+  <li><strong>Manual deletion:</strong> educators and administrators can delete whole surveys or individual submissions at any time before then.</li>
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Within a short window after submitting you can withdraw your
-response yourself using the withdrawal option on your confirmation page. After
-that, contact your educator (who can delete individual submissions) or write to
-us. Once a survey has been anonymised, responses are no longer linked to a
-person and can no longer be individually located.</p>""",
+            "en": """<p>Until your survey is consolidated you can withdraw your
+response yourself, using the withdrawal link on your confirmation page, or ask
+your educator (who can delete individual submissions) or us. The date is shown
+to you before you submit, and if you gave an e-mail address you are reminded
+seven days beforehand.</p>
+<p><strong>After that date we cannot do it, and neither can anyone else.</strong>
+Consolidation erases the individual responses and leaves only anonymous totals,
+so there is nothing left that could be identified as yours and removed. This is
+a deliberate design: it is what makes the remaining figures genuinely anonymous
+rather than merely stripped of a name.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
