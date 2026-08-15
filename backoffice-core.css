@@ -57,3 +57,28 @@
   font-weight: 700;
   text-transform: lowercase;
 }
+
+/* ── Chart data tables (FL-012) ────────────────────────────────────────────
+   Built by the shared chart-table.js from each Chart.js chart's own data, so a
+   chart's numbers are readable as text (WCAG 1.1.1) instead of living only in
+   a canvas. Collapsed by default: the chart is the primary presentation, and
+   an always-open table doubles the length of a results page.
+
+   Participant-facing charts need these rules too — Inequality's results page
+   is the only one — and its participant stylesheet carries a copy. */
+.chart-data { margin: .5rem 0 1.5rem; }
+.chart-data > summary {
+  cursor: pointer; font-size: .82rem; letter-spacing: .02em;
+  color: var(--bo-muted, #6b7280); padding: .25rem 0;
+}
+.chart-data > summary:hover { color: var(--bo-text, #171717); }
+.chart-data-table { border-collapse: collapse; font-size: .85rem; margin-top: .4rem; }
+.chart-data-table caption {
+  text-align: left; font-weight: 600; padding: .3rem 0; font-size: .85rem;
+}
+.chart-data-table th, .chart-data-table td {
+  border: 1px solid var(--bo-border, #d4d4d4); padding: .22rem .55rem;
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.chart-data-table th[scope="row"], .chart-data-table caption { text-align: left; }
+.chart-data-table thead th { font-weight: 600; }
