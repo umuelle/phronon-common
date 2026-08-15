@@ -106,7 +106,7 @@ TOOLS = {
             "en": """
 <ul>
   <li><strong>Running the survey and pairing discussion partners</strong> — Art. 6(1)(a) GDPR, your consent, given by ticking the required box before you submit. You can withdraw it at any time until the survey is consolidated (see Retention), using the link on your confirmation page; withdrawing does not affect processing that already happened. Every answer here is treated as data about your personal views — including political, religious or philosophical positions — whatever the statements happen to ask, so this is always explicit consent within the meaning of Art. 9(2)(a). We do not judge that statement by statement.</li>
-  <li><strong>Research and teaching beyond your class</strong> — Art. 6(1)(a) GDPR, a separate optional consent. Declining changes nothing about your participation or your results.</li>
+  <li><strong>Research and teaching beyond your class</strong> — Art. 6(1)(a) GDPR, a separate optional consent. Declining changes nothing about your participation, your results or your discussion pairing; it means your answers are deleted at the retention deadline rather than counted into the anonymous totals described under Retention.</li>
   <li><strong>Educator and administrator accounts</strong> — Art. 6(1)(b) GDPR, performance of the arrangement under which the account was created.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR, our legitimate interest in operating the service securely.</li>
 </ul>""",
@@ -122,7 +122,7 @@ TOOLS = {
         "retention": {
             "en": """
 <ul>
-  <li><strong>One deadline, set when your survey closes.</strong> Thirty days after your educator closes a survey, it is <em>consolidated</em>: every answer is folded into anonymous per-statement totals and the individual responses are erased — names, e-mail addresses, submission times and the record of who was paired with whom. A daily job enforces this.</li>
+  <li><strong>One deadline, set when your survey closes.</strong> Thirty days after your educator closes a survey, it is <em>consolidated</em>: the individual responses are erased — names, e-mail addresses, submission times and the record of who was paired with whom. Answers from participants who ticked the optional research box are first counted into anonymous per-statement totals; everyone else's are deleted without being counted. A daily job enforces this.</li>
   <li><strong>If a survey is never closed</strong>, it is consolidated 30 days after the last response instead, so nothing can stay open indefinitely.</li>
   <li><strong>If a survey never receives a response</strong>, it is simply deleted 90 days after it was created.</li>
   <li><strong>Postponement:</strong> the educator is warned 14 days before the date and can push it back by 30 days, at most three times — never more than 120 days past the original deadline. If you gave an e-mail address, you are warned 7 days before.</li>
