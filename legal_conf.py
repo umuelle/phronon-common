@@ -105,7 +105,7 @@ TOOLS = {
         "basis": {
             "en": """
 <ul>
-  <li><strong>Running the survey and pairing discussion partners</strong> — Art. 6(1)(a) GDPR, your consent, given by ticking the required box before you submit. You can withdraw it at any time until the survey is consolidated (see Retention), using the link on your confirmation page; withdrawing does not affect processing that already happened. Because the statements can ask about political, religious or moral positions, this is explicit consent within the meaning of Art. 9(2)(a).</li>
+  <li><strong>Running the survey and pairing discussion partners</strong> — Art. 6(1)(a) GDPR, your consent, given by ticking the required box before you submit. You can withdraw it at any time until the survey is consolidated (see Retention), using the link on your confirmation page; withdrawing does not affect processing that already happened. Every answer here is treated as data about your personal views — including political, religious or philosophical positions — whatever the statements happen to ask, so this is always explicit consent within the meaning of Art. 9(2)(a). We do not judge that statement by statement.</li>
   <li><strong>Research and teaching beyond your class</strong> — Art. 6(1)(a) GDPR, a separate optional consent. Declining changes nothing about your participation or your results.</li>
   <li><strong>Educator and administrator accounts</strong> — Art. 6(1)(b) GDPR, performance of the arrangement under which the account was created.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR, our legitimate interest in operating the service securely.</li>
