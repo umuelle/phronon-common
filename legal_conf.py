@@ -830,8 +830,17 @@ linked from this site are original works.</p>""",
         # That is a new processing purpose for data already held, not a new
         # collection, and it is exactly the kind of change a notice must state
         # rather than let a participant discover from their inbox.
-        "notice_version": "2026-08-e",
-        "last_updated": "2026-08-09",
+        # -f on 15 August: three changes at once, all of them things a
+        # participant must be told rather than discover. (1) There is now a real
+        # retention rule — a class is erased thirty days after it finishes,
+        # where the notice used to say there was no automatic deletion at all.
+        # (2) Two new mails: a warning fourteen days before to the facilitator
+        # and seven days before to participants. (3) A NEW, separate, optional
+        # consent: answers may be kept beyond the class for research, as a row
+        # stripped of address, class and group. Anyone who joined before this
+        # date consented to none of it and stays stamped 2026-08-e.
+        "notice_version": "2026-08-f",
+        "last_updated": "2026-08-15",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
@@ -845,7 +854,8 @@ linked from this site are original works.</p>""",
             "en": """
 <h3>From participants</h3>
 <ul>
-  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your facilitator in the session's participant list. <strong>We also send mail to it in one case:</strong> if someone tries to rejoin your session with your address from a device that is not already signed in, we send that address a one-time link so that only you can continue. That is the only message the exercise ever sends a participant; there is no newsletter and no other use.</li>
+  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your facilitator in the session's participant list. <strong>We send mail to it in exactly two cases:</strong> if someone tries to rejoin your session with your address from a device that is not already signed in, we send a one-time link so that only you can continue; and seven days before the class is erased we send you one notice with your personal withdrawal link. There is no newsletter and no other use.</li>
+  <li><strong>Your consent, as a record</strong> — that you ticked the box to take part, whether you ticked the separate research box, when, and which version of this notice and of the consent wording you were shown. We keep it because we have to be able to show that consent was actually given (Art. 7(1)).</li>
   <li><strong>A pseudonymous session token</strong> in a cookie, linking your responses within one session.</li>
   <li><strong>Session code</strong> — attributes your response to the correct group session.</li>
   <li><strong>Your item rankings</strong> — individual and, where applicable, the group ranking.</li>
@@ -863,7 +873,8 @@ linked from this site are original works.</p>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
 <ul>
-  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong>, um an einer Sitzung teilzunehmen. Sie wird zusammen mit Ihrer Reihung gespeichert und ist für die moderierende Person in der Teilnehmendenliste sichtbar. <strong>In einem Fall senden wir auch eine Nachricht an diese Adresse:</strong> Versucht jemand, mit Ihrer Adresse von einem Gerät aus wieder einzusteigen, das nicht bereits angemeldet ist, schicken wir an diese Adresse einen einmalig gültigen Link, damit nur Sie fortfahren können. Das ist die einzige Nachricht, die die Übung an Teilnehmende versendet; es gibt keinen Newsletter und keine weitere Verwendung.</li>
+  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong>, um an einer Sitzung teilzunehmen. Sie wird zusammen mit Ihrer Reihung gespeichert und ist für die moderierende Person in der Teilnehmendenliste sichtbar. <strong>In genau zwei Fällen senden wir eine Nachricht an diese Adresse:</strong> Versucht jemand, mit Ihrer Adresse von einem nicht angemeldeten Gerät aus wieder einzusteigen, schicken wir einen einmalig gültigen Link, damit nur Sie fortfahren können; und sieben Tage vor der Löschung des Kurses senden wir Ihnen eine Nachricht mit Ihrem persönlichen Widerrufslink. Es gibt keinen Newsletter und keine weitere Verwendung.</li>
+  <li><strong>Ihre Einwilligung als Nachweis</strong> — dass Sie das Kästchen zur Teilnahme angekreuzt haben, ob Sie das gesonderte Forschungskästchen angekreuzt haben, wann, und welche Fassung dieser Erklärung und des Einwilligungstextes Ihnen angezeigt wurde. Wir speichern das, weil wir nachweisen können müssen, dass eine Einwilligung tatsächlich erteilt wurde (Art. 7 Abs. 1).</li>
   <li><strong>Ein pseudonymes Sitzungstoken</strong> in einem Cookie, das Ihre Antworten innerhalb einer Sitzung verknüpft.</li>
   <li><strong>Sitzungscode</strong> — ordnet Ihre Antwort der richtigen Gruppensitzung zu.</li>
   <li><strong>Ihre Reihungen</strong> — individuell und ggf. die Gruppenreihung.</li>
@@ -884,6 +895,7 @@ linked from this site are original works.</p>""",
 <ul>
   <li><strong>Running the exercise and producing group results</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
   <li><strong>Optional demographics</strong> — Art. 6(1)(a) GDPR, your consent. You give it by ticking a box that is not ticked for you, you can skip the page entirely without any effect on the exercise, and you may withdraw it at any time by writing to us, after which the answers are deleted.</li>
+  <li><strong>Keeping your answers beyond the class, for research and teaching</strong> — Art. 6(1)(a) GDPR, your separate consent, with the safeguards of Art. 89(1). It is a second box, also not ticked for you, on the same screen as the first. <strong>Leaving it unticked changes nothing about taking part</strong>: you are grouped, you see your results, and everything of yours is simply erased with the rest of the class. Ticking it means one row is kept after the class is erased — see "How long we keep data" — and you can withdraw that consent at any time, with no deadline, using the link we e-mail you before the class is erased.</li>
   <li><strong>Facilitator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
@@ -891,6 +903,7 @@ linked from this site are original works.</p>""",
 <ul>
   <li><strong>Durchführung der Übung und Erstellung der Gruppenergebnisse</strong> — Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an der Unterstützung des Bildungsprogramms, an dem die Teilnehmenden teilnehmen.</li>
   <li><strong>Freiwillige demografische Angaben</strong> — Art. 6 Abs. 1 lit. a DSGVO, Ihre Einwilligung. Sie erteilen sie durch Ankreuzen eines nicht vorausgewählten Kästchens, Sie können die Seite folgenlos überspringen und Ihre Einwilligung jederzeit widerrufen; die Angaben werden dann gelöscht.</li>
+  <li><strong>Aufbewahrung Ihrer Antworten über den Kurs hinaus, für Forschung und Lehre</strong> — Art. 6 Abs. 1 lit. a DSGVO, Ihre gesonderte Einwilligung, mit den Garantien des Art. 89 Abs. 1. Es ist ein zweites, ebenfalls nicht vorausgewähltes Kästchen auf demselben Bildschirm wie das erste. <strong>Bleibt es leer, ändert das nichts an Ihrer Teilnahme</strong>: Sie werden einer Gruppe zugeordnet, sehen Ihre Ergebnisse, und alles von Ihnen wird zusammen mit dem übrigen Kurs gelöscht. Kreuzen Sie es an, bleibt bei der Löschung des Kurses ein Datensatz erhalten — siehe „Wie lange wir Daten speichern“ — und Sie können diese Einwilligung jederzeit und ohne Frist widerrufen, über den Link, den wir Ihnen vor der Löschung des Kurses zusenden.</li>
   <li><strong>Konten von Moderierenden</strong> — Art. 6 Abs. 1 lit. b DSGVO.</li>
   <li><strong>Sicherheit, Rate-Limiting und Missbrauchs­abwehr</strong> — Art. 6 Abs. 1 lit. f DSGVO.</li>
 </ul>""",
@@ -912,29 +925,52 @@ linked from this site are original works.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>Session responses</strong> — retained until the facilitator deletes the session in the backoffice, or until no longer needed for the educational purpose. There is currently no automatic deletion job.</li>
+  <li><strong>Everything from a class is erased 30 days after the session finishes.</strong> That means your e-mail address, your ranking, your group, your votes, the boards, the results page and the session itself. It runs automatically, it cannot be undone, and it is the same date for everyone in the class. A session that is never finished is erased 30 days after its last submission instead; a session nobody ever joined is deleted 90 days after it was created.</li>
+  <li><strong>Your facilitator can postpone that date by 30 days, up to three times</strong> — never further, and never earlier than a date you have already been told. They are warned 14 days before, and if the date is still approaching, <strong>you are e-mailed 7 days before</strong> so you can withdraw first. That is the only such message you get for a class.</li>
+  <li><strong>If you gave the separate research consent</strong>, one row of yours is kept when the class is erased, and kept indefinitely: your ranking, your score, your group's result, your optional answers about yourself, and the half-year it happened in. It carries no e-mail address, no name, no class, no group name and no date more precise than the half-year, and the link between it and you is destroyed with the class. It is not anonymous — a ranking plus several bands can still be rare — so we treat it as personal data throughout, keep it only for research and teaching, and never publish anything that stands for fewer than five people. <strong>You can withdraw it at any time, with no time limit</strong>, using the link in that 7-day e-mail.</li>
   <li><strong>Facilitator accounts</strong> — retained until deactivated or deleted by an administrator.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Sitzungsantworten</strong> — bleiben gespeichert, bis die moderierende Person die Sitzung im Backoffice löscht oder die Daten für den Bildungszweck nicht mehr benötigt werden. Einen automatischen Löschjob gibt es derzeit nicht.</li>
+  <li><strong>Alles aus einem Kurs wird 30 Tage nach dessen Abschluss gelöscht.</strong> Das umfasst Ihre E-Mail-Adresse, Ihre Reihung, Ihre Gruppe, Ihre Stimmen, die Gruppentafeln, die Ergebnisseite und die Sitzung selbst. Das geschieht automatisch, ist nicht rückgängig zu machen und gilt für alle im Kurs zum selben Datum. Eine nie abgeschlossene Sitzung wird stattdessen 30 Tage nach der letzten Abgabe gelöscht; eine Sitzung, der nie jemand beigetreten ist, 90 Tage nach ihrer Erstellung.</li>
+  <li><strong>Ihre Kursleitung kann dieses Datum um jeweils 30 Tage verschieben, höchstens dreimal</strong> — nicht weiter und nie auf ein früheres als das Ihnen bereits genannte Datum. Sie wird 14 Tage vorher benachrichtigt; steht das Datum dann weiterhin bevor, <strong>erhalten Sie 7 Tage vorher eine E-Mail</strong>, damit Sie vorher widerrufen können. Es ist die einzige Nachricht dieser Art zu einem Kurs.</li>
+  <li><strong>Wenn Sie die gesonderte Forschungseinwilligung erteilt haben</strong>, bleibt bei der Löschung des Kurses ein Datensatz von Ihnen erhalten, und zwar unbefristet: Ihre Reihung, Ihr Ergebnis, das Ergebnis Ihrer Gruppe, Ihre freiwilligen Angaben zur Person und das Halbjahr. Er enthält keine E-Mail-Adresse, keinen Namen, keinen Kurs, keinen Gruppennamen und kein Datum genauer als das Halbjahr; die Verbindung zwischen ihm und Ihnen wird mit dem Kurs vernichtet. Er ist nicht anonym — eine Reihung zusammen mit mehreren Angaben kann selten sein —, deshalb behandeln wir ihn durchgehend als personenbezogenes Datum, verwenden ihn nur für Forschung und Lehre und veröffentlichen nichts, was für weniger als fünf Personen steht. <strong>Sie können ihn jederzeit und ohne Frist widerrufen</strong>, über den Link in dieser E-Mail nach 7 Tagen.</li>
   <li><strong>Konten von Moderierenden</strong> — bis zur Deaktivierung oder Löschung durch einen Administrator.</li>
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Your e-mail address identifies your submission, so we can
-always find and delete it: write to us, or ask your facilitator, naming the
-session code and the address you joined with. Facilitators can delete a single
-participant's response, or a whole session, at any time. If you gave optional
-demographics, withdrawing that consent deletes those answers and nothing
-else — the exercise results are unaffected.</p>""",
-            "de": """<p>Ihre E-Mail-Adresse identifiziert Ihre Abgabe, wir können
-sie also jederzeit finden und löschen: Schreiben Sie uns oder Ihrer
-moderierenden Person unter Angabe des Sitzungscodes und der verwendeten
-Adresse. Moderierende können einzelne Antworten oder ganze Sitzungen jederzeit
-löschen. Wenn Sie freiwillige demografische Angaben gemacht haben, führt der
-Widerruf dieser Einwilligung ausschließlich zur Löschung dieser Angaben; die
-Übungsergebnisse bleiben davon unberührt.</p>""",
+            "en": """<p><strong>While the class still exists</strong> your e-mail
+address identifies your submission, so we can always find and delete it: write
+to us, or ask your facilitator, naming the session code and the address you
+joined with. Facilitators can delete a single participant's response, or a whole
+session, at any time. If you gave optional demographics, withdrawing that
+consent deletes those answers and nothing else — the exercise results are
+unaffected.</p>
+<p><strong>After the class is erased</strong> there is nothing of yours left to
+find unless you gave the separate research consent. That row we cannot find
+either — by design, it carries no address and nothing linking it to you — so it
+can only be reached with the personal link in the e-mail we send you seven days
+before the class is erased. <strong>Keep that e-mail.</strong> Opening the link
+shows you what would be removed and removes nothing until you confirm; use it
+before the deadline and it deletes your class answers as well. There is no time
+limit on it.</p>""",
+            "de": """<p><strong>Solange der Kurs besteht</strong>, identifiziert
+Ihre E-Mail-Adresse Ihre Abgabe, wir können sie also jederzeit finden und
+löschen: Schreiben Sie uns oder Ihrer moderierenden Person unter Angabe des
+Sitzungscodes und der verwendeten Adresse. Moderierende können einzelne
+Antworten oder ganze Sitzungen jederzeit löschen. Wenn Sie freiwillige
+demografische Angaben gemacht haben, führt der Widerruf dieser Einwilligung
+ausschließlich zur Löschung dieser Angaben; die Übungsergebnisse bleiben davon
+unberührt.</p>
+<p><strong>Nach der Löschung des Kurses</strong> ist von Ihnen nichts mehr
+vorhanden — es sei denn, Sie haben die gesonderte Forschungseinwilligung
+erteilt. Diesen Datensatz können auch wir nicht finden: Er enthält
+absichtsvoll keine Adresse und nichts, was ihn mit Ihnen verbindet. Erreichbar
+ist er ausschließlich über den persönlichen Link in der E-Mail, die wir Ihnen
+sieben Tage vor der Löschung des Kurses senden. <strong>Bewahren Sie diese
+E-Mail auf.</strong> Der Link zeigt Ihnen zunächst, was gelöscht würde, und
+löscht nichts, bevor Sie bestätigen; vor dem Stichtag verwendet, löscht er auch
+Ihre Kursantworten. Eine Frist gibt es dafür nicht.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
