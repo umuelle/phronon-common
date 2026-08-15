@@ -82,3 +82,73 @@
 }
 .chart-data-table th[scope="row"], .chart-data-table caption { text-align: left; }
 .chart-data-table thead th { font-weight: 600; }
+
+/* ── The detail page (owner, 15 August 2026) ───────────────────────────────
+   THE FLEET DEFAULT for the page that shows one survey / class / session.
+   Lifted from Whiteout, which the owner picked as the reference, and named
+   generically here because the thing being detailed is a survey in Controversy
+   Generator, a class in Layoff and a session in Whiteout.
+
+   The shape, in order:
+     1. .bo-detail-back      a breadcrumb back to the list
+     2. .bo-detail-header    holding:
+          .bo-detail-title   the join code as the headline, plus state badges
+          .bo-detail-meta    one muted line of facts
+     3. .bo-detail-actions   a bar: the main action left, the rest right
+     4. tabs, then content
+
+   WHY THE CODE IS THE HEADLINE. It is what an educator reads out loud to a
+   room, and what they match against the tab they have open. A tool's own name
+   in 40px tells them nothing they did not know when they clicked.
+
+   WHAT THIS REPLACED in Layoff: a full-width blue gradient hero with the tool
+   name centred in white and the actions inside it. It looked like a landing
+   page for a page nobody lands on — you arrive from a list, having already
+   chosen. */
+.bo-detail-back {
+  display: inline-block; margin-bottom: .75rem;
+  color: var(--bo-muted, #6b7280); text-decoration: none; font-size: .875rem;
+}
+.bo-detail-back:hover { color: var(--bo-text, #171717); }
+
+.bo-detail-header {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: .25rem; margin-bottom: 1rem;
+}
+.bo-detail-title {
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  font-size: 1.3rem; font-weight: 700; margin: 0;
+}
+.bo-detail-code {
+  font-family: ui-monospace, "SF Mono", "Fira Code", monospace;
+  font-size: 1.5rem; font-weight: 800; letter-spacing: .15em;
+  background: var(--bo-code-bg, #f1f1f1); padding: .2rem .6rem;
+  border-radius: 6px; text-decoration: none; color: inherit;
+  transition: background .12s;
+}
+a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
+.bo-detail-meta {
+  font-size: .85rem; color: var(--bo-muted, #6b7280); margin: .3rem 0 0;
+}
+.bo-detail-meta code { font-size: .8rem; }
+
+/* The main action sits left and the rest right, so the destructive one is
+   never adjacent to the one an educator reaches for mid-class. */
+.bo-detail-actions {
+  display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+  margin-bottom: 1.25rem; padding: .85rem 1.1rem;
+  background: var(--bo-surface, #fff); border: 1px solid var(--bo-border, #d4d4d4);
+  border-radius: 8px;
+}
+.bo-detail-actions__sep { flex: 1; }
+
+/* The quiet button the detail bar is built from. Promoted with the bar itself:
+   a shared layout whose buttons are styled per tool drifts straight back into
+   nine different-looking pages. Whiteout's local copy was removed in favour of
+   this one. */
+.btn-ghost {
+  background: transparent; color: var(--bo-muted, #6b7280);
+  border: 1.5px solid var(--bo-border, #d4d4d4);
+}
+.btn-ghost:hover { border-color: var(--bo-text, #171717); color: var(--bo-text, #171717); }
+.bo-detail-actions .btn { font-size: .82rem; padding: .4rem .8rem; }
