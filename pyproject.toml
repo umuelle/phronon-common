@@ -4,7 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phronon_common"
-version = "1.9.1"
+# Keep in step with the tag the fleet pins (server-ops/check_common_pin.py
+# compares CI, every repo and the server checkout — but none of them reads
+# THIS). It sat at 1.9.1 while every consumer pinned v1.13.25, so `pip show`,
+# an SBOM or an audit report would have named a version that had not existed
+# for weeks (external review, 16 August 2026).
+#
+# SET IT TO THE TAG YOU ARE ABOUT TO CREATE, not the one that exists: writing
+# the current tag here and then tagging the commit that contains it recreates
+# the drift immediately, one version smaller.
+version = "1.13.26"
 description = "Shared framework-agnostic helpers for the Phronon teaching tools"
 requires-python = ">=3.10"
 dependencies = [
