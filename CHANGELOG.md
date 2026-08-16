@@ -4,6 +4,21 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.13.31 — 2026-08-16
+
+- Redact password-reset tokens and Drawbridge Prolific recruitment identifiers
+  from uvicorn access records.
+- Send `Referrer-Policy: no-referrer` on credential-bearing URLs so a secret
+  suppressed on its own route cannot reappear as a same-origin static-asset
+  referrer.
+- Correct the 30 + 3×30-day public retention arithmetic for Controversy,
+  Drawbridge and Moral Mirror.
+- Version Drawbridge's exact retained research shape and Layoff's accurate
+  pseudonymisation wording.
+- Correct Drawbridge's browser-hash and erasure wording: a support message does
+  not expose the participant's duplicate-prevention hash, and the hash is
+  pseudonymous rather than incapable of singling out a browser session.
+
 ## 1.8.2
 Legal routes answer HEAD explicitly (methods=[GET, HEAD]) — routes nested
 via include_router do not get Starlette's automatic GET->HEAD, and corporate

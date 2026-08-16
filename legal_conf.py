@@ -125,7 +125,7 @@ TOOLS = {
   <li><strong>One deadline, set when your survey closes.</strong> Thirty days after your educator closes a survey, it is <em>consolidated</em>: the individual responses are erased — names, e-mail addresses, submission times and the record of who was paired with whom. Answers from participants who ticked the optional research box are first counted into anonymous per-statement totals; everyone else's are deleted without being counted. A daily job enforces this.</li>
   <li><strong>If a survey is never closed</strong>, it is consolidated 30 days after the last response instead, so nothing can stay open indefinitely.</li>
   <li><strong>If a survey never receives a response</strong>, it is simply deleted 90 days after it was created.</li>
-  <li><strong>Postponement:</strong> the educator is warned 14 days before the date and can push it back by 30 days, at most three times — never more than 120 days past the original deadline. If you gave an e-mail address, you are warned 7 days before.</li>
+  <li><strong>Postponement:</strong> the educator is warned 14 days before the date and can push it back by 30 days, at most three times — no later than 120 days after the survey closed or the last response, which is 90 days beyond the original deletion date. If you gave an e-mail address, you are warned 7 days before.</li>
   <li><strong>After consolidation</strong> only anonymous totals remain, and they are kept indefinitely. They cannot be traced back to you, to your class or to a date, which is also why a response cannot be withdrawn once that day has passed.</li>
   <li><strong>Manual deletion:</strong> educators and administrators can delete whole surveys or individual submissions at any time before then.</li>
 </ul>""",
@@ -186,8 +186,6 @@ the responsibility of the educator who writes them.</p>""",
         # erasure section is rewritten around the deletion code, which is new:
         # with no address on file it is the only self-service route there can
         # be, and the old text offered nothing but a cookie-lifetime window.
-        "notice_version": "2026-08-b",
-        "last_updated": "2026-08-16",
         # 2026-08 (16 August): the duplicate-prevention hashes are now actually
         # checked before a submission is accepted, and the notice says what the
         # check can and cannot do rather than claiming more than it delivers.
@@ -197,7 +195,7 @@ the responsibility of the educator who writes them.</p>""",
         # -b, later the same day: the collection list named neither the
         # randomly-assigned question version (which IS the experiment) nor the
         # record that this notice was shown. Both are stored per participant.
-        "notice_version": "2026-08-b",
+        "notice_version": "2026-08-d",
         "last_updated": "2026-08-16",
         "art9": True,  # moral-judgment attributions
         "purpose": {
@@ -218,7 +216,7 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
   <li><strong>Submission timestamp.</strong></li>
   <li><strong>A deletion code</strong> — shown to you once when you submit, and stored so that entering it later finds your response. It is the only thing that can, since no name or address is collected. Keep it if you might want your answers removed; we cannot re-send it.</li>
   <li><strong>Your answer to the optional research question</strong>, with the date and the version of the wording you were shown — this is how we can demonstrate what you agreed to.</li>
-  <li><strong>Short one-way hashes of your session cookie and browser identifier</strong> — checked before a response is accepted, so that one browser session cannot submit twice. They do not identify you and cannot be reversed; clearing your cookies starts a new session, so this prevents accidental double submission rather than a determined one. Because such a key exists, the data is pseudonymous rather than anonymous.</li>
+  <li><strong>Short one-way hashes of your session cookie and browser identifier</strong> — checked before a response is accepted, so that one browser session cannot submit twice. The original cookie and browser string are not retained in these fields, but the hashes can still single out the same browser session; clearing your cookies starts a new session, so this prevents accidental double submission rather than a determined one. Because such a key exists, the data is pseudonymous rather than anonymous.</li>
 </ul>
 <h3>From baseline (Prolific) participants</h3>
 <ul>
@@ -235,6 +233,7 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
             "en": """
 <ul>
   <li><strong>Running the study and aggregate visualisations</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
+  <li><strong>Keeping a stripped research row after the class is erased</strong> — Art. 6(1)(a) GDPR, your separate, optional consent. The box is not pre-selected, declining changes nothing about the exercise, and you can withdraw at any time with your deletion code.</li>
   <li><strong>Educator and administrator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
@@ -249,8 +248,8 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
         "retention": {
             "en": """
 <ul>
-  <li><strong>Class responses</strong> — erased automatically <strong>30 days</strong> after the class is closed, or 30 days after the last response if it is never closed. A class nobody ever joined is removed 90 days after it was created. Erasure removes the whole class: every response, the free-text answers, the optional demographics and the browser hashes. Educators are warned 14 days beforehand and may postpone up to three times by 30 days, so the longest anything is held is <strong>120 days</strong> past the deadline.</li>
-  <li><strong>If you tick the optional research box</strong> — one row of yours is kept after that date: your choice, the story version you saw, your certainty and any demographics you gave. It carries <strong>no class, no group and no date finer than the half-year</strong>, and the link back to your class is destroyed rather than hidden. Those rows are <strong>pseudonymous, not anonymous</strong>: the deletion code you were given still matches yours, which is exactly what lets you withdraw it. If you do not tick it, nothing of yours survives the deadline.</li>
+  <li><strong>Class responses</strong> — erased automatically <strong>30 days</strong> after the class is closed, or 30 days after the last response if it is never closed. A class nobody ever joined is removed 90 days after it was created. Erasure removes the whole class: every response, the free-text answers, the optional demographics and the browser hashes. Educators are warned 14 days beforehand and may postpone up to three times by 30 days. The latest possible date is <strong>120 days after</strong> the class closed or the last response — 90 days beyond the original deletion date.</li>
+  <li><strong>If you tick the optional research box</strong> — one row of yours is kept after that date: the experimental story version and factor levels, your choice, certainty, optional closed-choice follow-up, and any demographics you gave. <strong>Your free-text explanation is never copied.</strong> The row has no class code or class name and no date finer than the half-year. It does carry a new random cohort key shared by people who answered in the same class, so co-membership can be analysed without retaining which class it was. Those rows are <strong>pseudonymous, not anonymous</strong>: the deletion code you were given still matches yours, which is exactly what lets you withdraw it. If you do not tick it, nothing of yours survives the deadline.</li>
   <li><strong>Baseline (Prolific) responses</strong> — a one-time benchmark sample, collected as research from the outset with consent given through Prolific and retained as part of that dataset. It is not on the class clock above. The Prolific ID is held only for deduplication and for withdrawal through Prolific.</li>
   <li><strong>Educator accounts</strong> — retained until deactivated or deleted by an administrator.</li>
 </ul>""",
@@ -262,11 +261,10 @@ response is erased immediately — before or after the 30-day deadline, and
 including the research row if you kept one. That code is the only thing that
 identifies your response as yours: we store no name and no e-mail address, so
 we cannot look it up for you, and we cannot send you another.</p>
-<p>If you did not keep it, we usually cannot find your response. Within the
-lifetime of your session cookie it can still be matched via the
-duplicate-prevention hash, so contact us promptly from the same browser and we
-will delete it. Baseline (Prolific) participants can always request deletion
-via their Prolific ID.</p>""",
+<p>If you did not keep it, we cannot identify which response is yours: the
+duplicate-prevention hashes are not exposed as a lookup code and sending us a
+message from the same browser does not transmit them. Baseline (Prolific)
+participants can request deletion via their Prolific ID.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
@@ -388,7 +386,7 @@ from published public sources; the survey design and site are original works.</p
         # says educators also see cross-class AGGREGATE analytics, which they
         # always could. And the audit trail is database records, not a monthly
         # rotating file; it has been a table since 12 August (FL-002).
-        "notice_version": "2026-08",
+        "notice_version": "2026-08-b",
         "last_updated": "2026-08-16",
         "art9": False,  # ranking/structural decisions
         "purpose": {
@@ -463,25 +461,29 @@ from published public sources; the survey design and site are original works.</p
         "retention": {
             "en": """
 <ul>
-  <li><strong>Automatic anonymisation:</strong> classes whose responses are older than 60 days are anonymised automatically (hourly check), whichever rounds the class ran — e-mail addresses are deleted; rankings are kept for aggregate analysis.</li>
-  <li><strong>Educator-triggered anonymisation:</strong> educators are asked to anonymise a class as soon as the session is finished, and can do so at any time.</li>
+  <li><strong>Automatic pseudonymisation:</strong> classes whose responses are older than 60 days are pseudonymised automatically (hourly check), whichever rounds the class ran. E-mail addresses are replaced by stable per-class labels; rankings, optional demographics, the class link and submission timestamps remain joined for aggregate analysis. These rows are <strong>not anonymous</strong>.</li>
+  <li><strong>Educator-triggered pseudonymisation:</strong> educators are asked to pseudonymise a class as soon as the session is finished, and can do so at any time.</li>
   <li><strong>Backoffice audit log:</strong> kept as database records and deleted after <strong>12 months</strong>.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Automatische Anonymisierung:</strong> Klassen, deren Antworten älter als 60 Tage sind, werden automatisch anonymisiert (stündliche Prüfung) — unabhängig davon, welche Runden die Klasse durchlaufen hat. E-Mail-Adressen werden gelöscht; die Reihungen bleiben für aggregierte Auswertungen erhalten.</li>
-  <li><strong>Anonymisierung durch Lehrende:</strong> Lehrende werden gebeten, eine Klasse unmittelbar nach der Sitzung zu anonymisieren, und können dies jederzeit tun.</li>
+  <li><strong>Automatische Pseudonymisierung:</strong> Klassen, deren Antworten älter als 60 Tage sind, werden automatisch pseudonymisiert (stündliche Prüfung) — unabhängig davon, welche Runden die Klasse durchlaufen hat. E-Mail-Adressen werden durch stabile, klassenbezogene Kennzeichnungen ersetzt; Reihungen, freiwillige demografische Angaben, Klassenzuordnung und Abgabezeitpunkte bleiben für aggregierte Auswertungen miteinander verknüpft. Diese Datensätze sind <strong>nicht anonym</strong>.</li>
+  <li><strong>Pseudonymisierung durch Lehrende:</strong> Lehrende werden gebeten, eine Klasse unmittelbar nach der Sitzung zu pseudonymisieren, und können dies jederzeit tun.</li>
   <li><strong>Backoffice-Protokoll:</strong> als Datenbank­einträge gespeichert und nach <strong>12 Monaten</strong> gelöscht.</li>
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Before anonymisation, write to us or to your educator naming
+            "en": """<p>Before pseudonymisation, write to us or to your educator naming
 the e-mail address you used; the submission can be located and deleted. After
-anonymisation, responses are no longer linked to a person.</p>""",
-            "de": """<p>Vor der Anonymisierung schreiben Sie uns oder Ihrer Lehrperson
+pseudonymisation the address is gone, so we can normally no longer identify
+which stable per-class row was yours; the retained rows remain pseudonymous,
+not anonymous.</p>""",
+            "de": """<p>Vor der Pseudonymisierung schreiben Sie uns oder Ihrer Lehrperson
 unter Angabe der verwendeten E-Mail-Adresse; die Abgabe kann gefunden und
-gelöscht werden. Nach der Anonymisierung sind Antworten keiner Person mehr
-zugeordnet.</p>""",
+gelöscht werden. Nach der Pseudonymisierung ist die Adresse gelöscht; daher
+können wir in der Regel nicht mehr feststellen, welche stabile,
+klassenbezogene Zeile zu Ihnen gehörte. Die gespeicherten Zeilen bleiben
+pseudonym und sind nicht anonym.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
@@ -710,7 +712,7 @@ one.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>Session responses</strong> — deleted automatically <strong>30 days</strong> after the session is closed, or 30 days after the last answer if it is never closed. A session nobody ever joined is removed 90 days after it was created. Deletion removes the whole session: every answer, the optional demographics and the condition each participant was assigned. Educators are warned 14 days beforehand and can postpone up to three times by 30 days, so the longest anything is held is <strong>120 days</strong> past the deadline.</li>
+  <li><strong>Session responses</strong> — deleted automatically <strong>30 days</strong> after the session is closed, or 30 days after the last answer if it is never closed. A session nobody ever joined is removed 90 days after it was created. Deletion removes the whole session: every answer, the optional demographics and the condition each participant was assigned. Educators are warned 14 days beforehand and can postpone up to three times by 30 days. The latest possible date is <strong>120 days after</strong> the session closed or the last answer — 90 days beyond the original deletion date.</li>
   <li><strong>Class-level figures</strong> — when an educator closes a session, its answers are added to cross-session benchmarks as <strong>counts only</strong>. Those counts contain no participant records and are not affected by the deletion above; they cannot be traced to a session or a person.</li>
   <li><strong>Educator accounts</strong> — retained until deleted.</li>
 </ul>""",

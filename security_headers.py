@@ -119,7 +119,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = self.frame_options
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # A credential in the current URL must not reappear as the same-origin
+        # Referer of a CSS/JS request. `strict-origin-when-cross-origin` keeps the
+        # full path and query on same-origin requests, including password-reset,
+        # withdrawal, report and recruitment credentials.
+        query_names = {name.lower() for name in request.query_params.keys()}
+        credential_query = bool(
+            query_names & {"token", "prolific_pid", "study_id", "session_id"}
+        )
+        credential_path = any(marker in request.url.path.lower() for marker in (
+            "/password-reset", "/reset-password", "/reset_password",
+            "/withdraw", "/resume", "/report/", "/results/", "/postpone",
+        ))
+        response.headers["Referrer-Policy"] = (
+            "no-referrer" if credential_query or credential_path
+            else "strict-origin-when-cross-origin"
+        )
         response.headers["Permissions-Policy"] = (
             "camera=(), microphone=(), geolocation=(), payment=()"
         )

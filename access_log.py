@@ -37,9 +37,14 @@ import logging
 import re
 from typing import Iterable
 
-# `token=` in a query string, whatever the tool. Query strings are the one place
-# a generic rule is safe: nothing else in this fleet uses that parameter name.
-_QUERY_TOKEN = re.compile(r"([?&]token=)[^&\s\"]+")
+# Query-string credentials and recruitment identifiers, whatever the tool.
+# These names are deliberately exact: redacting every query value would remove
+# useful class codes from operational logs, while leaving PROLIFIC_PID visible
+# would join a research identifier to the visitor's IP and browser metadata.
+_QUERY_SECRET = re.compile(
+    r"([?&](?:token|PROLIFIC_PID|STUDY_ID|SESSION_ID)=)[^&\s\"]+",
+    re.IGNORECASE,
+)
 
 
 class RedactingAccessFilter(logging.Filter):
@@ -61,7 +66,7 @@ class RedactingAccessFilter(logging.Filter):
     def _redact(self, path: str) -> str:
         for pattern in self._patterns:
             path = pattern.sub(r"\1<redacted>", path)
-        return _QUERY_TOKEN.sub(r"\1<redacted>", path)
+        return _QUERY_SECRET.sub(r"\1<redacted>", path)
 
     def filter(self, record: logging.LogRecord) -> bool:
         args = record.args
