@@ -16,6 +16,45 @@ from email.mime.multipart import MIMEMultipart
 logger = logging.getLogger(__name__)
 
 
+def recipient_domain(address) -> str:
+    """A log-safe stand-in for a recipient address: `"@domain"`, or a placeholder.
+
+    ONE implementation, fleet-wide, since 16 August 2026. There were four —
+    Controversy Generator, LSR, Whiteout and Moral Mirror each grew their own,
+    the last of them written the same week with a comment saying "there is no
+    shared helper for it, so it lives here". They had already diverged, and not
+    harmlessly: three of the four returned `"@not-an-address"` for a string
+    with no `@` in it, which logs the WHOLE thing — so a participant who
+    mistyped their address had their raw input written to the journal in full,
+    by the very helper that exists to stop exactly that. Three also left
+    surrounding whitespace in. CG's was the strict one, and this is CG's, which
+    is the rule when consolidating: promote the strictest copy, never the most
+    convenient (harmonization wave 2, 29 July).
+
+    WHY REDACT AT ALL. Participant addresses are personal data and journald
+    retention on this host is open-ended relative to the tools' own rules, so
+    an address logged here outlives the response it belongs to and the deletion
+    promised for it — a log line quietly undoing a retention rule.
+
+    WHY KEEP THE DOMAIN. It is what makes a mail log useful: it separates "the
+    whole university's mail server is refusing us" from "one person mistyped
+    their address", and it identifies nobody.
+    """
+    # str() before strip(): this is called from exception handlers and
+    # background workers, where whatever went wrong may hand us something that
+    # is not a string at all — and a raise HERE would replace the error being
+    # reported with its own, losing the incident. The loose per-tool copies
+    # coerced; the strict one did not, so consolidating on the strict one meant
+    # taking its robustness gap with it.
+    if not address:
+        return "(no address)"
+    address = str(address).strip()
+    if "@" not in address:
+        return "(no address)"
+    domain = address.rsplit("@", 1)[-1]
+    return "@" + domain if domain else "(no address)"
+
+
 def branded_html(tool_name: str, inner_html: str, card_width: int = 520,
                  subtitle: str = "", footer_note: str = "") -> str:
     """Wrap `inner_html` in the fleet's e-mail shell: navy header carrying the
@@ -119,18 +158,33 @@ def send_password_reset(tool_name: str, default_from: str, to_email: str,
     """Send the branded reset email. No-op (logs the link) if SMTP unconfigured."""
     hours = os.getenv("RESET_TOKEN_HOURS", "2")
     if not os.getenv("SMTP_PASSWORD"):
-        # A reset URL is a live credential — never log it in production
-        # (security audit, finding 3). Locally the link is logged so the dev
-        # can complete the flow without SMTP configured.
-        if os.getenv("PRODUCTION", "").strip().lower() in ("1", "true", "yes"):
+        # A reset URL is a live credential and an address is personal data, so
+        # neither is logged by default ANYWHERE (external review, 16 August
+        # 2026). This used to withhold the link in production but still log the
+        # full address in both branches, and log the live link outright off
+        # production — and "off production" is any box where PRODUCTION is
+        # unset, which is a weaker guarantee than it looks.
+        #
+        # LOG_RESET_LINKS=1 is the deliberate, explicit way to get the link
+        # while developing without SMTP. It is opt-in and named for what it
+        # does, so switching it on is a decision someone made rather than a
+        # default they inherited.
+        where = recipient_domain(to_email)
+        if os.getenv("LOG_RESET_LINKS", "").strip() in ("1", "true", "yes"):
+            logger.warning(
+                "SMTP not configured — reset link for %s: %s "
+                "(LOG_RESET_LINKS is on; never set it in production)",
+                where, reset_url,
+            )
+        elif os.getenv("PRODUCTION", "").strip().lower() in ("1", "true", "yes"):
             logger.error(
                 "SMTP not configured (SMTP_PASSWORD unset) — password reset for "
-                "%s could not be sent; reset link withheld from logs.", to_email,
+                "%s could not be sent; reset link withheld from logs.", where,
             )
         else:
             logger.warning(
-                "SMTP not configured (dev) — reset link for %s: %s",
-                to_email, reset_url,
+                "SMTP not configured — password reset for %s was not sent. Set "
+                "LOG_RESET_LINKS=1 to log the link while developing.", where,
             )
         return
     sender = os.getenv("EMAIL_FROM") or os.getenv("SMTP_FROM") or default_from
