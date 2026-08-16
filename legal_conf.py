@@ -184,7 +184,10 @@ the responsibility of the educator who writes them.</p>""",
         # The access line records that the raw baseline sample is admin-only —
         # it had been open to every educator account. The free-text box now
         # carries, here and on the page, the one warning no code can enforce.
-        "notice_version": "2026-08",
+        # -b, later the same day: the collection list named neither the
+        # randomly-assigned question version (which IS the experiment) nor the
+        # record that this notice was shown. Both are stored per participant.
+        "notice_version": "2026-08-b",
         "last_updated": "2026-08-16",
         "art9": True,  # moral-judgment attributions
         "purpose": {
@@ -493,7 +496,14 @@ original works created for teaching.</p>""",
         # keeps scores and any demographics given — pseudonymous, as the formal
         # notice here has always said. One word, but it is the word that
         # decides whether Art. 15-22 rights still apply to what is kept.
-        "notice_version": "2026-08",
+        # -b, later the same day: the "what we collect" list was INCOMPLETE.
+        # It named nothing of the report and withdrawal tokens (which are what
+        # make those links work without a password) and nothing of the consent
+        # and acknowledgement evidence stored beside every response. Neither
+        # contradicted anything published; both are things a reader is entitled
+        # to see listed, and an inventory that omits them is not the inventory
+        # Art. 13 asks for.
+        "notice_version": "2026-08-b",
         "last_updated": "2026-08-16",
         "art9": False,  # leadership-style point allocations
         "purpose": {
@@ -512,6 +522,8 @@ original works created for teaching.</p>""",
   <li><strong>Questionnaire responses</strong> — point allocations, context answers, derived style scores.</li>
   <li><strong>Optional demographics</strong> — only fields you fill in; used for aggregate analysis only.</li>
   <li><strong>Submission timestamp.</strong></li>
+  <li><strong>Two access tokens</strong> — one that opens your report link and one that opens your withdrawal link. They are what let those links work without a password; anyone holding a link can use it, so treat them as private.</li>
+  <li><strong>A record of what you were shown and what you chose</strong> — when you acknowledged this notice, and, if you answered the research question on your results page, your answer with the date and the version of the wording you saw. This is how we can demonstrate what you agreed to, which the law requires of us.</li>
 </ul>
 <h3>From educators and administrators</h3>
 <ul>
@@ -626,7 +638,10 @@ design are original works created for executive teaching.</p>""",
         # benchmark COUNTS, which survive the deletion — a reader told only
         # "everything is deleted after 30 days" would have been told something
         # that is not quite true.
-        "notice_version": "2026-08",
+        # -b, later the same day: the collection list named neither the
+        # randomly-assigned question version (which IS the experiment) nor the
+        # record that this notice was shown. Both are stored per participant.
+        "notice_version": "2026-08-b",
         "last_updated": "2026-08-16",
         "art9": True,  # moral judgments
         "purpose": {
@@ -645,6 +660,8 @@ submission:</p>
   <li><strong>Optional demographics</strong> — only the fields you choose to answer.</li>
   <li><strong>A class code</strong> — attaches responses to the correct session, not to you.</li>
   <li><strong>A pseudonymous session token</strong> in a cookie, so your answers within one session hang together. Because such a token exists, the data is pseudonymous rather than anonymous.</li>
+  <li><strong>Which version of a question you were shown</strong> — some questions exist in more than one wording, and which one you saw is assigned at random and recorded. Comparing those groups is the point of the activity.</li>
+  <li><strong>A record that this notice was shown to you</strong> — the moment you pressed "I understand" and the version of the wording you saw. It is not a consent, and nothing here depends on your agreeing: it records that you were informed, which we must be able to show either way.</li>
 </ul>
 <h3>From educators</h3>
 <ul>
