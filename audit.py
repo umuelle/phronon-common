@@ -69,6 +69,18 @@ ACTIONS = (
     "admin_created", "admin_deleted", "admin_role_changed",
     "class_deleted", "class_anonymised", "class_archived", "responses_deleted",
     "data_exported",
+    # Added 16 August 2026, after an external review found each of them already
+    # happening in a tool with no row to show for it.
+    #
+    # `class_edited` covers the CONFIGURATION of a class/session/survey — its
+    # code, date, mode, and the items it asks. Editing those after responses
+    # exist changes what the collected answers mean, so "who changed the
+    # questions" is exactly the sort of question the trail is for.
+    #
+    # `participant_email_corrected` was already being written verbatim by
+    # Layoff; naming it here is what stops the second tool to need it from
+    # inventing "participant_email_fixed".
+    "class_edited", "participant_email_corrected",
 )
 
 

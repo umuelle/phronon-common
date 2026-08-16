@@ -178,6 +178,14 @@ the responsibility of the educator who writes them.</p>""",
         "domain": "drawbridge-drama.org",
         "tool_name": "The Drawbridge Drama",
         "languages": ["en"],
+        # 2026-08 (16 August): the duplicate-prevention hashes are now actually
+        # checked before a submission is accepted, and the notice says what the
+        # check can and cannot do rather than claiming more than it delivers.
+        # The access line records that the raw baseline sample is admin-only —
+        # it had been open to every educator account. The free-text box now
+        # carries, here and on the page, the one warning no code can enforce.
+        "notice_version": "2026-08",
+        "last_updated": "2026-08-16",
         "art9": True,  # moral-judgment attributions
         "purpose": {
             "en": "The Drawbridge Drama presents a short illustrated narrative and "
@@ -192,10 +200,10 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
 <ul>
   <li><strong>Class code</strong> — attributes the response to the correct class; it is not linked to you personally.</li>
   <li><strong>Story-path code</strong> — which version of the story flow was shown.</li>
-  <li><strong>Your responses</strong> — your responsibility attribution, certainty rating and optional follow-ups; a free-text explanation if you choose "Other". Your answers can reveal your moral views.</li>
+  <li><strong>Your responses</strong> — your responsibility attribution, certainty rating and optional follow-ups; a free-text explanation if you choose "Other". Your answers can reveal your moral views. The free-text box is the one field we cannot check for you: please do not type your name or anything that identifies you or another person, and we ask you not to on the page itself.</li>
   <li><strong>Optional demographics</strong> — age bracket, gender, childhood country/region, prior familiarity. All optional.</li>
   <li><strong>Submission timestamp.</strong></li>
-  <li><strong>Short one-way hashes of your session cookie and browser identifier</strong> — used solely to prevent the same browser submitting twice. Because such a key exists, the data is pseudonymous rather than anonymous.</li>
+  <li><strong>Short one-way hashes of your session cookie and browser identifier</strong> — checked before a response is accepted, so that one browser session cannot submit twice. They do not identify you and cannot be reversed; clearing your cookies starts a new session, so this prevents accidental double submission rather than a determined one. Because such a key exists, the data is pseudonymous rather than anonymous.</li>
 </ul>
 <h3>From baseline (Prolific) participants</h3>
 <ul>
@@ -219,8 +227,8 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see aggregate counts and the pseudonymous response-level data for their own classes. No stored field identifies a participant directly.</li>
-  <li><strong>The administrator</strong> has technical access for maintenance, backups and security only.</li>
+  <li><strong>Educators</strong> see aggregate counts and the pseudonymous response-level data for their own classes, plus aggregated comparison figures from the baseline sample. No stored field identifies a participant directly.</li>
+  <li><strong>The administrator</strong> has technical access for maintenance, backups and security only, and is the only role that can open or export the raw baseline (Prolific) sample.</li>
 </ul>""",
         },
         "retention": {
@@ -351,6 +359,15 @@ from published public sources; the survey design and site are original works.</p
         "domain": "layoff-exercise.org",
         "tool_name": "The Layoff Exercise",
         "languages": ["en", "de"],
+        # 2026-08 (16 August): three corrections, each of which had the notice
+        # describing something the code did not do. Automatic anonymisation is
+        # stated for every class rather than only those that reached round 2 —
+        # the query was narrower than the promise. The educator access line now
+        # says educators also see cross-class AGGREGATE analytics, which they
+        # always could. And the audit trail is database records, not a monthly
+        # rotating file; it has been a table since 12 August (FL-002).
+        "notice_version": "2026-08",
+        "last_updated": "2026-08-16",
         "art9": False,  # ranking/structural decisions
         "purpose": {
             "en": "The Layoff Exercise asks participants to rank candidates in a "
@@ -376,7 +393,7 @@ from published public sources; the survey design and site are original works.</p
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
   <li><strong>Class data</strong> — names, codes, configuration, responses.</li>
-  <li><strong>An audit record of backoffice actions</strong> — the educator's e-mail address and the <strong>IP address</strong> an action came from, written to a log file. This is a security record: it is how an account compromise is reconstructed. The file rotates monthly and is kept for <strong>12 months</strong>.</li>
+  <li><strong>An audit record of backoffice actions</strong> — the educator's e-mail address and the <strong>IP address</strong> an action came from, stored as database records. This is a security record: it is how an account compromise is reconstructed. Records are deleted after <strong>12 months</strong>.</li>
 </ul>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
@@ -392,7 +409,7 @@ from published public sources; the survey design and site are original works.</p
   <li><strong>E-Mail-Adresse</strong> — für die Anmeldung im Backoffice.</li>
   <li><strong>Passwort</strong> — ausschließlich als bcrypt-Hash gespeichert.</li>
   <li><strong>Klassendaten</strong> — Namen, Codes, Konfiguration, Antworten.</li>
-  <li><strong>Protokoll der Backoffice-Aktionen</strong> — die E-Mail-Adresse der Lehrperson und die <strong>IP-Adresse</strong>, von der eine Aktion ausging, in einer Protokolldatei. Dies ist eine Sicherheitsaufzeichnung: Damit lässt sich eine Kontokompromittierung nachvollziehen. Die Datei wird monatlich rotiert und nach <strong>12 Monaten</strong> gelöscht.</li>
+  <li><strong>Protokoll der Backoffice-Aktionen</strong> — die E-Mail-Adresse der Lehrperson und die <strong>IP-Adresse</strong>, von der eine Aktion ausging, als Datenbank­einträge gespeichert. Dies ist eine Sicherheitsaufzeichnung: Damit lässt sich eine Kontokompromittierung nachvollziehen. Die Einträge werden nach <strong>12 Monaten</strong> gelöscht.</li>
 </ul>""",
         },
         "basis": {
@@ -412,27 +429,27 @@ from published public sources; the survey design and site are original works.</p
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see the participants of their own classes (e-mail addresses) and the class's responses for the debrief.</li>
+  <li><strong>Educators</strong> see the participants of their own classes (e-mail addresses) and the class's responses for the debrief. They can also open <strong>aggregate analytics across all classes</strong> — combined figures only, with small groups suppressed, never another class's individual responses or addresses.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Lehrende</strong> sehen die Teilnehmenden ihrer eigenen Klassen (E-Mail-Adressen) und die Antworten der Klasse für die Auswertung.</li>
+  <li><strong>Lehrende</strong> sehen die Teilnehmenden ihrer eigenen Klassen (E-Mail-Adressen) und die Antworten der Klasse für die Auswertung. Zusätzlich können sie <strong>aggregierte Auswertungen über alle Klassen hinweg</strong> aufrufen — ausschließlich zusammengefasste Werte, kleine Gruppen unterdrückt, niemals Einzelantworten oder Adressen einer anderen Klasse.</li>
   <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit.</li>
 </ul>""",
         },
         "retention": {
             "en": """
 <ul>
-  <li><strong>Automatic anonymisation:</strong> classes whose responses are older than 60 days are anonymised automatically (hourly check) — e-mail addresses are deleted; rankings are kept for aggregate analysis.</li>
+  <li><strong>Automatic anonymisation:</strong> classes whose responses are older than 60 days are anonymised automatically (hourly check), whichever rounds the class ran — e-mail addresses are deleted; rankings are kept for aggregate analysis.</li>
   <li><strong>Educator-triggered anonymisation:</strong> educators are asked to anonymise a class as soon as the session is finished, and can do so at any time.</li>
-  <li><strong>Backoffice audit log:</strong> rotated monthly and deleted after <strong>12 months</strong>.</li>
+  <li><strong>Backoffice audit log:</strong> kept as database records and deleted after <strong>12 months</strong>.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Automatische Anonymisierung:</strong> Klassen, deren Antworten älter als 60 Tage sind, werden automatisch anonymisiert (stündliche Prüfung) — E-Mail-Adressen werden gelöscht; die Reihungen bleiben für aggregierte Auswertungen erhalten.</li>
+  <li><strong>Automatische Anonymisierung:</strong> Klassen, deren Antworten älter als 60 Tage sind, werden automatisch anonymisiert (stündliche Prüfung) — unabhängig davon, welche Runden die Klasse durchlaufen hat. E-Mail-Adressen werden gelöscht; die Reihungen bleiben für aggregierte Auswertungen erhalten.</li>
   <li><strong>Anonymisierung durch Lehrende:</strong> Lehrende werden gebeten, eine Klasse unmittelbar nach der Sitzung zu anonymisieren, und können dies jederzeit tun.</li>
-  <li><strong>Backoffice-Protokoll:</strong> monatlich rotiert und nach <strong>12 Monaten</strong> gelöscht.</li>
+  <li><strong>Backoffice-Protokoll:</strong> als Datenbank­einträge gespeichert und nach <strong>12 Monaten</strong> gelöscht.</li>
 </ul>""",
         },
         "erasure": {
@@ -471,6 +488,13 @@ original works created for teaching.</p>""",
         "domain": "lsr-profiler.org",
         "tool_name": "LSR Profiler",
         "languages": ["en", "de"],
+        # 2026-08 (16 August): the short participant-facing notices said
+        # "fully anonymized patterns" and "anonymised answers" for data that
+        # keeps scores and any demographics given — pseudonymous, as the formal
+        # notice here has always said. One word, but it is the word that
+        # decides whether Art. 15-22 rights still apply to what is kept.
+        "notice_version": "2026-08",
+        "last_updated": "2026-08-16",
         "art9": False,  # leadership-style point allocations
         "purpose": {
             "en": "The LSR Profiler collects scenario-based point allocations and "
