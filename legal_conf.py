@@ -617,6 +617,17 @@ design are original works created for executive teaching.</p>""",
         "domain": "moral-mirror.org",
         "tool_name": "Moral Mirror",
         "languages": ["en"],
+        # 2026-08 (16 August): the retention section described a tool that kept
+        # session responses until somebody deleted them by hand, and said an
+        # automatic job was "planned". The job exists now (FL-001, the clock
+        # Controversy Generator and Whiteout already use), so the notice states
+        # the real rule and the real ceiling. The second bullet is new and had
+        # to be: closing a session folds its answers into cross-session
+        # benchmark COUNTS, which survive the deletion — a reader told only
+        # "everything is deleted after 30 days" would have been told something
+        # that is not quite true.
+        "notice_version": "2026-08",
+        "last_updated": "2026-08-16",
         "art9": True,  # moral judgments
         "purpose": {
             "en": "Moral Mirror lets a class observe patterns in its own moral "
@@ -663,7 +674,8 @@ one.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>Session responses</strong> — retained until the session is deleted by an educator or the administrator. There is currently no automatic anonymisation job; one is planned, and this notice will be updated when it exists.</li>
+  <li><strong>Session responses</strong> — deleted automatically <strong>30 days</strong> after the session is closed, or 30 days after the last answer if it is never closed. A session nobody ever joined is removed 90 days after it was created. Deletion removes the whole session: every answer, the optional demographics and the condition each participant was assigned. Educators are warned 14 days beforehand and can postpone up to three times by 30 days, so the longest anything is held is <strong>120 days</strong> past the deadline.</li>
+  <li><strong>Class-level figures</strong> — when an educator closes a session, its answers are added to cross-session benchmarks as <strong>counts only</strong>. Those counts contain no participant records and are not affected by the deletion above; they cannot be traced to a session or a person.</li>
   <li><strong>Educator accounts</strong> — retained until deleted.</li>
 </ul>""",
         },
