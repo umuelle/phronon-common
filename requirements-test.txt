@@ -26,6 +26,15 @@ httpx2==2.9.1
 # without it 2 tests fail, with it all 18 pass, on both httpx and httpx2.
 python-multipart==0.0.32
 
+# passwords.py and twofactor.py import bcrypt, and pyproject declares only
+# itsdangerous, so nothing installs it here. CI has been RED on this since at
+# least 64ec06c: test_password_length_bound.py fails at COLLECTION, which takes
+# the whole run down — so every other test in this package stopped gating too,
+# silently, while the tools kept passing because their own requirements.txt
+# names bcrypt. Same version the fleet deploys (all nine pin 5.0.0), because
+# the 72-byte bound this package asserts is bcrypt's, not ours.
+bcrypt==5.0.0
+
 # legal.py renders the fleet legal pages through its own Jinja
 # environment. The tools all ship jinja2 via FastAPI templating; this
 # package has no requirements.txt, so the test environment names it.
