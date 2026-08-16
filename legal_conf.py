@@ -178,6 +178,16 @@ the responsibility of the educator who writes them.</p>""",
         "domain": "drawbridge-drama.org",
         "tool_name": "The Drawbridge Drama",
         "languages": ["en"],
+        # -b, later the same day: Drawbridge stops keeping class responses for
+        # ever (FL-001). It was the last tool in the fleet that did. The clock
+        # is Controversy Generator's; what happens at the deadline is
+        # Whiteout's, because this tool writes no aggregate anywhere and
+        # deleting outright would take the research value with it. The
+        # erasure section is rewritten around the deletion code, which is new:
+        # with no address on file it is the only self-service route there can
+        # be, and the old text offered nothing but a cookie-lifetime window.
+        "notice_version": "2026-08-b",
+        "last_updated": "2026-08-16",
         # 2026-08 (16 August): the duplicate-prevention hashes are now actually
         # checked before a submission is accepted, and the notice says what the
         # check can and cannot do rather than claiming more than it delivers.
@@ -206,6 +216,8 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
   <li><strong>Your responses</strong> — your responsibility attribution, certainty rating and optional follow-ups; a free-text explanation if you choose "Other". Your answers can reveal your moral views. The free-text box is the one field we cannot check for you: please do not type your name or anything that identifies you or another person, and we ask you not to on the page itself.</li>
   <li><strong>Optional demographics</strong> — age bracket, gender, childhood country/region, prior familiarity. All optional.</li>
   <li><strong>Submission timestamp.</strong></li>
+  <li><strong>A deletion code</strong> — shown to you once when you submit, and stored so that entering it later finds your response. It is the only thing that can, since no name or address is collected. Keep it if you might want your answers removed; we cannot re-send it.</li>
+  <li><strong>Your answer to the optional research question</strong>, with the date and the version of the wording you were shown — this is how we can demonstrate what you agreed to.</li>
   <li><strong>Short one-way hashes of your session cookie and browser identifier</strong> — checked before a response is accepted, so that one browser session cannot submit twice. They do not identify you and cannot be reversed; clearing your cookies starts a new session, so this prevents accidental double submission rather than a determined one. Because such a key exists, the data is pseudonymous rather than anonymous.</li>
 </ul>
 <h3>From baseline (Prolific) participants</h3>
@@ -237,17 +249,24 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
         "retention": {
             "en": """
 <ul>
-  <li><strong>Class responses</strong> — retained without a fixed deletion schedule; retention is reviewed periodically and data no longer needed for the educational and research purpose is removed. There is currently no automatic deletion job.</li>
-  <li><strong>Baseline (Prolific) responses</strong> — retained as part of the research dataset; the Prolific ID is held only for deduplication and withdrawal.</li>
+  <li><strong>Class responses</strong> — erased automatically <strong>30 days</strong> after the class is closed, or 30 days after the last response if it is never closed. A class nobody ever joined is removed 90 days after it was created. Erasure removes the whole class: every response, the free-text answers, the optional demographics and the browser hashes. Educators are warned 14 days beforehand and may postpone up to three times by 30 days, so the longest anything is held is <strong>120 days</strong> past the deadline.</li>
+  <li><strong>If you tick the optional research box</strong> — one row of yours is kept after that date: your choice, the story version you saw, your certainty and any demographics you gave. It carries <strong>no class, no group and no date finer than the half-year</strong>, and the link back to your class is destroyed rather than hidden. Those rows are <strong>pseudonymous, not anonymous</strong>: the deletion code you were given still matches yours, which is exactly what lets you withdraw it. If you do not tick it, nothing of yours survives the deadline.</li>
+  <li><strong>Baseline (Prolific) responses</strong> — a one-time benchmark sample, collected as research from the outset with consent given through Prolific and retained as part of that dataset. It is not on the class clock above. The Prolific ID is held only for deduplication and for withdrawal through Prolific.</li>
   <li><strong>Educator accounts</strong> — retained until deactivated or deleted by an administrator.</li>
 </ul>""",
         },
         "erasure": {
-            "en": """<p>We store no name or e-mail address, so we usually cannot
-locate a specific class response after the fact. Within the lifetime of your
-session cookie a submission can still be matched via the duplicate-prevention
-hash — if you contact us promptly from the same browser session we will delete
-it. Baseline participants can always request deletion via their Prolific ID.</p>""",
+            "en": """<p><strong>Use the deletion code you were shown when you
+submitted.</strong> Enter it at <a href="/withdraw">/withdraw</a> and your
+response is erased immediately — before or after the 30-day deadline, and
+including the research row if you kept one. That code is the only thing that
+identifies your response as yours: we store no name and no e-mail address, so
+we cannot look it up for you, and we cannot send you another.</p>
+<p>If you did not keep it, we usually cannot find your response. Within the
+lifetime of your session cookie it can still be matched via the
+duplicate-prevention hash, so contact us promptly from the same browser and we
+will delete it. Baseline (Prolific) participants can always request deletion
+via their Prolific ID.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
