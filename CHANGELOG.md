@@ -4,6 +4,20 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.13.37 — 2026-08-17
+
+- New `account.py`: e-mail-address change tokens (signed, bound to the account,
+  the address they were issued from and the session epoch) plus the fleet's one
+  address and display-name validator. It backs the Manage account page that now
+  replaces the stand-alone change-password page in all nine tools.
+- Three shared mail bodies in `emails.py`: confirm-your-new-address (to the new
+  address), address-change-requested (to the old one, while the link is still
+  unused) and two-factor-reset-by-an-administrator. The SMTP conversation is
+  extracted to one `_smtp_send`, so the mails added since the reset mail no
+  longer each carry a copy of the host/port/STARTTLS handling.
+- `twofactor.is_required` now answers True for OWNER as well as ADMIN. The hub's
+  own role was the one role the rule exempted; nothing depended on it yet.
+
 ## 1.13.31 — 2026-08-16
 
 - Redact password-reset tokens and Drawbridge Prolific recruitment identifiers

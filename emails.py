@@ -15,6 +15,12 @@ from email.mime.multipart import MIMEMultipart
 
 logger = logging.getLogger(__name__)
 
+#: How long a confirm-your-new-address link lives, in hours. Defined HERE, where
+#: the mail that states it is written, and imported by `account.py` for the
+#: signature age limit — so the sentence in the mail and the limit the server
+#: enforces cannot disagree. Matches the password-reset window.
+EMAIL_CHANGE_HOURS = 2
+
 
 def recipient_domain(address) -> str:
     """A log-safe stand-in for a recipient address: `"@domain"`, or a placeholder.
@@ -187,9 +193,25 @@ def send_password_reset(tool_name: str, default_from: str, to_email: str,
                 "LOG_RESET_LINKS=1 to log the link while developing.", where,
             )
         return
-    sender = os.getenv("EMAIL_FROM") or os.getenv("SMTP_FROM") or default_from
+    sender = _sender_address(default_from)
     msg = build_password_reset_message(tool_name, sender, to_email, reset_url,
                                        hours, subject_prefix)
+    _smtp_send(sender, to_email, msg)
+
+
+# ── transport, shared by every sender below ─────────────────────────────────
+
+def _sender_address(default_from: str) -> str:
+    return os.getenv("EMAIL_FROM") or os.getenv("SMTP_FROM") or default_from
+
+
+def _smtp_send(sender: str, to_email: str, msg: MIMEMultipart) -> None:
+    """The one SMTP conversation in the fleet.
+
+    Extracted from `send_password_reset` unchanged (17 August 2026) so the mails
+    added since do not each grow their own copy of the host/port/STARTTLS
+    handling — the drift that `recipient_domain` above is a monument to.
+    """
     with smtplib.SMTP(
         os.getenv("SMTP_HOST", "smtp.ionos.de"),
         int(os.getenv("SMTP_PORT", "587")),
@@ -198,3 +220,184 @@ def send_password_reset(tool_name: str, default_from: str, to_email: str,
         smtp.starttls()
         smtp.login(os.getenv("SMTP_USER", sender), os.getenv("SMTP_PASSWORD", ""))
         smtp.sendmail(sender, [to_email], msg.as_string())
+
+
+def _unsendable(what: str, to_email: str, link: str = "") -> None:
+    """Log an unsent mail the way `send_password_reset` does, and for its reasons.
+
+    `link`, when given, is a live credential: it is withheld from the journal
+    unless LOG_RESET_LINKS is explicitly on, and the address is never written in
+    full. The variable keeps its name deliberately — one switch for "log the
+    links while developing", not one per mail type.
+    """
+    where = recipient_domain(to_email)
+    if link and os.getenv("LOG_RESET_LINKS", "").strip() in ("1", "true", "yes"):
+        logger.warning("SMTP not configured — %s link for %s: %s "
+                       "(LOG_RESET_LINKS is on; never set it in production)",
+                       what, where, link)
+    elif os.getenv("PRODUCTION", "").strip().lower() in ("1", "true", "yes"):
+        logger.error("SMTP not configured (SMTP_PASSWORD unset) — %s for %s could "
+                     "not be sent%s.", what, where,
+                     "; link withheld from logs" if link else "")
+    else:
+        logger.warning("SMTP not configured — %s for %s was not sent.%s", what, where,
+                       " Set LOG_RESET_LINKS=1 to log the link while developing."
+                       if link else "")
+
+
+def _multipart(subject: str, sender: str, to_email: str, text: str, html: str) -> MIMEMultipart:
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to_email
+    msg.attach(MIMEText(text, "plain"))
+    msg.attach(MIMEText(html, "html"))
+    return msg
+
+
+# ── account self-service mails (Manage account, 17 August 2026) ─────────────
+# Three mails, and each one exists because the change it reports can otherwise
+# be made silently by whoever is holding the session:
+#
+#   confirm  → to the NEW address. The change does not happen until this comes
+#              back, which is what stops a typo becoming a permanent lockout and
+#              a borrowed session becoming a takeover.
+#   notice   → to the OLD address, at the moment the change is REQUESTED rather
+#              than applied. The real owner hears about it while the link is
+#              still unused and there is still something they can do.
+#   2fa reset→ to the account whose second factor an administrator cleared. An
+#              admin resetting somebody's 2FA is legitimate and routine; it is
+#              also exactly what taking over an account looks like, so it is
+#              never something the account holder learns only by noticing.
+
+def email_change_confirm_bodies(tool_name: str, confirm_url: str, hours: str = "2"):
+    text = (
+        "Hello,\n\n"
+        f"This address was given as the new sign-in address for a {tool_name} account.\n\n"
+        f"Open the link below to confirm it (valid for {hours} hours):\n\n"
+        f"{confirm_url}\n\n"
+        "Until you do, the account keeps its current address and nothing changes.\n\n"
+        "If you were not expecting this, you can ignore this mail — without this "
+        "link the address cannot be changed.\n\n"
+        f"— {tool_name}\n"
+        "Part of Phronon · https://phronon.org"
+    )
+    html = branded_html(tool_name, (
+        '<p style="margin:0 0 16px;">Hello,</p>'
+        f'<p style="margin:0 0 16px;">This address was given as the new sign-in address '
+        f'for a <strong>{tool_name}</strong> account. Confirm it below.</p>'
+        '<p style="margin:0 0 24px;text-align:center;">'
+        f'<a href="{confirm_url}" style="display:inline-block;background:#0F1B2D;color:#ffffff;'
+        'text-decoration:none;font-weight:600;padding:12px 28px;border-radius:6px;">'
+        'Confirm this address</a></p>'
+        f'<p style="margin:0 0 16px;color:#555555;font-size:13px;">This link is valid for {hours} hours. '
+        'If the button does not work, paste this URL into your browser:<br>'
+        f'<a href="{confirm_url}" style="color:#0F1B2D;word-break:break-all;">{confirm_url}</a></p>'
+        '<p style="margin:0;color:#555555;font-size:13px;">Until then the account keeps its '
+        'current address. If you were not expecting this, ignore this mail — without this link '
+        'the address cannot be changed.</p>'
+    ))
+    return text, html
+
+
+def send_email_change_confirm(tool_name: str, default_from: str, to_email: str,
+                              confirm_url: str, subject_prefix: str = "") -> None:
+    """Send the confirm-your-new-address link. No-op (logs) without SMTP."""
+    hours = str(EMAIL_CHANGE_HOURS)
+    if not os.getenv("SMTP_PASSWORD"):
+        _unsendable("e-mail address confirmation", to_email, confirm_url)
+        return
+    sender = _sender_address(default_from)
+    text, html = email_change_confirm_bodies(tool_name, confirm_url, hours)
+    _smtp_send(sender, to_email, _multipart(
+        f"{subject_prefix}{tool_name} — confirm your new e-mail address",
+        sender, to_email, text, html))
+
+
+def email_change_notice_bodies(tool_name: str, new_email: str):
+    text = (
+        "Hello,\n\n"
+        f"Somebody asked to change the sign-in address of your {tool_name} account "
+        f"to:\n\n    {new_email}\n\n"
+        "Nothing has changed yet. The new address has to be confirmed from a link "
+        "sent to it before it replaces this one.\n\n"
+        "If that was you, there is nothing to do here.\n\n"
+        "If it was NOT you, somebody is signed in to your account: change your "
+        "password now, and switch on two-factor login while you are there.\n\n"
+        f"— {tool_name}\n"
+        "Part of Phronon · https://phronon.org"
+    )
+    html = branded_html(tool_name, (
+        '<p style="margin:0 0 16px;">Hello,</p>'
+        f'<p style="margin:0 0 16px;">Somebody asked to change the sign-in address of your '
+        f'<strong>{tool_name}</strong> account to:</p>'
+        f'<p style="margin:0 0 16px;padding:12px 16px;background:#f4f5f7;border-radius:6px;'
+        f'word-break:break-all;"><strong>{new_email}</strong></p>'
+        '<p style="margin:0 0 16px;">Nothing has changed yet — the new address has to be '
+        'confirmed from a link sent to it before it replaces this one.</p>'
+        '<p style="margin:0 0 16px;color:#555555;font-size:13px;">If that was you, there is '
+        'nothing to do here.</p>'
+        '<p style="margin:0;color:#555555;font-size:13px;"><strong>If it was not you</strong>, '
+        'somebody is signed in to your account: change your password now, and switch on '
+        'two-factor login while you are there.</p>'
+    ))
+    return text, html
+
+
+def send_email_change_notice(tool_name: str, default_from: str, to_email: str,
+                             new_email: str, subject_prefix: str = "") -> None:
+    """Tell the CURRENT address that a change was requested. No link inside."""
+    if not os.getenv("SMTP_PASSWORD"):
+        _unsendable("e-mail address change notice", to_email)
+        return
+    sender = _sender_address(default_from)
+    text, html = email_change_notice_bodies(tool_name, new_email)
+    _smtp_send(sender, to_email, _multipart(
+        f"{subject_prefix}{tool_name} — a change of e-mail address was requested",
+        sender, to_email, text, html))
+
+
+def two_factor_reset_bodies(tool_name: str, account_url: str):
+    text = (
+        "Hello,\n\n"
+        f"An administrator has reset two-factor login on your {tool_name} account.\n\n"
+        "Your next sign-in will ask for your password only. Your old authenticator "
+        "entry and your old recovery codes no longer work — delete them.\n\n"
+        "You can set two-factor login up again here:\n\n"
+        f"{account_url}\n\n"
+        "If you did not ask for this, tell your administrator: it means somebody "
+        "else can now sign in with your password alone.\n\n"
+        f"— {tool_name}\n"
+        "Part of Phronon · https://phronon.org"
+    )
+    html = branded_html(tool_name, (
+        '<p style="margin:0 0 16px;">Hello,</p>'
+        f'<p style="margin:0 0 16px;">An administrator has reset two-factor login on your '
+        f'<strong>{tool_name}</strong> account.</p>'
+        '<p style="margin:0 0 16px;">Your next sign-in will ask for your password only. Your '
+        'old authenticator entry and your old recovery codes no longer work — delete them.</p>'
+        '<p style="margin:0 0 24px;text-align:center;">'
+        f'<a href="{account_url}" style="display:inline-block;background:#0F1B2D;color:#ffffff;'
+        'text-decoration:none;font-weight:600;padding:12px 28px;border-radius:6px;">'
+        'Set it up again</a></p>'
+        '<p style="margin:0;color:#555555;font-size:13px;">If you did not ask for this, tell your '
+        'administrator: it means somebody else can now sign in with your password alone.</p>'
+    ))
+    return text, html
+
+
+def send_two_factor_reset_notice(tool_name: str, default_from: str, to_email: str,
+                                 account_url: str, subject_prefix: str = "") -> None:
+    """Tell an account that an administrator cleared its second factor.
+
+    `account_url` is a plain page address behind the login, not a credential —
+    it is logged with the rest of the line when SMTP is missing.
+    """
+    if not os.getenv("SMTP_PASSWORD"):
+        _unsendable("two-factor reset notice", to_email)
+        return
+    sender = _sender_address(default_from)
+    text, html = two_factor_reset_bodies(tool_name, account_url)
+    _smtp_send(sender, to_email, _multipart(
+        f"{subject_prefix}{tool_name} — two-factor login was reset",
+        sender, to_email, text, html))

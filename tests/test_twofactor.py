@@ -128,6 +128,14 @@ def test_second_factor_is_required_for_admins_only():
     assert not tf.is_required("") and not tf.is_required(None)
 
 
+def test_the_hub_owner_role_is_required_too():
+    """`owner` is the hub's own role and outranks `admin`. It answered False
+    here until 17 August 2026 — the one role this rule exempted was the most
+    privileged account in the fleet."""
+    assert tf.is_required("owner")
+    assert tf.is_required("OWNER")
+
+
 def test_check_code_accepts_a_totp_code_without_spending_a_recovery_code():
     secret = tf.generate_secret()
     hashes = tf.hash_backup_codes(tf.generate_backup_codes(), _FakeBcrypt)

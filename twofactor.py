@@ -161,17 +161,26 @@ def qr_svg(uri: str) -> str:
         return ""
 
 
+#: Roles that must carry a second factor. OWNER is the hub's own role and was
+#: missing here until 17 August 2026: `is_required("owner")` answered False, so
+#: the most privileged account in the fleet was the one role this function
+#: exempted. Nothing depended on it yet — the hub had its own hard-coded gate —
+#: but "the rule did not cover the role it matters most for" is exactly the
+#: shape of a bug that only shows up once somebody reuses the helper.
+REQUIRED_ROLES = ("ADMIN", "OWNER")
+
+
 def is_required(role: str) -> bool:
     """Is a second factor MANDATORY for this account?
 
-    Admins yes, educators no (the owner's decision, 29 July 2026): educators
-    are numerous, often first-time users on a teaching day, and a lockout
-    mid-class is a worse outcome than the risk it removes. Educators may still
-    switch it on for themselves — `is_required` governs enforcement, never
+    Admins and owners yes, educators no (the owner's decision, 29 July 2026):
+    educators are numerous, often first-time users on a teaching day, and a
+    lockout mid-class is a worse outcome than the risk it removes. Educators may
+    still switch it on for themselves — `is_required` governs enforcement, never
     availability. Role spellings differ across the fleet ("ADMIN"/"admin"), so
     the comparison is case-insensitive.
     """
-    return str(role or "").strip().upper() == "ADMIN"
+    return str(role or "").strip().upper() in REQUIRED_ROLES
 
 
 def check_code(secret: str, code: str, stored_hashes, bcrypt_module):
