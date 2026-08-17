@@ -174,3 +174,38 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
   background: var(--bo-code-bg, #f5f5f5);
   border-color: var(--bo-text, #171717);
 }
+
+/* ── Manage account: two columns on a desktop ───────────────────────────────
+   Owner, 17 August 2026. The first version was one 440px column, which is the
+   right shape for a phone and the wrong one for the machine educators actually
+   use: on a laptop it put four short cards in a single tall stack and asked
+   for two screens of scrolling to see an account that fits on one.
+
+   MULTI-COLUMN RATHER THAN GRID, and the difference is visible. A grid fills
+   row by row, so a tall card beside a short one leaves a hole under the short
+   one — the account page has exactly that shape (a long name/address card, a
+   compact password card). `columns` balances by height instead, so the four
+   cards distribute themselves and the page ends where the content ends.
+
+   `columns: 22rem 2` reads "at most two columns, neither narrower than 22rem",
+   which is also the whole of the responsive behaviour: below ~46rem there is
+   room for one column and the browser makes one, with no breakpoint here to
+   maintain. `break-inside: avoid` keeps a card whole — without it a column
+   break can land in the middle of a form.
+
+   Tools style their own cards (`.bo-form-card`, Bootstrap `.card`, …); this
+   sheet owns only the shape of the page around them. */
+.bo-account {
+  columns: 22rem 2;
+  column-gap: 1.25rem;
+  max-width: 60rem;
+}
+.bo-account > * {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;   /* older WebKit still wants this one */
+  margin-bottom: 1.25rem;
+}
+/* A page-level notice and the once-only recovery codes speak for the whole
+   account, so they run the full width above the columns rather than inside
+   one. `column-span` is the only way out of a column flow. */
+.bo-account__full { column-span: all; }

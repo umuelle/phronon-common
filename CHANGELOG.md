@@ -4,6 +4,13 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.13.38 — 2026-08-17
+
+- `backoffice-core.css` gains `.bo-account`: the Manage account page lays its
+  cards out in two balanced columns on a desktop and one on a phone. Multi-column
+  rather than grid, so a tall card beside a short one does not leave a hole under
+  the short one — which is the exact shape this page has.
+
 ## 1.13.37 — 2026-08-17
 
 - New `account.py`: e-mail-address change tokens (signed, bound to the account,
