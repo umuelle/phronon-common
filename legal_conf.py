@@ -824,8 +824,8 @@ original works created for teaching organisational design.</p>""",
         "art9": False,
         "is_hub": True,
         "purpose": {
-            "en": "phronon.org is the umbrella site for the Phronon classroom "
-                  "simulations. Each simulation runs on its own domain and "
+            "en": "phronon.org is the umbrella site for the Phronon online "
+                  "tools. Each tool runs on its own domain and "
                   "carries its own legal pages covering the participant data it "
                   "processes; this site collects no participant data itself.",
         },
@@ -873,7 +873,7 @@ are deleted on request.</p>""",
 requirement; the public pages can be read without providing any data at all.</p>""",
         },
         "provenance": {
-            "en": """<p>The Phronon name, wordmark, logo and the simulations
+            "en": """<p>The Phronon name, wordmark, logo and the tools
 linked from this site are original works.</p>""",
         },
         "cookies": [
