@@ -175,28 +175,23 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
   border-color: var(--bo-text, #171717);
 }
 
-/* ── Manage account: the page uses the window ───────────────────────────────
-   Owner, 17 August 2026, twice. It shipped as one 440px column — a phone
-   layout shown to a desktop. The second try was two balanced columns capped at
-   60rem, which still left two thirds of a wide window empty while the page
-   next door (Users) runs the full width. This is the third and the simple one:
-   the cards flow across whatever width the page has, like every other
-   backoffice page.
+/* ── Manage account: one column, the width of the tables ────────────────────
+   Owner, 17 August 2026, and this is the settled shape. The page went 440px
+   column -> two columns capped at 60rem -> three columns across the window,
+   which was the width asked for and the wrong answer to it: three cards abreast
+   turn one account into a dashboard, and each field ends up in a narrow well.
 
-   `auto-fit` + `minmax(22rem, 1fr)` is the whole responsive rule — as many
-   columns as fit, never narrower than 22rem, one column on a phone, no
-   breakpoint here to maintain. `align-items: start` keeps a two-field card from
-   stretching to the height of a six-field one.
+   ONE COLUMN, the width the Sessions / Classes / Users tables already use. The
+   cards stack, each spanning that width, so a field is as wide as a table row
+   is and the eye reads down a single spine.
 
-   Tools style their own cards (`.bo-form-card`, Bootstrap `.card`, …); this
-   sheet owns only the shape of the page around them. */
-.bo-account {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
-  gap: 1.25rem;
-  align-items: start;
-}
-.bo-account > * { min-width: 0; }
-/* A page-level notice and the once-only recovery codes speak for the whole
-   account, so they run the full width above the columns rather than in one. */
-.bo-account__full { grid-column: 1 / -1; }
+   No max-width here on purpose: the page's own container (`.bo-content` in most
+   tools, `.container` in the Bootstrap ones) already caps it, and stating a
+   second cap here would fight it — that is how this page ended up narrower than
+   the page next door in the first place. */
+.bo-account { display: block; }
+.bo-account > * { margin-bottom: 1.25rem; }
+.bo-account > *:last-child { margin-bottom: 0; }
+/* Kept so a template that marks the once-only recovery codes or a page notice
+   as full-width still says something true — in one column, everything is. */
+.bo-account__full { width: 100%; }

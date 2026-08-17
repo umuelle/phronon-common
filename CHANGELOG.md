@@ -4,6 +4,12 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.13.40 — 2026-08-18
+
+- `.bo-account` is one column at the page's own width — the shape the Sessions,
+  Classes and Users tables already use. Three cards abreast turned one account
+  into a dashboard and put every field in a narrow well.
+
 ## 1.13.39 — 2026-08-17
 
 - `.bo-account` lays the Manage account cards across the full page width, like
