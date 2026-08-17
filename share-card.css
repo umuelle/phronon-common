@@ -45,7 +45,18 @@
   justify-content: space-between;
   gap: var(--ph-space-md, 1rem);
   padding: 1.35rem 1.5rem;
-  background: #202020;
+  /* THE ONE COLOUR EACH TOOL SETS FOR ITSELF (17 August 2026).
+     The card is otherwise identical everywhere on purpose — same layout, same
+     class vocabulary, one file synced to eight repos — but a join sheet is the
+     thing an educator projects, and it should look like the tool it belongs to.
+     So the header bar reads a per-tool token, declared in that tool's own
+     static/css/brand.css, and falls back to the fleet near-black for anything
+     that has not set one. Nothing else here varies by tool.
+
+     Whatever a tool sets has to clear 4.5:1 against the #fafafa text below,
+     because the accessibility gate runs on every deploy — Inequality's brand
+     gold managed 2.3 and had to be darkened for exactly that reason. */
+  background: var(--ph-brand, #202020);
   color: #fafafa;
 }
 
