@@ -4,6 +4,11 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.13.39 — 2026-08-17
+
+- `.bo-account` lays the Manage account cards across the full page width, like
+  every other backoffice page, instead of two columns capped at 60rem.
+
 ## 1.13.38 — 2026-08-17
 
 - `backoffice-core.css` gains `.bo-account`: the Manage account page lays its
