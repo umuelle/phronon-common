@@ -106,7 +106,7 @@ def branded_html(tool_name: str, inner_html: str, card_width: int = 520,
         '</td></tr>'
         '<tr><td style="padding:18px 28px;border-top:1px solid #e3e6ea;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#888888;text-align:center;">'
         + (f'<div style="margin:0 0 10px;line-height:1.5;">{footer_note}</div>' if footer_note else '')
-        + 'Part of <a href="https://phronon.org" style="color:#888888;">Phronon</a> — classroom simulations for practical judgment'
+        + 'Part of <a href="https://phronon.org" style="color:#888888;">Phronon</a> — online tools for practical judgment'
         '</td></tr></table></td></tr></table></body></html>'
     )
 
