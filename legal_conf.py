@@ -289,13 +289,13 @@ works.</p>""",
     # ────────────────────────────────────────────────────────────────────
     "inequality": {
         "domain": "inequality-explorer.org",
-        "tool_name": "Wealth Inequality Explorer",
+        "tool_name": "Inequality Explorer",
         "languages": ["en"],
         "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
                        # items (pol_redistribution, pol_regulation), stored as enums.
                        # Political opinions are Art. 9(1) data — the earlier False was wrong.
         "purpose": {
-            "en": "The Wealth Inequality Explorer collects numerical estimates of "
+            "en": "The Inequality Explorer collects numerical estimates of "
                   "wealth distribution and compares them with real data, to "
                   "support classroom discussion of perceptions of inequality.",
         },
