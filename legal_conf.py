@@ -176,7 +176,7 @@ the responsibility of the educator who writes them.</p>""",
     # ────────────────────────────────────────────────────────────────────
     "drawbridge": {
         "domain": "drawbridge-drama.org",
-        "tool_name": "The Drawbridge Drama",
+        "tool_name": "Drawbridge Drama",
         "languages": ["en"],
         # -b, later the same day: Drawbridge stops keeping class responses for
         # ever (FL-001). It was the last tool in the fleet that did. The clock
@@ -377,7 +377,7 @@ from published public sources; the survey design and site are original works.</p
     # ────────────────────────────────────────────────────────────────────
     "layoff": {
         "domain": "layoff-exercise.org",
-        "tool_name": "The Layoff Exercise",
+        "tool_name": "Layoff Exercise",
         "languages": ["en", "de"],
         # 2026-08 (16 August): three corrections, each of which had the notice
         # describing something the code did not do. Automatic anonymisation is
@@ -884,7 +884,7 @@ linked from this site are original works.</p>""",
     # ────────────────────────────────────────────────────────────────────
     "whiteout": {
         "domain": "whiteout-exercise.org",
-        "tool_name": "The Whiteout Exercise",
+        "tool_name": "Whiteout Exercise",
         "languages": ["en", "de"],
         # Ahead of the fleet default since 3 August 2026: the demographic
         # breakdown gained a combined "everyone else" row, so the promise about
