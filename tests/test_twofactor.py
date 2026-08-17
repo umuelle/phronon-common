@@ -68,7 +68,7 @@ def test_two_secrets_do_not_share_codes():
 
 
 def test_provisioning_uri_is_well_formed_and_escaped():
-    uri = tf.provisioning_uri("ABC234", "urs@example.org", "LSR Profiler")
+    uri = tf.provisioning_uri("ABC234", "urs@example.org", "Polarity Profiler")
     assert uri.startswith("otpauth://totp/")
     assert "secret=ABC234" in uri and "period=30" in uri and "digits=6" in uri
     assert " " not in uri, "spaces must be percent-encoded or the QR breaks"

@@ -509,8 +509,8 @@ original works created for teaching.</p>""",
 
     # ────────────────────────────────────────────────────────────────────
     "lsr": {
-        "domain": "lsr-profiler.org",
-        "tool_name": "LSR Profiler",
+        "domain": "polarity-profiler.org",
+        "tool_name": "Polarity Profiler",
         "languages": ["en", "de"],
         # 2026-08 (16 August): the short participant-facing notices said
         # "fully anonymized patterns" and "anonymised answers" for data that
@@ -528,10 +528,10 @@ original works created for teaching.</p>""",
         "last_updated": "2026-08-16",
         "art9": False,  # leadership-style point allocations
         "purpose": {
-            "en": "The LSR Profiler collects scenario-based point allocations and "
+            "en": "The Polarity Profiler collects scenario-based point allocations and "
                   "produces a personal leadership-style repertoire report, with an "
                   "optional class comparison, for use in executive education.",
-            "de": "Der LSR Profiler erhebt szenariobasierte Punktverteilungen und "
+            "de": "Der Polarity Profiler erhebt szenariobasierte Punktverteilungen und "
                   "erstellt einen persönlichen Bericht zum Führungsstil-Repertoire, "
                   "mit optionalem Klassenvergleich, für die Führungskräfte­bildung.",
         },
