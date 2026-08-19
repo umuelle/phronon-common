@@ -4,6 +4,15 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.14.1 — 2026-08-19
+
+- `pyproject.toml` was left at 1.13.40 when v1.14.0 was cut, so the tag
+  installs as the wrong version — the exact drift the comment in that file
+  warns about, caught by `deploy.sh`'s pin gate before anything reached the
+  server. **v1.14.0 is superseded: pin this one.** The tag was not moved,
+  because CI on all nine tools had already installed from it and a tag that
+  names two different trees is worse than a tag nobody should use.
+
 ## 1.14.0 — 2026-08-19
 
 - **Session length now depends on the role: educators 6 hours, admins and

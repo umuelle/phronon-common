@@ -27,4 +27,4 @@ Keep tool-specific logic OUT of here — only what is identical everywhere.
 # the mechanism, and nothing reads the string below. It sat at "1.7.0" while
 # the fleet ran v1.13.2, and no gate noticed, because no gate looks here.
 # Kept in step by hand as documentation for whoever opens this file first.
-__version__ = "1.14.0"
+__version__ = "1.14.1"
