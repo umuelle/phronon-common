@@ -103,7 +103,7 @@ PRIVILEGED_ROLES = ("ADMIN", "OWNER")
 
 
 def is_privileged(role: Any) -> bool:
-    """True for an admin/owner account, False for an educator or facilitator.
+    """True for an admin/owner account, False for an educator.
 
     An unknown or missing role reads as NOT privileged, which gives it the
     longer session. That is the safe direction for a tool whose role column is

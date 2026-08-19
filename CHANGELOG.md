@@ -4,6 +4,24 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.14.2 — 2026-08-19
+
+- **Whiteout's published notice says "educator", not "facilitator"** (owner,
+  19 August 2026). It was the only tool in the fleet using the other word, in
+  23 places on its own privacy and cookie pages, while the other eight say
+  "your educator" and Whiteout's own `admins.role` column has stored
+  `'educator'` all along. Nothing about who that person is or what they can see
+  changed — same role, same permissions, same promises.
+
+- `notice_version` deliberately unchanged. It is stamped on each participant's
+  record to say which notice they were shown, and a synonym does not change
+  what they were told; bumping it would put a "something changed" signal in
+  every future record and a no-op entry in the wording archive.
+
+- The German text is NOT touched here: it says *Kursleitung* where Layoff says
+  *Lehrperson*, which is the same drift in the other language and needs the
+  owner's sign-off before it moves. TO DO FL-032.
+
 ## 1.14.1 — 2026-08-19
 
 - `pyproject.toml` was left at 1.13.40 when v1.14.0 was cut, so the tag

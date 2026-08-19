@@ -22,7 +22,7 @@ our own database):
   layoff       auto_anonymize_old_classes()      60 days, hourly check
   moralmirror  NO JOB EXISTS — the text says so honestly (open item)
   drawbridge   no job — retention reviewed periodically (stated as such)
-  whiteout     no job — facilitator-deleted (stated as such)
+  whiteout     no job — educator-deleted (stated as such)
 
 CORRECTION 2026-07-30 (second pass, after an external review). The first pass
 checked retention claims against the code but NOT the "what we collect" claims,
@@ -30,7 +30,7 @@ and that is exactly where the false statements were:
 
   whiteout    the notice said no name/e-mail was collected. /join REQUIRES an
               e-mail, stores it on participants.email, and shows it to the
-              facilitator. Corrected.
+              educator. Corrected.
   lsr         the notice called the e-mail optional; the form marks it required
               and the handler rejects a submission without it. It also called
               the benchmarking tick-box "optional consent" while the handler
@@ -888,7 +888,7 @@ linked from this site are original works.</p>""",
         "languages": ["en", "de"],
         # Ahead of the fleet default since 3 August 2026: the demographic
         # breakdown gained a combined "everyone else" row, so the promise about
-        # what a facilitator can see is no longer "five people gave the same
+        # what an educator can see is no longer "five people gave the same
         # answer" but "an average over at least five people". A weaker promise
         # than the one earlier participants consented to, so it needs its own
         # version — theirs stays stamped 2026-07. The other eight tools have not
@@ -908,7 +908,7 @@ linked from this site are original works.</p>""",
         # participant must be told rather than discover. (1) There is now a real
         # retention rule — a class is erased thirty days after it finishes,
         # where the notice used to say there was no automatic deletion at all.
-        # (2) Two new mails: a warning fourteen days before to the facilitator
+        # (2) Two new mails: a warning fourteen days before to the educator
         # and seven days before to participants. (3) A NEW, separate, optional
         # consent: answers may be kept beyond the class for research, as a row
         # stripped of address, class and group. Anyone who joined before this
@@ -933,18 +933,18 @@ linked from this site are original works.</p>""",
             "en": """
 <h3>From participants</h3>
 <ul>
-  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your facilitator in the session's participant list. <strong>We send mail to it in exactly two cases:</strong> if someone tries to rejoin your session with your address from a device that is not already signed in, we send a one-time link so that only you can continue; and seven days before the class is erased we send you one notice with your personal withdrawal link. There is no newsletter and no other use.</li>
+  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your educator in the session's participant list. <strong>We send mail to it in exactly two cases:</strong> if someone tries to rejoin your session with your address from a device that is not already signed in, we send a one-time link so that only you can continue; and seven days before the class is erased we send you one notice with your personal withdrawal link. There is no newsletter and no other use.</li>
   <li><strong>Your consent, as a record</strong> — that you ticked the box to take part, whether you ticked the separate research box, when, and which version of this notice and of the consent wording you were shown. We keep it because we have to be able to show that consent was actually given (Art. 7(1)).</li>
   <li><strong>A pseudonymous session token</strong> in a cookie, linking your responses within one session.</li>
   <li><strong>Session code</strong> — attributes your response to the correct group session.</li>
   <li><strong>Your item rankings</strong> — individual and, where applicable, the group ranking.</li>
     <li><strong>Submission timestamp.</strong></li>
-  <li><strong>Your prediction</strong> — when you send your ranking you are asked, in one click, how you think it will compare with the rest of the class. It is <strong>required</strong>: the gap between what a class expected and what happened is part of what the exercise teaches. It is stored with your ranking and shown to your facilitator as class totals, never next to your name.</li>
-  <li><strong>How often you are outdoors in winter</strong> — asked on the same screen and <strong>optional</strong>; "prefer not to say" is preselected. If you answer, the answer is stored with your response — on the same record as your e-mail address, like your ranking, <strong>not</strong> behind the demographics consent described below. Your facilitator sees it only as averages over at least five people, never next to your name, and it is not part of the data export.</li>
-  <li><strong>Closing questions, in sessions that include them</strong> — some sessions end a group round with two short private questions: which considerations came up in your group's discussion, and what happened to what you yourself knew. <strong>Required in those sessions</strong>, stored with your response, and shown to your facilitator only in combined form — per group as majority counts, and the self-descriptions only as totals over at least five people. If you gave the separate research consent, these answers are among those kept beyond the class; <strong>the group's written reason for its decision is not kept</strong>, because free text can contain anything and no consent can cover what nobody can predict.</li>
-  <li><strong>Optional demographics</strong> — age band, gender, years of work experience, experience leading a team, field of study or work, and country. <strong>Every one of these is optional, the whole page can be skipped, and nothing is stored unless you tick the consent box.</strong> They are shown to your facilitator only as group averages, and never for a group of fewer than five people. Your country answer is also shown grouped into a world region. We record when you consented and which version of this notice and of the consent wording you saw.</li>
+  <li><strong>Your prediction</strong> — when you send your ranking you are asked, in one click, how you think it will compare with the rest of the class. It is <strong>required</strong>: the gap between what a class expected and what happened is part of what the exercise teaches. It is stored with your ranking and shown to your educator as class totals, never next to your name.</li>
+  <li><strong>How often you are outdoors in winter</strong> — asked on the same screen and <strong>optional</strong>; "prefer not to say" is preselected. If you answer, the answer is stored with your response — on the same record as your e-mail address, like your ranking, <strong>not</strong> behind the demographics consent described below. Your educator sees it only as averages over at least five people, never next to your name, and it is not part of the data export.</li>
+  <li><strong>Closing questions, in sessions that include them</strong> — some sessions end a group round with two short private questions: which considerations came up in your group's discussion, and what happened to what you yourself knew. <strong>Required in those sessions</strong>, stored with your response, and shown to your educator only in combined form — per group as majority counts, and the self-descriptions only as totals over at least five people. If you gave the separate research consent, these answers are among those kept beyond the class; <strong>the group's written reason for its decision is not kept</strong>, because free text can contain anything and no consent can cover what nobody can predict.</li>
+  <li><strong>Optional demographics</strong> — age band, gender, years of work experience, experience leading a team, field of study or work, and country. <strong>Every one of these is optional, the whole page can be skipped, and nothing is stored unless you tick the consent box.</strong> They are shown to your educator only as group averages, and never for a group of fewer than five people. Your country answer is also shown grouped into a world region. We record when you consented and which version of this notice and of the consent wording you saw.</li>
 </ul>
-<h3>From facilitators</h3>
+<h3>From educators</h3>
 <ul>
   <li><strong>Login credentials</strong> — the password is stored only as a bcrypt hash.</li>
   <li><strong>Session data</strong> — names, codes and configuration of sessions you create.</li>
@@ -975,7 +975,7 @@ linked from this site are original works.</p>""",
   <li><strong>Running the exercise and producing group results</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
   <li><strong>Optional demographics</strong> — Art. 6(1)(a) GDPR, your consent. You give it by ticking a box that is not ticked for you, you can skip the page entirely without any effect on the exercise, and you may withdraw it at any time by writing to us, after which the answers are deleted.</li>
   <li><strong>Keeping your answers beyond the class, for research and teaching</strong> — Art. 6(1)(a) GDPR, your separate consent, with the safeguards of Art. 89(1). It is a second box, also not ticked for you, on the same screen as the first. <strong>Leaving it unticked changes nothing about taking part</strong>: you are grouped, you see your results, and everything of yours is simply erased with the rest of the class. Ticking it means one row is kept after the class is erased — see "How long we keep data" — and you can withdraw that consent at any time, with no deadline, using the link we e-mail you before the class is erased.</li>
-  <li><strong>Facilitator accounts</strong> — Art. 6(1)(b) GDPR.</li>
+  <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
             "de": """
@@ -990,8 +990,8 @@ linked from this site are original works.</p>""",
         "access": {
             "en": """
 <ul>
-  <li><strong>Facilitators</strong> see, for their own sessions, the participant list <strong>including each participant's e-mail address</strong>, alongside the individual and group rankings. Demographics are shown to them <strong>only as averages over at least five people</strong> — never next to a name. Answers given by fewer than five people are not shown separately; they are either withheld or combined with other rare answers into a single "everyone else" figure that also covers at least five people.</li>
-  <li><strong>Your class</strong> may be shown those same demographic averages during the debrief, and they may be included in a written summary your facilitator hands out afterwards. That is part of the discussion the answers are collected for. The five-person floor and the "everyone else" pooling apply exactly as above, so nothing is shown that stands for fewer than five people — but be aware that <strong>five people in a room where everyone knows each other are not anonymous in the way five strangers would be</strong>. If you would rather your answers were not part of that, skip the questions, or ask your facilitator to delete them.</li>
+  <li><strong>Educators</strong> see, for their own sessions, the participant list <strong>including each participant's e-mail address</strong>, alongside the individual and group rankings. Demographics are shown to them <strong>only as averages over at least five people</strong> — never next to a name. Answers given by fewer than five people are not shown separately; they are either withheld or combined with other rare answers into a single "everyone else" figure that also covers at least five people.</li>
+  <li><strong>Your class</strong> may be shown those same demographic averages during the debrief, and they may be included in a written summary your educator hands out afterwards. That is part of the discussion the answers are collected for. The five-person floor and the "everyone else" pooling apply exactly as above, so nothing is shown that stands for fewer than five people — but be aware that <strong>five people in a room where everyone knows each other are not anonymous in the way five strangers would be</strong>. If you would rather your answers were not part of that, skip the questions, or ask your educator to delete them.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
             "de": """
@@ -1005,9 +1005,9 @@ linked from this site are original works.</p>""",
             "en": """
 <ul>
   <li><strong>Everything from a class is erased 30 days after the session finishes.</strong> That means your e-mail address, your ranking, your group, your votes, the boards, the results page and the session itself. It runs automatically, it cannot be undone, and it is the same date for everyone in the class. A session that is never finished is erased 30 days after its last submission instead; a session nobody ever joined is deleted 90 days after it was created.</li>
-  <li><strong>Your facilitator can postpone that date by 30 days, up to three times</strong> — never further, and never earlier than a date you have already been told. They are warned 14 days before, and if the date is still approaching, <strong>you are e-mailed 7 days before</strong> so you can withdraw first. That is the only such message you get for a class.</li>
+  <li><strong>Your educator can postpone that date by 30 days, up to three times</strong> — never further, and never earlier than a date you have already been told. They are warned 14 days before, and if the date is still approaching, <strong>you are e-mailed 7 days before</strong> so you can withdraw first. That is the only such message you get for a class.</li>
   <li><strong>If you gave the separate research consent</strong>, one row of yours is kept when the class is erased, and kept indefinitely: your ranking, your score, your group's result, your optional answers about yourself, your answers to the closing round in sessions that include one, and the half-year it happened in. <strong>Nothing is kept from anyone who did not tick that box</strong> — their answers are deleted with the class and never counted. It carries no e-mail address, no name, no class, no group name and no date more precise than the half-year, and the link between it and you is destroyed with the class. It is not anonymous — a ranking plus several bands can still be rare — so we treat it as personal data throughout, keep it only for research and teaching, and never publish anything that stands for fewer than five people. <strong>You can withdraw it at any time, with no time limit</strong>, using the link in that 7-day e-mail.</li>
-  <li><strong>Facilitator accounts</strong> — retained until deactivated or deleted by an administrator.</li>
+  <li><strong>Educator accounts</strong> — retained until deactivated or deleted by an administrator.</li>
 </ul>""",
             "de": """
 <ul>
@@ -1020,8 +1020,8 @@ linked from this site are original works.</p>""",
         "erasure": {
             "en": """<p><strong>While the class still exists</strong> your e-mail
 address identifies your submission, so we can always find and delete it: write
-to us, or ask your facilitator, naming the session code and the address you
-joined with. Facilitators can delete a single participant's response, or a whole
+to us, or ask your educator, naming the session code and the address you
+joined with. Educators can delete a single participant's response, or a whole
 session, at any time. If you gave optional demographics, withdrawing that
 consent deletes those answers and nothing else — the exercise results are
 unaffected.</p>
@@ -1068,7 +1068,7 @@ draws on established facilitation methodology.</p>""",
         "cookies": [
             ("whiteout_p", "Pseudonymous participant token: keeps your ranking consistent across pages (signed, HTTP-only).", "8 hours", "participants"),
             ("whiteout_csrf", "Protects forms against cross-site request forgery (signed, HTTP-only).", "8 hours", "all"),
-            ("whiteout_session", "Keeps facilitators and administrators signed in (signed, HTTP-only).", "6 hours (facilitators) / 3 hours (administrators)", "backoffice"),
+            ("whiteout_session", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("wo_pending_totp / whiteout_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },

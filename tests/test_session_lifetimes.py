@@ -183,4 +183,7 @@ def test_the_published_row_says_who_each_number_applies_to():
             continue
         low = lifetime.lower()
         assert "administrator" in low, f"{key}/{name}: {lifetime!r}"
-        assert "educator" in low or "facilitator" in low, f"{key}/{name}: {lifetime!r}"
+        # "educator", not "or facilitator": Whiteout published the odd word out
+        # until 19 August 2026 (owner), and accepting both here is how the two
+        # vocabularies stayed side by side in one fleet's legal pages.
+        assert "educator" in low, f"{key}/{name}: {lifetime!r}"
