@@ -4,6 +4,21 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.15.1 — 2026-08-19
+
+- `max_age_for` documents why it fails towards the LONGER session, and what
+  that costs. Docstring only; no behaviour change, so no tool needs restarting
+  to pick it up.
+
+  It matters because the asymmetry reads as a bug to whoever finds it next: an
+  unrecognised role gets the educator limit, which means a mistyped key
+  (`row.get("Role")`) is indistinguishable from an empty role column and
+  answers six hours while looking like working code. The trade is deliberate —
+  strictness here would cut every educator to three hours the moment a role
+  column went empty mid-class — and the key is therefore checked at the CALL
+  SITE by `server-ops/fleet_session_length_check.py`, which reads the argument
+  of every call to this function with `ast`.
+
 ## 1.15.0 — 2026-08-19
 
 - **A tool that declares a locale publishes its cookie table in that locale.**

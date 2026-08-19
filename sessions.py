@@ -116,7 +116,28 @@ def is_privileged(role: Any) -> bool:
 
 
 def max_age_for(role: Any) -> int:
-    """Seconds a session for this role may live. Pass the role from the DB row."""
+    """Seconds a session for this role may live. Pass the role from the DB row.
+
+    IT FAILS TOWARDS THE LONGER SESSION, ON PURPOSE, AND THAT IS NOT A BUG.
+    A role this function does not recognise — None, "", a spelling it has never
+    seen — gets the EDUCATOR limit, not the admin one. The alternative reads
+    safer and is worse: treating everything unrecognised as privileged would cut
+    every ordinary educator to three hours the moment a role column went empty,
+    which is a visible outage in the middle of a teaching day, against a threat
+    that the six-hour ceiling and `session_epoch` revocation already bound.
+
+    THE COST, NAMED SO NOBODY HAS TO REDISCOVER IT: this makes a missing role
+    and a MISTYPED KEY indistinguishable here. `max_age_for(row.get("Role"))`
+    reads None, answers six hours, and looks exactly like working code — the
+    parallel session found precisely that hole in the gate below on the day this
+    shipped. The answer is NOT to make this function strict; it is to check the
+    key where it is written. `server-ops/fleet_session_length_check.py` reads
+    the argument of every call to this function with `ast` and fails the deploy
+    if the role is read under anything but an approved key.
+
+    So: if you are here because an admin seems to have a six-hour session, look
+    at the CALL SITE first. This function is doing what it was told.
+    """
     return ADMIN_SESSION_MAX_AGE if is_privileged(role) else EDUCATOR_SESSION_MAX_AGE
 
 
