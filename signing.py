@@ -18,10 +18,15 @@ from __future__ import annotations
 
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
-# 4 hours, matching the admin session length used across the fleet
-# (reduced from 8 on 2026-07-29 — a shorter window is a smaller one for a
-# stolen or borrowed session to be used in).
-DEFAULT_MAX_AGE = 60 * 60 * 4
+from .sessions import MAX_SESSION_AGE
+
+# The CEILING for a backoffice session, not the whole answer: since 2026-08-19
+# the fleet's session length depends on the role holding it (educators 6 h,
+# admins 3 h — see `sessions.max_age_for`). A signer can only enforce the age
+# it was built with, and it is built before anyone has logged in, so it
+# enforces the longest of the two; the caller narrows it once it has read the
+# account row. Was a flat 4 h from 2026-07-29 (and 8 h before that).
+DEFAULT_MAX_AGE = MAX_SESSION_AGE
 
 
 class CookieSigner:

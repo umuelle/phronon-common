@@ -58,6 +58,81 @@ MIGRATION_SQL = (
 REVOKE_SQL = "UPDATE {table} SET session_epoch = session_epoch + 1 WHERE id = %s"
 
 
+# ── How long a session lives, by role (2026-08-19) ──────────────────────────
+# Until now every backoffice session in the fleet lived exactly four hours,
+# whoever held it. That single number was answering two different questions.
+#
+# An EDUCATOR holds a session for the length of a teaching day: they sign in
+# before class, run an exercise, come back after a break to look at the
+# results. Four hours expired in the middle of that often enough to be the
+# thing people noticed about the tool. Their account can see and export their
+# own classes' data — real, but bounded.
+#
+# An ADMIN (and the hub's OWNER) can reach every class in the tool, create and
+# delete accounts, and change other people's roles. That session is the most
+# valuable thing an attacker on a borrowed or shared machine could pick up,
+# and it is used in short deliberate visits, not left open all day.
+#
+# So the two move in opposite directions: educators 6 hours, admins 3.
+#
+# THE CEILING. `MAX_SESSION_AGE` is the longest life any backoffice cookie may
+# have, and it is what the signers are built with — a signature older than
+# this is refused before anything else looks at it. The role-specific limit is
+# then applied a second time, once the account row has been read, by
+# `max_age_for(row['role'])`. It is done in that order on purpose: the role
+# that decides the limit is the one in the DATABASE at this request, not the
+# one that was true when the cookie was signed. Demoting an admin therefore
+# lengthens their session and promoting an educator shortens it immediately,
+# without depending on the epoch bump to have been wired up at that call site.
+#
+# The published cookie tables in `legal_conf.py` name both numbers. If you
+# change one here, change it there in the same commit — `closing_audit.py`
+# compares them and will fail the deploy if they drift.
+EDUCATOR_SESSION_MAX_AGE = 60 * 60 * 6   # 6 hours
+ADMIN_SESSION_MAX_AGE = 60 * 60 * 3      # 3 hours
+
+#: The longest any backoffice session may live — build signers with this.
+MAX_SESSION_AGE = EDUCATOR_SESSION_MAX_AGE
+
+#: Roles that get the SHORTER session. Deliberately the same set as
+#: `twofactor.REQUIRED_ROLES`: both answer "is this account privileged?", and
+#: OWNER was missing from that one for three weeks because it was written out
+#: by hand. Spellings differ across the fleet ("ADMIN" / "admin"), so the
+#: comparison is case-insensitive.
+PRIVILEGED_ROLES = ("ADMIN", "OWNER")
+
+
+def is_privileged(role: Any) -> bool:
+    """True for an admin/owner account, False for an educator or facilitator.
+
+    An unknown or missing role reads as NOT privileged, which gives it the
+    longer session. That is the safe direction for a tool whose role column is
+    absent or empty: the alternative — treating everything unrecognised as an
+    admin — would cut ordinary educators to three hours the moment a spelling
+    changed, which is a visible outage, while this errs towards the behaviour
+    every account already had before today.
+    """
+    return str(role or "").strip().upper() in PRIVILEGED_ROLES
+
+
+def max_age_for(role: Any) -> int:
+    """Seconds a session for this role may live. Pass the role from the DB row."""
+    return ADMIN_SESSION_MAX_AGE if is_privileged(role) else EDUCATOR_SESSION_MAX_AGE
+
+
+def session_age_ok(signer: Any, raw: str, role: Any) -> bool:
+    """Re-check an already-decoded cookie against the ROLE's own limit.
+
+    The signer was built with `MAX_SESSION_AGE`, so a decoded cookie is only
+    known to be younger than the ceiling. This asks the narrower question, and
+    is a no-op for a role that gets the ceiling anyway.
+    """
+    limit = max_age_for(role)
+    if limit >= MAX_SESSION_AGE:
+        return True
+    return signer.loads(raw, max_age=limit) is not None
+
+
 def cookie_payload(admin_id: Any, epoch: int, **extra) -> dict:
     """The payload to sign into an admin session cookie.
 

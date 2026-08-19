@@ -65,7 +65,7 @@ checkbox exists (Tier 1 #7: recording or claiming consent never given).
 # Version stamp shown on every legal document, fleet-wide. Bump the version
 # when wording changes substantively; git is the audit trail for the text.
 NOTICE_VERSION = "2026-07"
-LAST_UPDATED = "2026-07-30"
+LAST_UPDATED = "2026-08-19"
 
 # nginx logs to /var/log/nginx/access.log, logrotate: daily, rotate 14.
 # Verified on the server 2026-07-30. If the rotation policy changes, change it
@@ -167,7 +167,7 @@ the responsibility of the educator who writes them.</p>""",
             ("quiz_code / answers / user", "Carry the survey code and your in-progress answers between pages.", "browser session / 2 hours", "participants"),
             ("norms_&lt;code&gt; / privacy_&lt;code&gt;", "Record that the survey's ground-rules and privacy note were shown.", "1 hour", "participants"),
             ("withdrawal_token", "Lets you withdraw your submission right after submitting.", "5–10 minutes", "participants"),
-            ("backoffice_user", "Keeps educators and administrators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
+            ("backoffice_user", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("cg_pending_totp / cg_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
             ("dismiss_anonymize_until", "Remembers that an educator dismissed the \"these surveys need anonymising\" reminder, so it is not shown again for a week. Set only when the educator clicks dismiss.", "7 days", "backoffice"),
         ],
@@ -196,7 +196,7 @@ the responsibility of the educator who writes them.</p>""",
         # randomly-assigned question version (which IS the experiment) nor the
         # record that this notice was shown. Both are stored per participant.
         "notice_version": "2026-08-d",
-        "last_updated": "2026-08-16",
+        "last_updated": "2026-08-19",
         "art9": True,  # moral-judgment attributions
         "purpose": {
             "en": "The Drawbridge Drama presents a short illustrated narrative and "
@@ -279,7 +279,7 @@ works.</p>""",
         "cookies": [
             ("drawbridge_session", "Signed, HTTP-only session cookie: holds the anonymous session and CSRF value so your pass through the story stays consistent.", "4 hours", "participants"),
             ("drawbridge_progress", "Remembers how far you have read through the story, so returning to the page does not restart it (signed, HTTP-only). Cleared when you finish.", "4 hours", "participants"),
-            ("drawbridge_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
+            ("drawbridge_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("bo_csrf", "Protects backoffice forms against cross-site request forgery (signed, HTTP-only).", "1 hour", "backoffice"),
             ("bo_flash", "Carries a one-off status message between two backoffice pages.", "10 seconds", "backoffice"),
             ("db_pending_totp / drawbridge_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
@@ -369,7 +369,7 @@ from published public sources; the survey design and site are original works.</p
         },
         "cookies": [
             ("survey_state", "Keeps your in-progress estimates as you move through the survey (signed, HTTP-only).", "2 hours", "participants"),
-            ("backoffice", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
+            ("backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("wee_pending_totp / pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
@@ -387,7 +387,7 @@ from published public sources; the survey design and site are original works.</p
         # always could. And the audit trail is database records, not a monthly
         # rotating file; it has been a table since 12 August (FL-002).
         "notice_version": "2026-08-b",
-        "last_updated": "2026-08-16",
+        "last_updated": "2026-08-19",
         "art9": False,  # ranking/structural decisions
         "purpose": {
             "en": "The Layoff Exercise asks participants to rank candidates in a "
@@ -500,9 +500,9 @@ Abgabe gespeichert werden. Demografische Felder sind freiwillig.</p>""",
 original works created for teaching.</p>""",
         },
         "cookies": [
-            ("layoff_participant", "Carries your e-mail and class code between the exercise steps (signed, HTTP-only).", "24 hours", "participants"),
-            ("layoff_flash", "Carries a one-off status message between two pages.", "10 minutes", "all"),
-            ("layoff_admin", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
+            ("layoff_participant", "Carries your e-mail and class code between the exercise steps (signed, HTTP-only).", "30 minutes", "participants"),
+            ("layoff_flash", "Carries a one-off status message between two pages.", "5 minutes", "all"),
+            ("layoff_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("lo_pending_totp / layoff_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
@@ -525,7 +525,7 @@ original works created for teaching.</p>""",
         # to see listed, and an inventory that omits them is not the inventory
         # Art. 13 asks for.
         "notice_version": "2026-08-b",
-        "last_updated": "2026-08-16",
+        "last_updated": "2026-08-19",
         "art9": False,  # leadership-style point allocations
         "purpose": {
             "en": "The Polarity Profiler collects scenario-based point allocations and "
@@ -640,7 +640,7 @@ design are original works created for executive teaching.</p>""",
             ("participant_session", "Keeps your progress through the questionnaire (signed, HTTP-only).", "2 hours", "participants"),
             ("repertoire_answers / scenario_answers / context_answers / demographics_data", "Carry your in-progress answers from page to page so you do not lose them mid-questionnaire (HTTP-only; held in your browser, not signed).", "2 hours", "participants"),
             ("response_id / withdrawal_raw", "Your submission reference and your withdrawal link, so the results page can offer withdrawal (signed, HTTP-only).", "2 hours", "participants"),
-            ("backoffice", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
+            ("backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("lsr_pending_totp / lsr_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
@@ -663,7 +663,7 @@ design are original works created for executive teaching.</p>""",
         # randomly-assigned question version (which IS the experiment) nor the
         # record that this notice was shown. Both are stored per participant.
         "notice_version": "2026-08-b",
-        "last_updated": "2026-08-16",
+        "last_updated": "2026-08-19",
         "art9": True,  # moral judgments
         "purpose": {
             "en": "Moral Mirror lets a class observe patterns in its own moral "
@@ -736,7 +736,7 @@ teaching.</p>""",
         },
         "cookies": [
             ("moralmirror_pax", "Pseudonymous session token: keeps your answers within one session together (signed, HTTP-only).", "24 hours", "participants"),
-            ("moralmirror_admin", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
+            ("moralmirror_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("mm_pending_totp / moralmirror_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
@@ -811,7 +811,7 @@ original works created for teaching organisational design.</p>""",
         },
         "cookies": [
             ("orgdesignsim_participant", "Keeps your simulation session while you play (signed, HTTP-only).", "24 hours", "participants"),
-            ("orgdesignsim_backoffice", "Keeps educators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
+            ("orgdesignsim_backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("os_pending_totp / orgdesignsim_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },
@@ -877,7 +877,7 @@ requirement; the public pages can be read without providing any data at all.</p>
 linked from this site are original works.</p>""",
         },
         "cookies": [
-            ("session", "Set only inside the private administration area to keep an administrator signed in (signed, HTTP-only). Not used on public pages.", "4 hours", "backoffice"),
+            ("session", "Set only inside the private administration area to keep an administrator signed in (signed, HTTP-only). Not used on public pages.", "3 hours", "backoffice"),
         ],
     },
 
@@ -919,7 +919,7 @@ linked from this site are original works.</p>""",
         # who declined the research box. Both are facts about what is kept,
         # so they belong in the version a participant is stamped with.
         "notice_version": "2026-08-g",
-        "last_updated": "2026-08-15",
+        "last_updated": "2026-08-19",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
@@ -1068,7 +1068,7 @@ draws on established facilitation methodology.</p>""",
         "cookies": [
             ("whiteout_p", "Pseudonymous participant token: keeps your ranking consistent across pages (signed, HTTP-only).", "8 hours", "participants"),
             ("whiteout_csrf", "Protects forms against cross-site request forgery (signed, HTTP-only).", "8 hours", "all"),
-            ("whiteout_session", "Keeps facilitators signed in (signed, HTTP-only).", "4 hours", "backoffice"),
+            ("whiteout_session", "Keeps facilitators and administrators signed in (signed, HTTP-only).", "6 hours (facilitators) / 3 hours (administrators)", "backoffice"),
             ("wo_pending_totp / whiteout_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
     },

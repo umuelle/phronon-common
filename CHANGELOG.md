@@ -4,6 +4,33 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.14.0 — 2026-08-19
+
+- **Session length now depends on the role: educators 6 hours, admins and
+  owners 3.** New in `sessions.py`: `EDUCATOR_SESSION_MAX_AGE`,
+  `ADMIN_SESSION_MAX_AGE`, `MAX_SESSION_AGE` (the ceiling — build signers with
+  it), `is_privileged()`, `max_age_for(role)` and `session_age_ok(signer, raw,
+  role)`. Role spellings are compared case-insensitively, and an unknown or
+  empty role gets the LONGER session, which is the behaviour it had before.
+
+- `signing.DEFAULT_MAX_AGE` is now `MAX_SESSION_AGE` (6 h) rather than a flat
+  4 h. **It is a ceiling, not the session length.** A signer is constructed
+  before anyone has logged in, so it cannot know the role; every consumer must
+  call `session_age_ok(...)` with the role from the account ROW once it has
+  read it, or an admin gets six hours.
+
+- `legal_conf.py`: every tool's backoffice cookie row publishes both numbers,
+  and `last_updated` moves to 2026-08-19 fleet-wide. `notice_version` is
+  deliberately unchanged — it is recorded against each participant's own
+  submission as the notice they were shown, and nothing a participant is told
+  has changed. Two unrelated corrections in Layoff's table, found by widening
+  `closing_audit.py`'s cookie parser: `layoff_participant` published 24 hours
+  where the code sets 30 minutes, `layoff_flash` 10 minutes where it sets 5.
+
+- Bumping the minor rather than the patch: a tool that takes this pin without
+  adding the second age check silently lengthens its admin sessions from four
+  hours to six.
+
 ## 1.13.40 — 2026-08-18
 
 - `.bo-account` is one column at the page's own width — the shape the Sessions,
