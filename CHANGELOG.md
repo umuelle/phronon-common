@@ -4,6 +4,43 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.15.0 — 2026-08-19
+
+- **A tool that declares a locale publishes its cookie table in that locale.**
+  `cookies_de` beside `cookies` for Layoff, Polarity Profiler and Whiteout —
+  same cookies, same order, German purpose, lifetime and audience.
+  `_cookie_table.html` picks by `lang`, with **no fallback to English**: the
+  environment runs `StrictUndefined`, so a German page without the table raises
+  instead of quietly serving the wrong language.
+
+  The German pages had printed a German heading row over English cells since
+  they were built. That was survivable while the lifetime column held "4 hours"
+  — a number reads in any language — and stopped being survivable on 19 August,
+  when it became "6 hours (educators) / 3 hours (administrators)". The gap did
+  not grow; the content grew into it.
+
+- **New `legal_conf.lifetime_seconds()` and `LIFETIME_SECONDS`, knowing English
+  AND German units.** This parser used to live in `server-ops/closing_audit.py`,
+  which now imports it. It belongs next to the sentences it reads: a new locale
+  adds its unit words to one table, and every reader of the published text
+  learns them at once. An unrecognised unit makes a cell parse to nothing, which
+  SKIPS the row rather than failing it — a typo in "Stunden" would delete a
+  check, not break one, which is why both languages are spelled out in full.
+
+- The German word for an educator is **Lehrperson** (owner). Whiteout said
+  *Kursleitung*, Layoff said *Lehrperson* — the same drift "facilitator" vs
+  "educator" was in English, surviving as long because each notice reads
+  consistent on its own. Audience column: *Teilnehmende*, *Backoffice*, *alle*.
+
+- New `tests/test_cookie_tables_de.py`, written for the tenth tool rather than
+  the three that exist: adding `"de"` to a tool's `languages` without
+  translating its table fails six tests. It also pins the pairing that decays —
+  identical cookie names in identical order, and lifetimes that parse to the
+  same seconds in both languages.
+
+- `notice_version` unchanged again: being shown the same promise in your own
+  language is not a different promise. `last_updated` moves.
+
 ## 1.14.2 — 2026-08-19
 
 - **Whiteout's published notice says "educator", not "facilitator"** (owner,
@@ -20,7 +57,9 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 - The German text is NOT touched here: it says *Kursleitung* where Layoff says
   *Lehrperson*, which is the same drift in the other language and needs the
-  owner's sign-off before it moves. TO DO FL-032.
+  owner's sign-off before it moves. (Approved and done in 1.15.0, below. The
+  first draft of this line cited "TO DO FL-032" — a number already held by the
+  skip-link defect; the item never needed one, it was approved the same day.)
 
 ## 1.14.1 — 2026-08-19
 

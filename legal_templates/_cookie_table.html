@@ -1,6 +1,19 @@
 {# Renders the per-tool cookie table from config: (name, purpose, lifetime,
    audience). The table must match the cookies the app actually sets —
-   legal_check.py asserts observed Set-Cookie names appear here. #}
+   legal_check.py asserts observed Set-Cookie names appear here.
+
+   TWO lists, one per language. Until 19 August 2026 there was one, and the
+   German pages printed a German heading row over English cells: readable while
+   the lifetime column held nothing but "4 hours", not once it held a sentence
+   ("6 hours (educators) / 3 hours (administrators)").
+
+   A tool that serves German MUST carry `cookies_de`. There is deliberately no
+   fallback to the English list: the environment runs StrictUndefined, so a
+   missing translation raises here instead of quietly serving the wrong
+   language — which is the failure this replaced. Adding "de" to a tenth tool's
+   `languages` therefore means translating its table in the same change, and
+   `tests/test_cookie_tables_de.py` says so before a deploy finds out. #}
+{% set rows = cfg.cookies_de if lang == 'de' else cfg.cookies %}
 <div class="lp-table-scroll">
 <table>
   <thead>
@@ -13,7 +26,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for name, purpose, lifetime, audience in cfg.cookies %}
+    {% for name, purpose, lifetime, audience in rows %}
     <tr>
       <td><code>{{ name|safe }}</code></td>
       <td>{{ purpose }}</td>

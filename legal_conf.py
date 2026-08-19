@@ -62,6 +62,8 @@ by editing the tool's `basis` entry here. Do not state consent before the
 checkbox exists (Tier 1 #7: recording or claiming consent never given).
 """
 
+import re
+
 # Version stamp shown on every legal document, fleet-wide. Bump the version
 # when wording changes substantively; git is the audit trail for the text.
 NOTICE_VERSION = "2026-07"
@@ -71,6 +73,47 @@ LAST_UPDATED = "2026-08-19"
 # Verified on the server 2026-07-30. If the rotation policy changes, change it
 # THERE and HERE together.
 LOG_RETENTION_DAYS = 14
+
+# ── Reading a published lifetime cell ────────────────────────────────────────
+# The cookie tables state a lifetime in prose, in whichever language the page is
+# in. `server-ops/closing_audit.py` compares those words with the `max_age` the
+# app actually sets, and its parser used to live over there and know only
+# English — which was fine while the German pages printed the English cells and
+# became a hole the day they stopped (19 August 2026).
+#
+# It lives here instead because this file is where the sentences are. A tool
+# gaining a new locale adds its unit words to ONE table, and every reader of the
+# published text — the deploy gate and the fleet tests — learns them together.
+#
+# A unit this table does not know reads as "no number published", which SKIPS
+# the row rather than failing it. That is the safe direction for prose like
+# "browser session", and the reason both languages are spelled out in full
+# rather than matched loosely: a missing word disables a check silently.
+LIFETIME_SECONDS = {
+    "second": 1, "seconds": 1, "sekunde": 1, "sekunden": 1,
+    "minute": 60, "minutes": 60, "minuten": 60,
+    "hour": 3600, "hours": 3600, "stunde": 3600, "stunden": 3600,
+    "day": 86400, "days": 86400, "tag": 86400, "tage": 86400, "tagen": 86400,
+}
+
+#: Longest first, so "stunden" is not matched as "stunde" plus a stray "n".
+_UNIT_ALT = "|".join(sorted(LIFETIME_SECONDS, key=len, reverse=True))
+
+
+def lifetime_seconds(text: str) -> list:
+    """Every duration in a published lifetime cell, in seconds.
+
+    "5-15 minutes", "5–15 Minuten" and "browser session / 2 hours" all yield a
+    RANGE; a cookie is fine if its real max_age matches any value in it.
+    """
+    # "5-15 minutes" / "5–15 Minuten": the first number carries no unit of its
+    # own, so give it the one that follows before scanning. Both the ASCII
+    # hyphen and the en dash appear in the tables.
+    text = re.sub(r"(\d+)\s*[-–]\s*(\d+)(\s*)(" + _UNIT_ALT + r")",
+                  r"\1 \4 \2\3\4", text, flags=re.I)
+    return [int(num) * LIFETIME_SECONDS[unit.lower()]
+            for num, unit in re.findall(r"(\d+)\s*(" + _UNIT_ALT + r")", text, re.I)]
+
 
 TOOLS = {
     # ────────────────────────────────────────────────────────────────────
@@ -505,6 +548,22 @@ original works created for teaching.</p>""",
             ("layoff_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("lo_pending_totp / layoff_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
+        # The German page renders THIS list, not the one above — same cookies,
+        # same order, same numbers, German words. The pairing is enforced by
+        # `phronon_common/tests/test_cookie_tables_de.py`, which fails if a tool
+        # declares "de" and has no `cookies_de`, if the two lists name different
+        # cookies, or if a lifetime cell disagrees between the languages.
+        # `closing_audit.py` reads both and understands Stunde/Minute/Tag.
+        "cookies_de": [
+            ('layoff_participant', 'Überträgt Ihre E-Mail-Adresse und den Kurscode zwischen den Schritten der Übung (signiert, HTTP-only).',
+             '30 Minuten', 'Teilnehmende'),
+            ('layoff_flash', 'Überträgt eine einmalige Statusmeldung von einer Seite zur nächsten.',
+             '5 Minuten', 'alle'),
+            ('layoff_admin', 'Hält Lehrpersonen und Administratoren angemeldet (signiert, HTTP-only).',
+             '6 Stunden (Lehrpersonen) / 3 Stunden (Administratoren)', 'Backoffice'),
+            ('lo_pending_totp / layoff_pending2fa', 'Überträgt den Zwischenschritt der Zwei-Faktor-Anmeldung: die Markierung der offenen Anmeldung (5 Minuten) und, während der Einrichtung, das noch nicht bestätigte TOTP-Geheimnis (15 Minuten).',
+             '5–15 Minuten', 'Backoffice'),
+        ],
     },
 
     # ────────────────────────────────────────────────────────────────────
@@ -642,6 +701,24 @@ design are original works created for executive teaching.</p>""",
             ("response_id / withdrawal_raw", "Your submission reference and your withdrawal link, so the results page can offer withdrawal (signed, HTTP-only).", "2 hours", "participants"),
             ("backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("lsr_pending_totp / lsr_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+        ],
+        # The German page renders THIS list, not the one above — same cookies,
+        # same order, same numbers, German words. The pairing is enforced by
+        # `phronon_common/tests/test_cookie_tables_de.py`, which fails if a tool
+        # declares "de" and has no `cookies_de`, if the two lists name different
+        # cookies, or if a lifetime cell disagrees between the languages.
+        # `closing_audit.py` reads both and understands Stunde/Minute/Tag.
+        "cookies_de": [
+            ('participant_session', 'Bewahrt Ihren Fortschritt im Fragebogen (signiert, HTTP-only).',
+             '2 Stunden', 'Teilnehmende'),
+            ('repertoire_answers / scenario_answers / context_answers / demographics_data', 'Übertragen Ihre begonnenen Antworten von Seite zu Seite, damit sie mitten im Fragebogen nicht verloren gehen (HTTP-only; in Ihrem Browser gespeichert, nicht signiert).',
+             '2 Stunden', 'Teilnehmende'),
+            ('response_id / withdrawal_raw', 'Ihre Einreichungs-Referenz und Ihr Widerrufslink, damit die Ergebnisseite den Widerruf anbieten kann (signiert, HTTP-only).',
+             '2 Stunden', 'Teilnehmende'),
+            ('backoffice', 'Hält Lehrpersonen und Administratoren angemeldet (signiert, HTTP-only).',
+             '6 Stunden (Lehrpersonen) / 3 Stunden (Administratoren)', 'Backoffice'),
+            ('lsr_pending_totp / lsr_pending2fa', 'Überträgt den Zwischenschritt der Zwei-Faktor-Anmeldung: die Markierung der offenen Anmeldung (5 Minuten) und, während der Einrichtung, das noch nicht bestätigte TOTP-Geheimnis (15 Minuten).',
+             '5–15 Minuten', 'Backoffice'),
         ],
     },
 
@@ -958,9 +1035,9 @@ linked from this site are original works.</p>""",
   <li><strong>Sitzungscode</strong> — ordnet Ihre Antwort der richtigen Gruppensitzung zu.</li>
   <li><strong>Ihre Reihungen</strong> — individuell und ggf. die Gruppenreihung.</li>
     <li><strong>Zeitstempel der Abgabe.</strong></li>
-  <li><strong>Ihre Einschätzung</strong> — beim Absenden Ihrer Reihung werden Sie mit einem Klick gefragt, wie diese im Vergleich zum Rest des Kurses abschneiden wird. Diese Angabe ist <strong>erforderlich</strong>: der Abstand zwischen Erwartung und Ergebnis gehört zum Lernziel der Übung. Sie wird zusammen mit Ihrer Reihung gespeichert und der Kursleitung als Gesamtwert für den Kurs angezeigt, nie neben Ihrem Namen.</li>
+  <li><strong>Ihre Einschätzung</strong> — beim Absenden Ihrer Reihung werden Sie mit einem Klick gefragt, wie diese im Vergleich zum Rest des Kurses abschneiden wird. Diese Angabe ist <strong>erforderlich</strong>: der Abstand zwischen Erwartung und Ergebnis gehört zum Lernziel der Übung. Sie wird zusammen mit Ihrer Reihung gespeichert und der Lehrperson als Gesamtwert für den Kurs angezeigt, nie neben Ihrem Namen.</li>
   <li><strong>Wie oft Sie im Winter draußen sind</strong> — auf demselben Bildschirm gefragt und <strong>freiwillig</strong>; „keine Angabe“ ist voreingestellt. Wenn Sie antworten, wird die Angabe zusammen mit Ihrer Antwort gespeichert — im selben Datensatz wie Ihre E-Mail-Adresse, wie Ihre Reihung, <strong>nicht</strong> hinter der unten beschriebenen Einwilligung für demografische Angaben. Die moderierende Person sieht sie ausschließlich als Durchschnittswerte über mindestens fünf Personen, nie neben Ihrem Namen; im Datenexport ist sie nicht enthalten.</li>
-  <li><strong>Abschlussfragen, in Sessions, die sie enthalten</strong> — manche Sessions beenden eine Gruppenrunde mit zwei kurzen privaten Fragen: welche Überlegungen in der Diskussion Ihrer Gruppe zur Sprache kamen, und was mit dem geschah, was Sie selbst wussten. In diesen Sessions <strong>erforderlich</strong>; gespeichert mit Ihrer Antwort und der Kursleitung ausschließlich zusammengefasst angezeigt — je Gruppe als Mehrheitszählung, die Selbstauskünfte nur als Summen über mindestens fünf Personen. Wenn Sie die gesonderte Forschungseinwilligung erteilt haben, gehören diese Antworten zu den über den Kurs hinaus aufbewahrten; <strong>die schriftliche Begründung der Gruppe wird nicht aufbewahrt</strong>, weil Freitext alles enthalten kann und keine Einwilligung abdecken kann, was niemand vorhersehen kann.</li>
+  <li><strong>Abschlussfragen, in Sessions, die sie enthalten</strong> — manche Sessions beenden eine Gruppenrunde mit zwei kurzen privaten Fragen: welche Überlegungen in der Diskussion Ihrer Gruppe zur Sprache kamen, und was mit dem geschah, was Sie selbst wussten. In diesen Sessions <strong>erforderlich</strong>; gespeichert mit Ihrer Antwort und der Lehrperson ausschließlich zusammengefasst angezeigt — je Gruppe als Mehrheitszählung, die Selbstauskünfte nur als Summen über mindestens fünf Personen. Wenn Sie die gesonderte Forschungseinwilligung erteilt haben, gehören diese Antworten zu den über den Kurs hinaus aufbewahrten; <strong>die schriftliche Begründung der Gruppe wird nicht aufbewahrt</strong>, weil Freitext alles enthalten kann und keine Einwilligung abdecken kann, was niemand vorhersehen kann.</li>
   <li><strong>Freiwillige demografische Angaben</strong> — Altersgruppe, Geschlecht, Jahre Berufserfahrung, Erfahrung in der Teamleitung, Studien- oder Tätigkeitsfeld sowie Land. <strong>Jede dieser Angaben ist freiwillig, die gesamte Seite kann übersprungen werden, und ohne Ihr angekreuztes Einverständnis wird nichts gespeichert.</strong> Der moderierenden Person werden sie ausschließlich als Gruppendurchschnitte angezeigt, und nie für Gruppen mit weniger als fünf Personen. Ihre Länderangabe wird zusätzlich zu einer Weltregion zusammengefasst angezeigt. Wir erfassen, wann Sie eingewilligt haben und welche Fassung dieser Erklärung und des Einwilligungstextes Ihnen angezeigt wurde.</li>
 </ul>
 <h3>Von Moderierenden</h3>
@@ -997,7 +1074,7 @@ linked from this site are original works.</p>""",
             "de": """
 <ul>
   <li><strong>Moderierende</strong> sehen für ihre eigenen Sitzungen die Teilnehmendenliste <strong>einschließlich der E-Mail-Adressen</strong> sowie die individuellen und die Gruppenreihungen. Demografische Angaben sehen sie <strong>ausschließlich als Durchschnittswerte über mindestens fünf Personen</strong> — nie neben einem Namen. Antworten, die weniger als fünf Personen gegeben haben, werden nicht einzeln ausgewiesen; sie werden entweder zurückgehalten oder mit anderen seltenen Antworten zu einem einzigen Wert „alle Übrigen“ zusammengefasst, der ebenfalls mindestens fünf Personen umfasst.</li>
-  <li><strong>Ihr Kurs</strong> bekommt diese demografischen Durchschnittswerte unter Umständen ebenfalls zu sehen, und sie können in einer schriftlichen Zusammenfassung enthalten sein, die Ihre Kursleitung im Anschluss austeilt. Das ist Teil der Auswertung, für die die Angaben erhoben werden. Die Fünf-Personen-Grenze und die Zusammenfassung zu „alle Übrigen“ gelten dabei unverändert, es wird also nichts angezeigt, was für weniger als fünf Personen steht — bedenken Sie aber, dass <strong>eine Gruppe von fünf Personen in einem Raum, in dem man sich kennt, nicht in demselben Sinne anonym ist wie fünf Fremde</strong>. Wenn Sie das nicht möchten, überspringen Sie die Fragen oder bitten Sie Ihre Kursleitung, Ihre Angaben zu löschen.</li>
+  <li><strong>Ihr Kurs</strong> bekommt diese demografischen Durchschnittswerte unter Umständen ebenfalls zu sehen, und sie können in einer schriftlichen Zusammenfassung enthalten sein, die Ihre Lehrperson im Anschluss austeilt. Das ist Teil der Auswertung, für die die Angaben erhoben werden. Die Fünf-Personen-Grenze und die Zusammenfassung zu „alle Übrigen“ gelten dabei unverändert, es wird also nichts angezeigt, was für weniger als fünf Personen steht — bedenken Sie aber, dass <strong>eine Gruppe von fünf Personen in einem Raum, in dem man sich kennt, nicht in demselben Sinne anonym ist wie fünf Fremde</strong>. Wenn Sie das nicht möchten, überspringen Sie die Fragen oder bitten Sie Ihre Lehrperson, Ihre Angaben zu löschen.</li>
   <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit.</li>
 </ul>""",
         },
@@ -1012,7 +1089,7 @@ linked from this site are original works.</p>""",
             "de": """
 <ul>
   <li><strong>Alles aus einem Kurs wird 30 Tage nach dessen Abschluss gelöscht.</strong> Das umfasst Ihre E-Mail-Adresse, Ihre Reihung, Ihre Gruppe, Ihre Stimmen, die Gruppentafeln, die Ergebnisseite und die Sitzung selbst. Das geschieht automatisch, ist nicht rückgängig zu machen und gilt für alle im Kurs zum selben Datum. Eine nie abgeschlossene Sitzung wird stattdessen 30 Tage nach der letzten Abgabe gelöscht; eine Sitzung, der nie jemand beigetreten ist, 90 Tage nach ihrer Erstellung.</li>
-  <li><strong>Ihre Kursleitung kann dieses Datum um jeweils 30 Tage verschieben, höchstens dreimal</strong> — nicht weiter und nie auf ein früheres als das Ihnen bereits genannte Datum. Sie wird 14 Tage vorher benachrichtigt; steht das Datum dann weiterhin bevor, <strong>erhalten Sie 7 Tage vorher eine E-Mail</strong>, damit Sie vorher widerrufen können. Es ist die einzige Nachricht dieser Art zu einem Kurs.</li>
+  <li><strong>Ihre Lehrperson kann dieses Datum um jeweils 30 Tage verschieben, höchstens dreimal</strong> — nicht weiter und nie auf ein früheres als das Ihnen bereits genannte Datum. Sie wird 14 Tage vorher benachrichtigt; steht das Datum dann weiterhin bevor, <strong>erhalten Sie 7 Tage vorher eine E-Mail</strong>, damit Sie vorher widerrufen können. Es ist die einzige Nachricht dieser Art zu einem Kurs.</li>
   <li><strong>Wenn Sie die gesonderte Forschungseinwilligung erteilt haben</strong>, bleibt bei der Löschung des Kurses ein Datensatz von Ihnen erhalten, und zwar unbefristet: Ihre Reihung, Ihr Ergebnis, das Ergebnis Ihrer Gruppe, Ihre freiwilligen Angaben zur Person, in Sitzungen mit Abschlussrunde Ihre Antworten darin, sowie das Halbjahr. <strong>Von Personen ohne dieses Häkchen wird nichts aufbewahrt</strong> — ihre Antworten werden mit dem Kurs gelöscht und niemals gezählt. Er enthält keine E-Mail-Adresse, keinen Namen, keinen Kurs, keinen Gruppennamen und kein Datum genauer als das Halbjahr; die Verbindung zwischen ihm und Ihnen wird mit dem Kurs vernichtet. Er ist nicht anonym — eine Reihung zusammen mit mehreren Angaben kann selten sein —, deshalb behandeln wir ihn durchgehend als personenbezogenes Datum, verwenden ihn nur für Forschung und Lehre und veröffentlichen nichts, was für weniger als fünf Personen steht. <strong>Sie können ihn jederzeit und ohne Frist widerrufen</strong>, über den Link in dieser E-Mail nach 7 Tagen.</li>
   <li><strong>Konten von Moderierenden</strong> — bis zur Deaktivierung oder Löschung durch einen Administrator.</li>
 </ul>""",
@@ -1070,6 +1147,22 @@ draws on established facilitation methodology.</p>""",
             ("whiteout_csrf", "Protects forms against cross-site request forgery (signed, HTTP-only).", "8 hours", "all"),
             ("whiteout_session", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("wo_pending_totp / whiteout_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+        ],
+        # The German page renders THIS list, not the one above — same cookies,
+        # same order, same numbers, German words. The pairing is enforced by
+        # `phronon_common/tests/test_cookie_tables_de.py`, which fails if a tool
+        # declares "de" and has no `cookies_de`, if the two lists name different
+        # cookies, or if a lifetime cell disagrees between the languages.
+        # `closing_audit.py` reads both and understands Stunde/Minute/Tag.
+        "cookies_de": [
+            ('whiteout_p', 'Pseudonymes Teilnahme-Token: hält Ihre Reihung über alle Seiten hinweg konsistent (signiert, HTTP-only).',
+             '8 Stunden', 'Teilnehmende'),
+            ('whiteout_csrf', 'Schützt Formulare gegen Cross-Site-Request-Forgery (signiert, HTTP-only).',
+             '8 Stunden', 'alle'),
+            ('whiteout_session', 'Hält Lehrpersonen und Administratoren angemeldet (signiert, HTTP-only).',
+             '6 Stunden (Lehrpersonen) / 3 Stunden (Administratoren)', 'Backoffice'),
+            ('wo_pending_totp / whiteout_pending2fa', 'Überträgt den Zwischenschritt der Zwei-Faktor-Anmeldung: die Markierung der offenen Anmeldung (5 Minuten) und, während der Einrichtung, das noch nicht bestätigte TOTP-Geheimnis (15 Minuten).',
+             '5–15 Minuten', 'Backoffice'),
         ],
     },
 }
