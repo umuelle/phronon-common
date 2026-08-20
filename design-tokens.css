@@ -6,9 +6,24 @@
  * prefixed with .ph-* (which only affect elements that opt in). It does
  * NOT restyle bare html/body/a/button, so existing layouts are untouched.
  *
+ * ONE DELIBERATE EXCEPTION, added 20 August 2026 (FL-036): the `[hidden]`
+ * rule below. It is bare, and it carries `!important`, which is exactly what
+ * this header otherwise forbids — so the reason has to be good. It is: any
+ * author rule that sets `display` beats the user agent's
+ * `[hidden] { display: none }`, specificity never enters into it, and a rule
+ * as ordinary as `.btn { display: inline-flex }` is enough. Whiteout's group
+ * board showed five buttons at once, every one of them carrying `hidden`, and
+ * the state machine above them had been switching a flag nothing read. This
+ * does not impose a house style on anything: it affects only elements the
+ * markup or a script has ALREADY declared hidden, and it restores what the
+ * browser was going to do before this fleet's own stylesheets overrode it.
+ *
  * Source of truth: phronon_common/design-tokens.css
  * Deployed copy: each tool's static/css/phronon-tokens.css
  */
+
+/* An element declared hidden is hidden — not a styling question. */
+[hidden] { display: none !important; }
 
 :root {
   /* Brand colors */
