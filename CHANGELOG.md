@@ -4,6 +4,17 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.21.0 — 2026-08-20
+
+- Whiteout notice **2026-08-m**: the prediction and the winter question moved
+  from the ranking screen to the one after it, so the two bullets that said
+  "when you send your ranking" and "on the same screen" now say where the
+  questions actually are.
+
+  Nothing about the data changed — same fields, same basis, same storage on the
+  identifiable participant row rather than behind the demographic consent. A
+  notice that describes a screen has to be right about which screen.
+
 ## 1.20.0 — 2026-08-20
 
 - Whiteout notice **2026-08-l**: the two tables of private counts — what each
