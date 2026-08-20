@@ -583,7 +583,7 @@ original works created for teaching.</p>""",
         # contradicted anything published; both are things a reader is entitled
         # to see listed, and an inventory that omits them is not the inventory
         # Art. 13 asks for.
-        "notice_version": "2026-08-b",
+        "notice_version": "2026-08-c",
         "last_updated": "2026-08-19",
         "art9": False,  # leadership-style point allocations
         "purpose": {
@@ -618,6 +618,8 @@ original works created for teaching.</p>""",
   <li><strong>Fragebogen­antworten</strong> — Punktverteilungen, Kontextantworten, abgeleitete Stilwerte.</li>
   <li><strong>Freiwillige demografische Angaben</strong> — nur Felder, die Sie ausfüllen; ausschließlich für aggregierte Auswertungen.</li>
   <li><strong>Zeitstempel der Abgabe.</strong></li>
+  <li><strong>Zwei Zugangs-Token</strong> — eines öffnet den Link zu Ihrem Bericht, eines den Link zum Widerruf. Sie sind es, die diese Links ohne Passwort funktionieren lassen; wer einen Link hat, kann ihn verwenden — behandeln Sie sie daher vertraulich.</li>
+  <li><strong>Ein Nachweis darüber, was Ihnen gezeigt wurde und wie Sie entschieden haben</strong> — wann Sie diesen Hinweis zur Kenntnis genommen haben und, falls Sie die Forschungsfrage auf Ihrer Ergebnisseite beantwortet haben, Ihre Antwort mit Datum und der Version des Wortlauts, den Sie gesehen haben. So können wir belegen, worin Sie eingewilligt haben — das verlangt das Gesetz von uns.</li>
 </ul>
 <h3>Von Lehrenden und Administratoren</h3>
 <ul>
@@ -995,7 +997,7 @@ linked from this site are original works.</p>""",
         # NOT), and the notice now states that nothing is kept from anyone
         # who declined the research box. Both are facts about what is kept,
         # so they belong in the version a participant is stamped with.
-        "notice_version": "2026-08-i",
+        "notice_version": "2026-08-j",
         "last_updated": "2026-08-19",
         "art9": False,  # survival-item rankings
         "purpose": {
@@ -1036,7 +1038,7 @@ linked from this site are original works.</p>""",
   <li><strong>Sitzungscode</strong> — ordnet Ihre Antwort der richtigen Gruppensitzung zu.</li>
   <li><strong>Ihre Reihungen</strong> — individuell und ggf. die Gruppenreihung.</li>
     <li><strong>Zeitstempel der Abgabe.</strong></li>
-  <li><strong>Ihre Einschätzung</strong> — beim Absenden Ihrer Reihung werden Sie mit einem Klick gefragt, wie diese im Vergleich zum Rest des Kurses abschneiden wird. Diese Angabe ist <strong>erforderlich</strong>: der Abstand zwischen Erwartung und Ergebnis gehört zum Lernziel der Übung. Sie wird zusammen mit Ihrer Reihung gespeichert und der Lehrperson als Gesamtwert für den Kurs angezeigt, nie neben Ihrem Namen.</li>
+  <li><strong>Ihre Einschätzung</strong> — beim Absenden Ihrer Reihung werden Sie mit einem Klick gefragt, wie diese im Vergleich zum Rest des Kurses abschneiden wird. Diese Angabe ist <strong>erforderlich</strong>: der Abstand zwischen Erwartung und Ergebnis gehört zum Lernziel der Übung. Sie wird zusammen mit Ihrer Reihung gespeichert und der Lehrperson als Gesamtwert für den Kurs sowie als je ein unbeschrifteter Punkt pro Person in einem Diagramm angezeigt, das Einschätzungen und Ergebnisse gegenüberstellt — nie mit Ihrem Namen beschriftet. In einer kleinen Klasse könnte eine Lehrperson, die alle Punktzahlen sieht, allerdings erschließen, welcher Punkt Ihrer ist.</li>
   <li><strong>Wie oft Sie im Winter draußen sind</strong> — auf demselben Bildschirm gefragt und <strong>freiwillig</strong>; „keine Angabe“ ist voreingestellt. Wenn Sie antworten, wird die Angabe zusammen mit Ihrer Antwort gespeichert — im selben Datensatz wie Ihre E-Mail-Adresse, wie Ihre Reihung, <strong>nicht</strong> hinter der unten beschriebenen Einwilligung für demografische Angaben. Die moderierende Person sieht sie ausschließlich als Durchschnittswerte über mindestens fünf Personen, nie neben Ihrem Namen; im Datenexport ist sie nicht enthalten.</li>
   <li><strong>Abschlussfragen, in Sessions, die sie enthalten</strong> — manche Sessions beenden eine Gruppenrunde mit zwei kurzen privaten Fragen: welche Überlegungen in der Diskussion Ihrer Gruppe zur Sprache kamen, und was mit dem geschah, was Sie selbst wussten. In diesen Sessions <strong>erforderlich</strong>; gespeichert mit Ihrer Antwort und der Lehrperson ausschließlich zusammengefasst angezeigt — je Gruppe als Mehrheitszählung, die Selbstauskünfte nur als Summen über mindestens fünf Personen. Wenn Sie die gesonderte Forschungseinwilligung erteilt haben, gehören diese Antworten zu den über den Kurs hinaus aufbewahrten; <strong>die schriftliche Begründung der Gruppe wird nicht aufbewahrt</strong>, weil Freitext alles enthalten kann und keine Einwilligung abdecken kann, was niemand vorhersehen kann.</li>
   <li><strong>Was Ihre Gruppe entschieden hatte, in Sessions mit der optionalen zweiten Runde</strong> — bevor das Material der zweiten Runde angezeigt wird, werden Sie privat gefragt, was Ihre Gruppe in der Situation ausdrücklich vereinbart hatte: bleiben, aufbrechen, die Gruppe aufteilen, keine Einigung, oder nicht als eigene Frage besprochen. In diesen Sessions <strong>erforderlich</strong>; gespeichert mit Ihrer Antwort, der Lehrperson ausschließlich als Zählung je Gruppe angezeigt — nie neben Ihrem Namen — mit dem Kurs gelöscht und <strong>nicht</strong> Teil der Forschungsdaten.</li>
