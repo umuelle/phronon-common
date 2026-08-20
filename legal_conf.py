@@ -995,7 +995,7 @@ linked from this site are original works.</p>""",
         # NOT), and the notice now states that nothing is kept from anyone
         # who declined the research box. Both are facts about what is kept,
         # so they belong in the version a participant is stamped with.
-        "notice_version": "2026-08-h",
+        "notice_version": "2026-08-i",
         "last_updated": "2026-08-19",
         "art9": False,  # survival-item rankings
         "purpose": {
@@ -1016,7 +1016,7 @@ linked from this site are original works.</p>""",
   <li><strong>Session code</strong> — attributes your response to the correct group session.</li>
   <li><strong>Your item rankings</strong> — individual and, where applicable, the group ranking.</li>
     <li><strong>Submission timestamp.</strong></li>
-  <li><strong>Your prediction</strong> — when you send your ranking you are asked, in one click, how you think it will compare with the rest of the class. It is <strong>required</strong>: the gap between what a class expected and what happened is part of what the exercise teaches. It is stored with your ranking and shown to your educator as class totals, never next to your name.</li>
+  <li><strong>Your prediction</strong> — when you send your ranking you are asked, in one click, how you think it will compare with the rest of the class. It is <strong>required</strong>: the gap between what a class expected and what happened is part of what the exercise teaches. It is stored with your ranking and shown to your educator as class totals and as one unnamed point per person on a chart of predictions against results — never labelled with your name. In a small class, an educator who can see everyone's score could work out which point is yours.</li>
   <li><strong>How often you are outdoors in winter</strong> — asked on the same screen and <strong>optional</strong>; "prefer not to say" is preselected. If you answer, the answer is stored with your response — on the same record as your e-mail address, like your ranking, <strong>not</strong> behind the demographics consent described below. Your educator sees it only as averages over at least five people, never next to your name, and it is not part of the data export.</li>
   <li><strong>Closing questions, in sessions that include them</strong> — some sessions end a group round with two short private questions: which considerations came up in your group's discussion, and what happened to what you yourself knew. <strong>Required in those sessions</strong>, stored with your response, and shown to your educator only in combined form — per group as majority counts, and the self-descriptions only as totals over at least five people. If you gave the separate research consent, these answers are among those kept beyond the class; <strong>the group's written reason for its decision is not kept</strong>, because free text can contain anything and no consent can cover what nobody can predict.</li>
   <li><strong>What your group had decided, in sessions with the optional second round</strong> — before the second round's material is shown, you are asked privately what your group had explicitly agreed to do in the situation: stay, leave, split the group, no agreement, or not discussed as a separate question. <strong>Required in those sessions</strong>, stored with your response, shown to your educator only as counts per group — never next to your name — deleted with the class, and <strong>not</strong> part of the research data.</li>
