@@ -4,6 +4,43 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.20.0 — 2026-08-20
+
+- Whiteout notice **2026-08-l**: the two tables of private counts — what each
+  group thought it had decided, and what each member would privately have done
+  — may now be shown to the class on the projector, so the bullets stop saying
+  "shown to your educator only" and say who else may see them, in both
+  languages.
+
+  The counts themselves did not change. The AUDIENCE did, and that is the part
+  a notice describes: a group of six that answers unanimously is six people's
+  private answers on a wall, so both bullets now say plainly that a unanimous
+  group can be read off the counts. Whiteout's participant-facing wording moved
+  in the same change. Nobody had answered either question outside the demo
+  classes and the owner's own test class when this shipped.
+
+## 1.19.0 — 2026-08-20
+
+- Whiteout notice **2026-08-k**: the private stay-or-go question asked before
+  the second round enters the stored-data list, in both languages.
+
+## 1.18.0 — 2026-08-20
+
+- `tests/test_locale_promises_match.py`: a promise made in one locale must be
+  made in the other. Found two bullets missing from the Polarity Profiler's
+  German notice on the first run.
+
+## 1.17.0 — 2026-08-20
+
+- FL-036: `[hidden]` hides everywhere — an author `display` rule no longer
+  beats it. FL-037: `assets.py`, content-hash cache-busting, so a deployed
+  change cannot be masked by a stale cached file.
+
+## 1.16.0 — 2026-08-20
+
+- `csv_download`: the four things an export must do, in one shape (FL-022,
+  cheap half).
+
 ## 1.15.1 — 2026-08-19
 
 - `max_age_for` documents why it fails towards the LONGER session, and what
