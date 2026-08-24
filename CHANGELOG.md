@@ -4,6 +4,23 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.22.0 — 2026-08-24
+
+- Whiteout notice **2026-08-n**: the what-had-your-group-decided question is
+  asked in **every session** once the group's ranking agreement is final — no
+  longer only in sessions running the optional second round — and its
+  per-group counts gained an audience: they may now also appear in the **class
+  results handout**, not only on the projector. The bullet stops scoping the
+  question to the optional round and says both, in both languages.
+
+  Same field, same basis, same storage, still never beside a name, still not
+  part of the research data. What changed is *when the question is asked* and
+  *who may see the counts afterwards* — both are things a participant weighs
+  when deciding how honestly to answer, so both belong in the version they are
+  stamped with. Whiteout's participant-facing wording (`gr2.strategy_privacy`)
+  moved in the same change; the private-lean bullet is untouched (its counts
+  stay out of the handout).
+
 ## 1.21.0 — 2026-08-20
 
 - Whiteout notice **2026-08-m**: the prediction and the winter question moved
