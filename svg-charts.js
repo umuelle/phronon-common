@@ -39,6 +39,10 @@
     better:  '#2a78d6',   // the validated diverging pair: ΔE 26.1 under
     worse:   '#c0392b',   // deuteranopia, where green/red measures 8.6
     surface: '#ffffff',
+    // "Up is good" green, for signed effects only, and admissible against
+    // `worse` because the two differ strongly in lightness rather than in
+    // hue alone. See CHART-STANDARD.md and chart_palette_check.py.
+    up:      '#2e9e4f',
   };
 
   var _palette = null;
@@ -1069,7 +1073,8 @@
    * progression is the question. series: [{label, values[], tone OR color
    * (hex — segment identity lines), dash}]; opts: cats (x labels), yLabel,
    * xLabel, yMin/yMax/yStep, reverse (true = LOW values at the top, for
-   * rank scales where 1 is the good end), aria, height, unit, pointValues
+   * rank scales where 1 is the good end), legend (true draws a swatch row;
+   * default is on from two series up), aria, height, unit, pointValues
    * (false suppresses the per-point numbers when many series would collide
    * — the data table carries them instead). Every point carries its value
    * by default.
@@ -1079,7 +1084,13 @@
     var C = palette();
     var TONE = { better: C.better, worse: C.worse, ink: C.ink, muted: C.muted };
     var W = 900, H = opts.height || 380;
-    var PAD_L = 84, PAD_R = 30, PAD_T = 40, PAD_B = 70;
+    var showLegend = opts.legend === true
+                   || (opts.legend !== false && series.length > 1);
+    // Two legend rows' worth of head-room when there are many segments: a
+    // demographic breakdown routinely has six or eight of them.
+    var legendRows = showLegend ? Math.ceil(series.length / 4) : 0;
+    var PAD_L = 84, PAD_R = 30;
+    var PAD_T = 40 + legendRows * 22, PAD_B = 70;
     var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
     var vals = [];
     series.forEach(function (s) {
@@ -1163,7 +1174,9 @@
           }, fmt(Math.round(v * 100) / 100) + (opts.unit || '')));
         }
       });
-      if (s.label && series.length > 1) {
+      // The end-of-line label is only useful when there are one or two
+      // lines; with a legend above, it just crowds the right edge.
+      if (s.label && series.length === 2 && !showLegend) {
         var li = s.values.length - 1;
         while (li >= 0 && !has(s.values[li])) li--;
         if (li >= 0) {
@@ -1174,6 +1187,16 @@
         }
       }
     });
+    if (showLegend) {
+      var per = Math.ceil(series.length / legendRows);
+      for (var lr = 0; lr < legendRows; lr++) {
+        legendRow(svg, series.slice(lr * per, (lr + 1) * per)
+          .map(function (se, si) {
+            return { label: se.label,
+                     fill: se.color || TONE[se.tone] || C.ink };
+          }), PAD_L, 22 + lr * 22);
+      }
+    }
     host.appendChild(svg);
   }
 
@@ -1221,7 +1244,11 @@
    * side (employees, rounds) rather than one row per unit. cats: the x
    * labels; series: [{label, values[], color}]. Every bar carries its value.
    *
-   * opts: yLabel, yMin/yMax/yStep, reverse (true = the LOW value is the good
+   * opts: decimals (force a fixed number of them on the printed values, so
+   * a column of averages lines up as 2.00 / 4.33 rather than 2 / 4.33),
+   * signColor {up, down} colours each bar by the sign of its value — for
+   * signed effects, where the series is one meaning with two directions,
+   * yLabel, yMin/yMax/yStep, reverse (true = the LOW value is the good
    * end and is drawn at the TOP — rank scales), unit, aria, height, legend
    * (false suppresses it; default on when there is more than one series),
    * baseline (the value bars grow FROM; defaults to the axis floor, or 0
@@ -1280,6 +1307,10 @@
       }, opts.yLabel));
     }
 
+    function show(v) {
+      return has(opts.decimals) ? Number(v).toFixed(opts.decimals)
+                                : String(Math.round(v * 100) / 100);
+    }
     var slot = plotW / cats.length;
     var groupW = Math.min(slot * 0.7, 90);
     var barW = groupW / series.length;
@@ -1290,19 +1321,29 @@
         if (!has(v)) return;
         var x0 = cx - groupW / 2 + si * barW;
         var top = Math.min(y(v), y(base)), bot = Math.max(y(v), y(base));
+        var fill = se.color || (si === 0 ? C.muted : C.better);
+        if (opts.signColor) {
+          fill = v > base ? (opts.signColor.up || C.better)
+               : v < base ? (opts.signColor.down || C.worse) : C.muted;
+        }
         var rect = tag('rect', {
           x: x0 + 1, y: top, width: Math.max(barW - 2, 2),
           height: Math.max(bot - top, 1),
-          fill: se.color || (si === 0 ? C.muted : C.better),
+          fill: fill,
         });
         rect.appendChild(tag('title', {},
-          cat + ' — ' + (se.label || '') + ': ' + fmt(v) + (opts.unit || '')));
+          cat + ' — ' + (se.label || '') + ': ' + fmt(show(v))
+          + (opts.unit || '')));
         svg.appendChild(rect);
         svg.appendChild(tag('text', {
-          x: x0 + barW / 2, y: top - 5, fill: C.ink, 'font-size': 11,
+          x: x0 + barW / 2,
+          // Below the bar when it hangs downward from the baseline, or the
+          // label lands inside the bar it belongs to.
+          y: (v < base && !opts.reverse) ? bot + 14 : top - 5,
+          fill: C.ink, 'font-size': 11,
           'font-weight': 600, 'text-anchor': 'middle',
           'font-variant-numeric': 'tabular-nums',
-        }, fmt(Math.round(v * 100) / 100) + (opts.unit || '')));
+        }, fmt(show(v)) + (opts.unit || '')));
       });
       svg.appendChild(tag('text', {
         x: cx, y: PAD_T + plotH + 18, fill: C.ink, 'font-size': 11.5,
@@ -1343,8 +1384,12 @@
   }
 
   /* ── drawStackedBars: categories on X, one stack per category ───────────
-   * cats: x labels; keys: the segment order; rows: per category a {key:count}
-   * map; opts: fills, labels, darkText, yLabel, aria, height, total (a fixed
+   * cats: x labels; keys: the segment order — FIRST key sits at the BOTTOM
+   * of each stack, so a scale whose good end is 1 (rank) is passed
+   * reversed and reads with rank 1 on top; rows: per category a {key:count}
+   * map; opts: fills, labels, darkText, legendKeys (the legend's own
+   * order, when it should differ from the stacking order), yLabel, aria,
+   * height, total (a fixed
    * denominator per category — the unfilled remainder then shows as a dashed
    * frame, so a partly-answered category can never look complete).
    */
@@ -1430,7 +1475,7 @@
         'text-anchor': 'middle',
       }, cat));
     });
-    var items = KEYS.map(function (k) {
+    var items = (opts.legendKeys || KEYS).map(function (k) {
       return { label: (opts.labels && opts.labels[k]) || k,
                fill: (opts.fills && opts.fills[k]) || C.muted };
     });
