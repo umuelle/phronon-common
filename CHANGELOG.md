@@ -4,6 +4,19 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.24.0 — 2026-08-25
+
+- **Whiteout notice `2026-08-o`**: the required participation box is an
+  acknowledgment, not consent. The record bullet ("Your consent, as a
+  record — that you ticked the box to take part") described the required box
+  as consent that could not be refused without losing the class — the EDPB
+  ambiguity flagged by the 25 August external review. It now reads "Your
+  acknowledgment and consents, as a record", states that participation rests
+  on the legitimate interest named above, and scopes Art. 7(1) to the
+  genuinely optional boxes. Both locales; Whiteout's checkbox wording moves
+  in the same change (`wo-ack-2026-08-25`) and both are archived in
+  server-ops/CONSENT-WORDING-ARCHIVE.md.
+
 ## 1.23.0 — 2026-08-25
 
 - **Cache headers are method-aware** (external review, 25 August 2026): the
