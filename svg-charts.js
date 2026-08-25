@@ -1242,9 +1242,15 @@
   /* ── drawGroupedBars: categories on X, one bar per series ───────────────
    * The classic comparison when the reader wants to see CATEGORIES side by
    * side (employees, rounds) rather than one row per unit. cats: the x
-   * labels; series: [{label, values[], color}]. Every bar carries its value.
+   * labels; series: [{label, values[], color, colors[] (one per bar, when
+   * the CATEGORY carries the identity — a role, a party — rather than the
+   * series), min[]/max[] (a range behind each bar: the spread the average
+   * was taken over, drawn as a thin capped line so it reads as context,
+   * never as a second bar)}]. Every bar carries its value.
    *
-   * opts: decimals (force a fixed number of them on the printed values, so
+   * opts: horizontal (bars run along the x axis with the categories down
+   * the left — for many categories, or long category names that would
+   * crowd a vertical axis), decimals (force a fixed number of them on the printed values, so
    * a column of averages lines up as 2.00 / 4.33 rather than 2 / 4.33),
    * signColor {up, down} colours each bar by the sign of its value — for
    * signed effects, where the series is one meaning with two directions,
@@ -1256,6 +1262,7 @@
    */
   function drawGroupedBars(host, cats, series, opts) {
     if (!host || !cats.length || !series.length) return;
+    if (opts.horizontal) return drawGroupedBarsH(host, cats, series, opts);
     var C = palette();
     var W = 900, H = opts.height || 400;
     var showLegend = opts.legend === true
@@ -1268,6 +1275,9 @@
     var vals = [];
     series.forEach(function (se) {
       se.values.forEach(function (v) { if (has(v)) vals.push(v); });
+      ['min', 'max'].forEach(function (k) {
+        (se[k] || []).forEach(function (v) { if (has(v)) vals.push(v); });
+      });
     });
     if (!vals.length) return;
     var lo = has(opts.yMin) ? opts.yMin : Math.min.apply(null, vals);
@@ -1321,7 +1331,8 @@
         if (!has(v)) return;
         var x0 = cx - groupW / 2 + si * barW;
         var top = Math.min(y(v), y(base)), bot = Math.max(y(v), y(base));
-        var fill = se.color || (si === 0 ? C.muted : C.better);
+        var fill = (se.colors && se.colors[i])
+                || se.color || (si === 0 ? C.muted : C.better);
         if (opts.signColor) {
           fill = v > base ? (opts.signColor.up || C.better)
                : v < base ? (opts.signColor.down || C.worse) : C.muted;
@@ -1335,6 +1346,22 @@
           cat + ' — ' + (se.label || '') + ': ' + fmt(show(v))
           + (opts.unit || '')));
         svg.appendChild(rect);
+        // The range this average was taken over, behind the bar: a thin
+        // capped line, in the bar's own colour at low opacity, so it reads
+        // as the spread rather than as a value of its own.
+        if (se.min && se.max
+            && has(se.min[i]) && has(se.max[i]) && se.min[i] !== se.max[i]) {
+          var ry1 = y(se.max[i]), ry2 = y(se.min[i]);
+          var rcx = x0 + barW / 2;
+          [[rcx - 2, ry1, 4, Math.abs(ry2 - ry1)],
+           [rcx - 5, Math.min(ry1, ry2), 10, 2],
+           [rcx - 5, Math.max(ry1, ry2) - 2, 10, 2]].forEach(function (r2) {
+            svg.appendChild(tag('rect', {
+              x: r2[0], y: r2[1], width: r2[2], height: r2[3],
+              fill: fill, opacity: 0.55,
+            }));
+          });
+        }
         svg.appendChild(tag('text', {
           x: x0 + barW / 2,
           // Below the bar when it hangs downward from the baseline, or the
@@ -1360,6 +1387,87 @@
       return { label: se.label,
                fill: se.color || (si === 0 ? C.muted : C.better) };
     }), PAD_L, 22);
+    if (opts.legendItems) legendRow(svg, opts.legendItems, PAD_L, 22);
+    host.appendChild(svg);
+  }
+
+  /* The horizontal twin of drawGroupedBars: categories down the left, bars
+   * running rightward. Same options; the value scale is the x axis. */
+  function drawGroupedBarsH(host, cats, series, opts) {
+    var C = palette();
+    var showLegend = opts.legend === true
+                   || (opts.legend !== false && series.length > 1);
+    var W = 900, ROWH = opts.rowH || (series.length > 1 ? 20 : 26);
+    var LABEL_W = opts.labelW || 220, PAD_R = 70;
+    var PAD_T = showLegend ? 46 : 22, PAD_B = 46;
+    var slot = ROWH * series.length + 16;
+    var H = PAD_T + cats.length * slot + PAD_B;
+    var plotW = W - LABEL_W - PAD_R;
+
+    var vals = [];
+    series.forEach(function (se) {
+      se.values.forEach(function (v) { if (has(v)) vals.push(v); });
+    });
+    if (!vals.length) return;
+    var lo = has(opts.yMin) ? opts.yMin : Math.min(0, Math.min.apply(null, vals));
+    var hi = has(opts.yMax) ? opts.yMax : Math.max.apply(null, vals) * 1.12;
+    var step = opts.yStep || niceStep(hi - lo);
+    function x(v) { return LABEL_W + ((v - lo) / (hi - lo)) * plotW; }
+    var base = has(opts.baseline) ? opts.baseline : (lo <= 0 ? 0 : lo);
+
+    var svg = baseSvg(W, H, opts.aria);
+    for (var t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) {
+      var tv = Math.round(t * 100) / 100;
+      svg.appendChild(tag('line', {
+        x1: x(tv), x2: x(tv), y1: PAD_T - 8, y2: H - PAD_B + 4,
+        stroke: tv === base ? C.range : C.grid,
+        'stroke-width': tv === base ? 1.75 : 1,
+      }));
+      svg.appendChild(tag('text', {
+        x: x(tv), y: H - PAD_B + 20, fill: C.muted, 'font-size': 11.5,
+        'text-anchor': 'middle', 'font-variant-numeric': 'tabular-nums',
+      }, fmt(tv) + (opts.unit || '')));
+    }
+    function showv(v) {
+      return has(opts.decimals) ? Number(v).toFixed(opts.decimals)
+                                : String(Math.round(v * 100) / 100);
+    }
+    cats.forEach(function (cat, i) {
+      var y0 = PAD_T + i * slot + 8;
+      var shown = String(cat);
+      if (opts.labelMax && shown.length > opts.labelMax) {
+        shown = shown.slice(0, opts.labelMax - 1) + '…';
+      }
+      var nameEl = tag('text', {
+        x: LABEL_W - 12, y: y0 + (ROWH * series.length) / 2 + 4, fill: C.ink,
+        'font-size': 12.5, 'font-weight': 600, 'text-anchor': 'end',
+      }, shown);
+      if (shown !== String(cat)) nameEl.appendChild(tag('title', {}, String(cat)));
+      svg.appendChild(nameEl);
+      series.forEach(function (se, si) {
+        var v = se.values[i];
+        if (!has(v)) return;
+        var yb = y0 + si * ROWH;
+        var left = Math.min(x(v), x(base)), right = Math.max(x(v), x(base));
+        var fill = (se.colors && se.colors[i]) || se.color
+                 || (si === 0 ? C.ink : C.muted);
+        var rect = tag('rect', {
+          x: left, y: yb + 2, width: Math.max(right - left, 1),
+          height: ROWH - 4, fill: fill,
+        });
+        rect.appendChild(tag('title', {},
+          cat + ' — ' + (se.label || '') + ': ' + fmt(showv(v))
+          + (opts.unit || '')));
+        svg.appendChild(rect);
+        svg.appendChild(tag('text', {
+          x: right + 6, y: yb + ROWH / 2 + 4, fill: C.ink, 'font-size': 11,
+          'font-weight': 600, 'font-variant-numeric': 'tabular-nums',
+        }, fmt(showv(v)) + (opts.unit || '')));
+      });
+    });
+    if (showLegend) legendRow(svg, series.map(function (se, si) {
+      return { label: se.label, fill: se.color || (si === 0 ? C.ink : C.muted) };
+    }), LABEL_W, 22);
     host.appendChild(svg);
   }
 
@@ -1490,7 +1598,9 @@
    * opts: aria, height, unit, total (defaults to the sum). Every slice
    * carries its count and percentage, on the slice where it fits and on the
    * legend otherwise — a pie whose numbers live in a tooltip is unreadable
-   * from the back of a room.
+   * from the back of a room. opts.donut (0..1) punches a hole of that
+   * fraction of the radius, for the tools whose charts have always been
+   * doughnuts; opts.centre puts a short line of text in the hole.
    */
   function drawPie(host, slices, opts) {
     if (!host || !slices.length) return;
@@ -1511,11 +1621,26 @@
       var mid = (angle + end) / 2;
       var big = frac > 0.5 ? 1 : 0;
       var path;
-      if (frac >= 0.999) {
+      var inner = opts.donut ? R * opts.donut : 0;
+      if (frac >= 0.999 && !inner) {
         // A single full slice is a circle: an arc of exactly 360° collapses
         // to a point and draws nothing at all.
         path = tag('circle', { cx: cx, cy: cy, r: R, fill: sl.fill || C.muted,
                                stroke: C.surface, 'stroke-width': 2 });
+      } else if (inner) {
+        // An annulus sector: out along the start edge, round the outer arc,
+        // back down the end edge, round the inner arc the other way.
+        var e2 = frac >= 0.999 ? end - 0.0001 : end;
+        path = tag('path', {
+          d: 'M ' + (cx + inner * Math.cos(angle)) + ' ' + (cy + inner * Math.sin(angle))
+            + ' L ' + (cx + R * Math.cos(angle)) + ' ' + (cy + R * Math.sin(angle))
+            + ' A ' + R + ' ' + R + ' 0 ' + big + ' 1 '
+            + (cx + R * Math.cos(e2)) + ' ' + (cy + R * Math.sin(e2))
+            + ' L ' + (cx + inner * Math.cos(e2)) + ' ' + (cy + inner * Math.sin(e2))
+            + ' A ' + inner + ' ' + inner + ' 0 ' + big + ' 0 '
+            + (cx + inner * Math.cos(angle)) + ' ' + (cy + inner * Math.sin(angle)) + ' Z',
+          fill: sl.fill || C.muted, stroke: C.surface, 'stroke-width': 2,
+        });
       } else {
         path = tag('path', {
           d: 'M ' + cx + ' ' + cy
@@ -1530,8 +1655,9 @@
         sl.label + ': ' + sl.value + ' (' + pct + ')'));
       svg.appendChild(path);
       if (frac >= 0.08) {
+        var lr = inner ? (inner + R) / 2 / R : 0.62;
         svg.appendChild(tag('text', {
-          x: cx + R * 0.62 * Math.cos(mid), y: cy + R * 0.62 * Math.sin(mid) + 5,
+          x: cx + R * lr * Math.cos(mid), y: cy + R * lr * Math.sin(mid) + 5,
           fill: sl.darkText ? C.ink : C.surface, 'font-size': 14,
           'font-weight': 700, 'text-anchor': 'middle',
           'font-variant-numeric': 'tabular-nums', 'pointer-events': 'none',
@@ -1540,6 +1666,12 @@
       angle = end;
     });
 
+    if (opts.centre) {
+      svg.appendChild(tag('text', {
+        x: cx, y: cy + 5, fill: C.ink, 'font-size': 15, 'font-weight': 700,
+        'text-anchor': 'middle',
+      }, opts.centre));
+    }
     // The legend doubles as the readout: every slice, its count and share,
     // including the ones too thin to label on the pie.
     var ly = cy - (slices.length - 1) * 15;
