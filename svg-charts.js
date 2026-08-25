@@ -473,11 +473,19 @@
 
   /* ── Shared scaffolding for the linear-axis forms ──────────────────────── */
 
-  function baseSvg(W, H, aria) {
+  function baseSvg(W, H, aria, minWidth) {
+    /* The min-width is what makes a narrow screen SCROLL a chart rather than
+       shrink its labels to illegibility. Row charts need it (a 900-unit
+       viewBox squeezed into 375px renders 14px text at about 6px). A radar
+       does not: it has no label column, so it scales down evenly — and
+       forcing 700px on one placed in a third-width column just gives the
+       column a horizontal scrollbar. Callers that scale pass their own. */
+    var mw = minWidth === undefined ? 700 : minWidth;
     return tag('svg', {
       viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img',
       'aria-label': aria,
-      style: 'display:block; height:auto; min-width:700px; '
+      style: 'display:block; height:auto; '
+        + (mw ? 'min-width:' + mw + 'px; ' : '')
         + 'font-family:system-ui,-apple-system,"Segoe UI",sans-serif;',
     });
   }
@@ -1496,11 +1504,15 @@
     var TONE = { better: C.better, worse: C.worse, ink: C.ink, muted: C.muted,
                  up: C.up, warn: '#eda100' };
     var n = spokes.length;
-    var W = 900, H = opts.height || 520;
+    /* Square and compact on purpose: this one is meant to sit in a column
+       beside a table, so it scales rather than scrolls (see baseSvg). The
+       spoke labels are short by contract — the caller keeps the full names
+       for the data table. */
+    var W = opts.width || 560, H = opts.height || 520;
     var legendH = 34;
-    var cx = W / 2, cy = (H - legendH) / 2 + 6;
-    // Room for the longest spoke label at the widest point.
-    var R = Math.min(cy - 46, W / 2 - 190);
+    var cx = W / 2, cy = (H - legendH) / 2 + 4;
+    var rim = opts.rimGap || 20;
+    var R = Math.min(cy - rim - 20, W / 2 - rim - 26);
     var lo = has(opts.min) ? opts.min : 0;
     var hi = has(opts.max) ? opts.max : 1;
     var step = opts.step || niceStep(hi - lo);
@@ -1515,7 +1527,8 @@
     function px(i, v) { return cx + radius(v) * Math.cos(angle(i)); }
     function py(i, v) { return cy + radius(v) * Math.sin(angle(i)); }
 
-    var svg = baseSvg(W, H, opts.aria);
+    var svg = baseSvg(W, H, opts.aria, opts.minWidth === undefined ? 0
+                                                                   : opts.minWidth);
 
     // The rings, as polygons rather than circles: a circular grid reads as a
     // different scale from the straight edges the data draws.
@@ -1548,7 +1561,7 @@
         stroke: C.grid, 'stroke-width': 1,
       }));
       var a = angle(i2);
-      var lx = cx + (R + 14) * Math.cos(a), ly = cy + (R + 14) * Math.sin(a);
+      var lx = cx + (R + rim) * Math.cos(a), ly = cy + (R + rim) * Math.sin(a);
       var cos = Math.cos(a);
       svg.appendChild(tag('text', {
         x: lx, y: ly + 4, fill: C.ink, 'font-size': 11.5, 'font-weight': 600,
@@ -1583,11 +1596,19 @@
         svg.appendChild(dot);
         if (showValues) {
           var aa = angle(i4);
+          /* A value at (or near) the top of the scale lands ON the rim,
+             where the item's own label already is — the two printed over
+             each other for anyone who answered at the maximum. Past 88% of
+             the radius the label steps INWARD instead, along the same
+             spoke, so it stays attached to its point and clear of the rim. */
+          var atRim = radius(se.values[i4]) > R * 0.88;
+          var off = atRim ? -11 : 9;
+          var anchorCos = atRim ? -Math.cos(aa) : Math.cos(aa);
           svg.appendChild(tag('text', {
-            x: vx + 9 * Math.cos(aa), y: vy + 9 * Math.sin(aa) + 4,
+            x: vx + off * Math.cos(aa), y: vy + off * Math.sin(aa) + 4,
             fill: C.ink, 'font-size': 10.5, 'font-weight': 600,
-            'text-anchor': Math.cos(aa) > 0.2 ? 'start'
-                         : Math.cos(aa) < -0.2 ? 'end' : 'middle',
+            'text-anchor': anchorCos > 0.2 ? 'start'
+                         : anchorCos < -0.2 ? 'end' : 'middle',
             'font-variant-numeric': 'tabular-nums',
           }, fmtv(se.values[i4])));
         }
@@ -1598,7 +1619,7 @@
       return { label: se.label,
                fill: se.color || TONE[se.tone]
                    || [C.better, C.worse, C.ink][si % 3] };
-    }), 40, H - 12);
+    }), 12, H - 12);
     host.appendChild(svg);
   }
 
