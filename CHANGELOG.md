@@ -4,6 +4,18 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.23.0 — 2026-08-25
+
+- **Cache headers are method-aware** (external review, 25 August 2026): the
+  public-path allowlist now applies only to GET/HEAD. Responses to POST and
+  every other state-changing method are `no-store` regardless of path —
+  previously the response to `POST /join`, which can echo the e-mail address
+  the person just typed, went out with no cache header because `/join` sits
+  on the public list. No response to a state-changing method is ever
+  cacheable in this fleet; they are all per-person by construction. New
+  `tests/test_security_headers.py` pins both directions (public GET stays
+  cacheable, POST on the same path does not).
+
 ## 1.22.0 — 2026-08-24
 
 - Whiteout notice **2026-08-n**: the what-had-your-group-decided question is

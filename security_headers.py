@@ -142,7 +142,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if self.enable_hsts:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
-        if self._is_private(request.url.path):
+        # "Public" is a property of a PAGE, and only GET/HEAD serve pages.
+        # The path allowlist used to apply to every method, so the response to
+        # POST /join — which can carry the e-mail address the person just
+        # typed, echoed back on the consent step — went out without a
+        # no-store header (external review, 25 August 2026). No response to a
+        # state-changing method is ever cacheable here: they are all
+        # per-person by construction.
+        if request.method not in ("GET", "HEAD") or self._is_private(request.url.path):
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, private"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
