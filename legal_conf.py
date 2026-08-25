@@ -1002,7 +1002,7 @@ linked from this site are original works.</p>""",
         # round, and its per-group counts gained an audience — they may now
         # also appear in the class results handout, not only on the wall.
         # Both change what a participant is agreeing to when they answer.
-        "notice_version": "2026-08-n",
+        "notice_version": "2026-08-o",
         "last_updated": "2026-08-24",
         "art9": False,  # survival-item rankings
         "purpose": {
@@ -1018,7 +1018,7 @@ linked from this site are original works.</p>""",
 <h3>From participants</h3>
 <ul>
   <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your educator in the session's participant list. <strong>We send mail to it in exactly two cases:</strong> if someone tries to rejoin your session with your address from a device that is not already signed in, we send a one-time link so that only you can continue; and seven days before the class is erased we send you one notice with your personal withdrawal link. There is no newsletter and no other use.</li>
-  <li><strong>Your consent, as a record</strong> — that you ticked the box to take part, whether you ticked the separate research box, when, and which version of this notice and of the consent wording you were shown. We keep it because we have to be able to show that consent was actually given (Art. 7(1)).</li>
+  <li><strong>Your acknowledgment and consents, as a record</strong> — that you ticked the required box confirming you read this notice (taking part itself rests on our legitimate interest above, not on consent), whether you ticked the genuinely optional research and demographics boxes, when, and which version of this notice and of the wording you were shown. For the optional boxes we keep it because we must be able to show that consent was actually given (Art. 7(1)); for the required box it records that you were informed.</li>
   <li><strong>A pseudonymous session token</strong> in a cookie, linking your responses within one session.</li>
   <li><strong>Session code</strong> — attributes your response to the correct group session.</li>
   <li><strong>Your item rankings</strong> — individual and, where applicable, the group ranking.</li>
@@ -1039,7 +1039,7 @@ linked from this site are original works.</p>""",
 <h3>Von Teilnehmenden</h3>
 <ul>
   <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong>, um an einer Sitzung teilzunehmen. Sie wird zusammen mit Ihrer Reihung gespeichert und ist für die moderierende Person in der Teilnehmendenliste sichtbar. <strong>In genau zwei Fällen senden wir eine Nachricht an diese Adresse:</strong> Versucht jemand, mit Ihrer Adresse von einem nicht angemeldeten Gerät aus wieder einzusteigen, schicken wir einen einmalig gültigen Link, damit nur Sie fortfahren können; und sieben Tage vor der Löschung des Kurses senden wir Ihnen eine Nachricht mit Ihrem persönlichen Widerrufslink. Es gibt keinen Newsletter und keine weitere Verwendung.</li>
-  <li><strong>Ihre Einwilligung als Nachweis</strong> — dass Sie das Kästchen zur Teilnahme angekreuzt haben, ob Sie das gesonderte Forschungskästchen angekreuzt haben, wann, und welche Fassung dieser Erklärung und des Einwilligungstextes Ihnen angezeigt wurde. Wir speichern das, weil wir nachweisen können müssen, dass eine Einwilligung tatsächlich erteilt wurde (Art. 7 Abs. 1).</li>
+  <li><strong>Ihre Kenntnisnahme und Einwilligungen als Nachweis</strong> — dass Sie das Pflichtkästchen angekreuzt haben, das bestätigt, dass Sie diese Erklärung gelesen haben (die Teilnahme selbst stützt sich auf unser oben genanntes berechtigtes Interesse, nicht auf eine Einwilligung), ob Sie die wirklich freiwilligen Forschungs- und Demografie-Kästchen angekreuzt haben, wann, und welche Fassung dieser Erklärung und des Wortlauts Ihnen angezeigt wurde. Für die freiwilligen Kästchen speichern wir das, weil wir nachweisen können müssen, dass eine Einwilligung tatsächlich erteilt wurde (Art. 7 Abs. 1); für das Pflichtkästchen dokumentiert es, dass Sie informiert wurden.</li>
   <li><strong>Ein pseudonymes Sitzungstoken</strong> in einem Cookie, das Ihre Antworten innerhalb einer Sitzung verknüpft.</li>
   <li><strong>Sitzungscode</strong> — ordnet Ihre Antwort der richtigen Gruppensitzung zu.</li>
   <li><strong>Ihre Reihungen</strong> — individuell und ggf. die Gruppenreihung.</li>
