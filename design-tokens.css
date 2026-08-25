@@ -367,3 +367,29 @@
     scroll-behavior: auto !important;
   }
 }
+
+
+/* ── Chart tokens (FL-027, 25 August 2026) ─────────────────────────────────
+ * The fleet chart palette, read by the shared SVG chart engine
+ * (svg-charts.js) with these exact values as fallbacks — so changing a value
+ * HERE changes it everywhere the token sheet is loaded, and a tool without
+ * the sheet (Layoff) still draws correctly. Validated pairs and thresholds:
+ * server-ops/CHART-STANDARD.md; the gate: server-ops/chart_palette_check.py.
+ * Never carry meaning by colour alone — direction, shape and text say it
+ * again. */
+:root {
+  --chart-ink:     #171717;   /* names, printed values */
+  --chart-muted:   #666666;   /* axis labels, context marks, ties */
+  --chart-range:   #d4d4d4;   /* spread tracks, context lines */
+  --chart-grid:    #ececec;   /* hairline gridlines */
+  --chart-better:  #2a78d6;   /* the diverging pair: improvement… */
+  --chart-worse:   #c0392b;   /* …and decline (ΔE 26.1 under deuteranopia) */
+  --chart-surface: #ffffff;   /* mark rings, text on dark fills */
+  /* The categorical "agreement family" (Whiteout 04-GR1): three greens told
+   * apart by lightness plus red and amber for the two kinds of "no plan".
+   * Worst adjacent pair ΔE 15.5 normal / 14.1 CVD (validated 25 Aug 2026). */
+  --chart-good-1:  #166b34;
+  --chart-good-2:  #44a05b;
+  --chart-good-3:  #93cb7c;
+  --chart-warn:    #eda100;
+}
