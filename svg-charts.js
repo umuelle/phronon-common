@@ -467,6 +467,693 @@
     host.appendChild(svg);
   }
 
+  /* ── Shared scaffolding for the linear-axis forms ──────────────────────── */
+
+  function baseSvg(W, H, aria) {
+    return tag('svg', {
+      viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img',
+      'aria-label': aria,
+      style: 'display:block; height:auto; min-width:700px; '
+        + 'font-family:system-ui,-apple-system,"Segoe UI",sans-serif;',
+    });
+  }
+
+  function niceStep(span) {
+    var raw = span / 5;
+    var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var r = raw / mag;
+    return (r >= 5 ? 10 : r >= 2 ? 5 : r >= 1 ? 2 : 1) * mag;
+  }
+
+  /* ── drawDotRows: the row language on an arbitrary linear axis ──────────
+   * Whiteout's drawRows is bound to the negative score scale; this is the
+   * same grammar — label column, hollow start, coloured move, diamond end,
+   * printed values, verdict column — for any numeric domain (ranks,
+   * percentages, currency). Rows: {label, sub, a, b, only, fallback, title}
+   *   a     hollow circle — the start / reference (optional)
+   *   b     diamond — the result (optional)
+   *   only  a single dot where there is no pair, drawn as the diamond
+   * opts: min, max, step, axisLeft, axisRight, betterIs ('higher'|'lower'|
+   *   null: null = no judgement, moves stay ink), unit (suffix on printed
+   *   values), verdict(delta) -> text (default signs the delta), rowH,
+   *   labelW, labelMax, labelSize, rightW, aria, marker {at, label} a
+   *   dashed reference line across all rows.
+   */
+  function drawDotRows(host, rows, opts) {
+    if (!host || !rows.length) return;
+    var C = palette();
+    var ROW = opts.rowH || 56, PAD_T = 30, PAD_B = 52;
+    var LABEL_W = opts.labelW || 170, PAD_R = 12;
+    var RIGHT_W = opts.rightW || 120;
+    var W = 900, plotX = LABEL_W, plotW = W - LABEL_W - RIGHT_W - PAD_R;
+    var H = PAD_T + rows.length * ROW + PAD_B;
+    var unit = opts.unit || '';
+
+    var lo = opts.min, hi = opts.max;
+    if (!has(lo) || !has(hi)) {
+      var vals = [];
+      rows.forEach(function (r) {
+        ['a', 'b', 'only'].forEach(function (k) { if (has(r[k])) vals.push(r[k]); });
+      });
+      if (opts.marker && has(opts.marker.at)) vals.push(opts.marker.at);
+      if (!vals.length) return;
+      var vmin = Math.min.apply(null, vals), vmax = Math.max.apply(null, vals);
+      var pad = (vmax - vmin || 1) * 0.15;
+      lo = has(lo) ? lo : vmin - pad;
+      hi = has(hi) ? hi : vmax + pad;
+    }
+    var step = opts.step || niceStep(hi - lo);
+    function x(v) { return plotX + ((v - lo) / (hi - lo)) * plotW; }
+
+    var svg = baseSvg(W, H, opts.aria);
+
+    for (var t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) {
+      var tv = Math.round(t * 100) / 100;
+      svg.appendChild(tag('line', {
+        x1: x(tv), x2: x(tv), y1: PAD_T - 10, y2: H - PAD_B + 4,
+        stroke: C.grid, 'stroke-width': 1,
+      }));
+      svg.appendChild(tag('text', {
+        x: x(tv), y: H - PAD_B + 20, fill: C.muted, 'font-size': 12,
+        'text-anchor': 'middle', 'font-variant-numeric': 'tabular-nums',
+      }, fmt(tv) + (opts.tickUnit || '')));
+    }
+    if (opts.axisLeft) {
+      svg.appendChild(tag('text', {
+        x: plotX, y: H - PAD_B + 40, fill: C.muted, 'font-size': 12,
+        'text-anchor': 'start',
+      }, opts.axisLeft));
+    }
+    if (opts.axisRight) {
+      svg.appendChild(tag('text', {
+        x: plotX + plotW, y: H - PAD_B + 40, fill: C.muted, 'font-size': 12,
+        'text-anchor': 'end',
+      }, opts.axisRight));
+    }
+    if (opts.marker && has(opts.marker.at)) {
+      svg.appendChild(tag('line', {
+        x1: x(opts.marker.at), x2: x(opts.marker.at),
+        y1: PAD_T - 10, y2: H - PAD_B + 4,
+        stroke: C.ink, 'stroke-width': 1.5, 'stroke-dasharray': '5 4',
+      }));
+      if (opts.marker.label) {
+        svg.appendChild(tag('text', {
+          x: x(opts.marker.at), y: PAD_T - 14, fill: C.ink, 'font-size': 11,
+          'font-weight': 600, 'text-anchor': 'middle',
+        }, opts.marker.label));
+      }
+    }
+
+    rows.forEach(function (r, i) {
+      var y = PAD_T + i * ROW + ROW / 2 - 4;
+      var row = tag('g', {});
+      var shown = r.label;
+      if (opts.labelMax && shown.length > opts.labelMax) {
+        shown = shown.slice(0, opts.labelMax - 1) + '…';
+      }
+      var name = tag('text', {
+        x: LABEL_W - 16, y: r.sub ? y + 3 : y + 8, fill: C.ink,
+        'font-size': opts.labelSize || 14, 'font-weight': 600,
+        'text-anchor': 'end',
+      }, shown);
+      if (shown !== r.label) name.appendChild(tag('title', {}, r.label));
+      row.appendChild(name);
+      if (r.sub) {
+        row.appendChild(tag('text', {
+          x: LABEL_W - 16, y: y + 19, fill: C.muted, 'font-size': 11,
+          'text-anchor': 'end',
+        }, r.sub));
+      }
+
+      var a = r.a, b = has(r.b) ? r.b : r.only;
+      var pair = has(a) && has(r.b);
+      var delta = pair ? Math.round((r.b - a) * 100) / 100 : null;
+      var improved = null;
+      if (pair && opts.betterIs) {
+        improved = delta === 0 ? null
+                 : (opts.betterIs === 'higher' ? delta > 0 : delta < 0);
+      }
+      var moveColor = improved === null ? (pair ? C.muted : C.ink)
+                    : (improved ? C.better : C.worse);
+
+      if (pair && Math.abs(x(r.b) - x(a)) > 1) {
+        row.appendChild(tag('line', {
+          x1: x(a), x2: x(r.b), y1: y, y2: y,
+          stroke: moveColor, 'stroke-width': 3, 'stroke-linecap': 'round',
+        }));
+      }
+      if (has(a)) {
+        row.appendChild(tag('circle', {
+          cx: x(a), cy: y, r: 6, fill: C.surface, stroke: C.muted,
+          'stroke-width': 2,
+        }));
+        row.appendChild(tag('text', {
+          x: x(a), y: y + 20, fill: C.muted, 'font-size': 11,
+          'text-anchor': 'middle', 'font-variant-numeric': 'tabular-nums',
+        }, fmt(a) + unit));
+      }
+      if (has(b)) {
+        row.appendChild(tag('rect', {
+          x: x(b) - 7, y: y - 7, width: 14, height: 14, rx: 2,
+          fill: pair ? moveColor : C.ink,
+          stroke: C.surface, 'stroke-width': 2,
+          transform: 'rotate(45 ' + x(b) + ' ' + y + ')',
+        }));
+        var toRight = has(a) ? b >= a : true;
+        row.appendChild(tag('text', {
+          x: x(b) + (toRight ? 13 : -13), y: y - 13,
+          fill: C.ink, 'font-size': 13, 'font-weight': 700,
+          'text-anchor': toRight ? 'start' : 'end',
+          'font-variant-numeric': 'tabular-nums',
+        }, fmt(b) + unit));
+      }
+
+      var verdict = r.fallback || null, verdictColor = C.muted;
+      if (pair) {
+        if (opts.verdict) {
+          verdict = opts.verdict(delta, r);
+        } else {
+          verdict = (delta > 0 ? '+' : '') + fmt(delta) + unit;
+        }
+        verdictColor = moveColor;
+      }
+      if (verdict) {
+        row.appendChild(tag('text', {
+          x: W - PAD_R, y: y + 3, fill: verdictColor, 'font-size': 12.5,
+          'font-weight': pair ? 600 : 400, 'text-anchor': 'end',
+        }, verdict));
+      }
+      if (r.title) row.appendChild(tag('title', {}, r.title));
+      svg.appendChild(row);
+    });
+    host.appendChild(svg);
+  }
+
+  /* ── drawShares: one 100%-scaled segment bar per row ────────────────────
+   * Whiteout's decisions chart, generalised. rows: {label, sub, counts,
+   * total} — total is the FULL denominator, so the unanswered remainder
+   * stays visible as a dashed frame and a half-answered row can never look
+   * unanimous. opts: keys (segment order), fills {key}, labels {key},
+   * darkText {key: true} for ink-on-light fills, legendExtra (label for the
+   * empty frame; null = no frame legend), aria, rowH, labelW, labelMax.
+   */
+  function drawShares(host, rows, opts) {
+    if (!host || !rows.length) return;
+    var C = palette();
+    var W = 900, ROW = opts.rowH || 52, BAR_H = 26, PAD_T = 14;
+    var LEGEND_H = 40, PAD_B = 6;
+    var LABEL_W = opts.labelW || 150, PAD_R = 16;
+    var plotW = W - LABEL_W - PAD_R;
+    var H = PAD_T + rows.length * ROW + LEGEND_H + PAD_B;
+    var KEYS = opts.keys || [];
+    var svg = baseSvg(W, H, opts.aria);
+
+    rows.forEach(function (r, i) {
+      var y0 = PAD_T + i * ROW + (ROW - BAR_H) / 2;
+      var cyText = y0 + BAR_H / 2;
+      var answered = 0;
+      KEYS.forEach(function (k) { answered += (r.counts && r.counts[k]) || 0; });
+      var total = Math.max(r.total || 0, answered, 1);
+      var name = String(r.label || '');
+      if (opts.labelMax && name.length > opts.labelMax) {
+        name = name.slice(0, opts.labelMax - 1) + '…';
+      }
+      svg.appendChild(tag('text', {
+        x: LABEL_W - 16, y: r.sub ? cyText - 2 : cyText + 4, fill: C.ink,
+        'font-size': 14, 'font-weight': 600, 'text-anchor': 'end',
+      }, name));
+      if (r.sub) {
+        svg.appendChild(tag('text', {
+          x: LABEL_W - 16, y: cyText + 13, fill: C.muted,
+          'font-size': 11, 'text-anchor': 'end',
+          'font-variant-numeric': 'tabular-nums',
+        }, r.sub));
+      }
+      svg.appendChild(tag('rect', {
+        x: LABEL_W, y: y0, width: plotW, height: BAR_H,
+        fill: 'none', stroke: C.range, 'stroke-width': 1.5,
+        'stroke-dasharray': '4 3', rx: 4,
+      }));
+      var xCursor = LABEL_W;
+      KEYS.forEach(function (k) {
+        var count = (r.counts && r.counts[k]) || 0;
+        if (!count) return;
+        var w = (count / total) * plotW;
+        var rect = tag('rect', {
+          x: xCursor, y: y0, width: w, height: BAR_H,
+          fill: (opts.fills && opts.fills[k]) || C.muted,
+          stroke: C.surface, 'stroke-width': 2,
+        });
+        rect.appendChild(tag('title', {},
+          r.label + ' — ' + ((opts.labels && opts.labels[k]) || k) + ': '
+          + count + ' / ' + total));
+        svg.appendChild(rect);
+        if (w >= 18) {
+          svg.appendChild(tag('text', {
+            x: xCursor + w / 2, y: cyText + 4.5,
+            fill: (opts.darkText && opts.darkText[k]) ? C.ink : C.surface,
+            'font-size': 12.5, 'text-anchor': 'middle',
+            'font-variant-numeric': 'tabular-nums',
+            'pointer-events': 'none',
+          }, String(count)));
+        }
+        xCursor += w;
+      });
+    });
+
+    var items = KEYS.map(function (k) {
+      return { label: (opts.labels && opts.labels[k]) || k,
+               fill: (opts.fills && opts.fills[k]) || C.muted };
+    });
+    if (opts.legendExtra) items.push({ label: opts.legendExtra, hollow: true });
+    var lx = LABEL_W, ly = H - 16;
+    items.forEach(function (it) {
+      svg.appendChild(tag('rect', {
+        x: lx, y: ly - 10, width: 13, height: 13, rx: 3,
+        fill: it.hollow ? 'none' : it.fill,
+        stroke: it.hollow ? C.range : 'none',
+        'stroke-width': it.hollow ? 1.5 : null,
+        'stroke-dasharray': it.hollow ? '3 2' : null,
+      }));
+      svg.appendChild(tag('text', {
+        x: lx + 19, y: ly + 1, fill: C.muted, 'font-size': 12,
+      }, it.label));
+      lx += 19 + it.label.length * 6.4 + 22;
+    });
+    host.appendChild(svg);
+  }
+
+  /* ── drawBars: vertical value bars (distributions, histograms) ──────────
+   * bars: {label, value, sub} — the value is printed ON the bar (rule 3).
+   * opts: yLabel, note, marker {at (bar index fraction 0..1 NOT supported —
+   * use markerValue on the y scale), label}, aria, maxY, unit, barFill,
+   * labelRotate (true tilts long bin labels).
+   */
+  function drawBars(host, bars, opts) {
+    if (!host || !bars.length) return;
+    var C = palette();
+    var W = 900, H = opts.height || 360;
+    var PAD_L = 64, PAD_R = 20, PAD_T = 26, PAD_B = opts.labelRotate ? 74 : 54;
+    var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+    var maxY = opts.maxY;
+    if (!has(maxY)) {
+      maxY = 0;
+      bars.forEach(function (b) { maxY = Math.max(maxY, b.value); });
+      maxY = maxY || 1;
+    }
+    var step = opts.step || Math.max(1, niceStep(maxY));
+    function y(v) { return PAD_T + plotH - (v / maxY) * plotH; }
+    var bw = plotW / bars.length;
+    var svg = baseSvg(W, H, opts.aria);
+
+    for (var t = 0; t <= maxY + 1e-9; t += step) {
+      svg.appendChild(tag('line', {
+        x1: PAD_L, x2: PAD_L + plotW, y1: y(t), y2: y(t),
+        stroke: C.grid, 'stroke-width': 1,
+      }));
+      svg.appendChild(tag('text', {
+        x: PAD_L - 8, y: y(t) + 4, fill: C.muted, 'font-size': 11.5,
+        'text-anchor': 'end', 'font-variant-numeric': 'tabular-nums',
+      }, fmt(Math.round(t * 100) / 100)));
+    }
+    if (opts.yLabel) {
+      svg.appendChild(tag('text', {
+        x: 16, y: PAD_T + plotH / 2, fill: C.muted, 'font-size': 12,
+        'text-anchor': 'middle',
+        transform: 'rotate(-90 16 ' + (PAD_T + plotH / 2) + ')',
+      }, opts.yLabel));
+    }
+
+    bars.forEach(function (b, i) {
+      var cx = PAD_L + i * bw + bw / 2;
+      var barW = Math.min(bw * 0.64, 64);
+      if (b.value > 0) {
+        var rect = tag('rect', {
+          x: cx - barW / 2, y: y(b.value),
+          width: barW, height: PAD_T + plotH - y(b.value),
+          fill: b.fill || opts.barFill || '#9aa3ad',
+        });
+        rect.appendChild(tag('title', {}, b.label + ': ' + fmt(b.value)
+          + (opts.unit || '')));
+        svg.appendChild(rect);
+        svg.appendChild(tag('text', {
+          x: cx, y: y(b.value) - 6, fill: C.ink, 'font-size': 12,
+          'font-weight': 600, 'text-anchor': 'middle',
+          'font-variant-numeric': 'tabular-nums',
+        }, fmt(b.value) + (opts.unit || '')));
+      }
+      var lx = cx, lyy = PAD_T + plotH + 16;
+      var lbl = tag('text', {
+        x: lx, y: lyy, fill: C.muted, 'font-size': 11,
+        'text-anchor': opts.labelRotate ? 'end' : 'middle',
+        transform: opts.labelRotate
+          ? 'rotate(-38 ' + lx + ' ' + lyy + ')' : null,
+      }, b.label);
+      svg.appendChild(lbl);
+      if (b.sub) {
+        svg.appendChild(tag('text', {
+          x: cx, y: lyy + 14, fill: C.muted, 'font-size': 10,
+          'text-anchor': 'middle',
+        }, b.sub));
+      }
+    });
+    if (has(opts.markerValue)) {
+      svg.appendChild(tag('line', {
+        x1: PAD_L, x2: PAD_L + plotW,
+        y1: y(opts.markerValue), y2: y(opts.markerValue),
+        stroke: C.ink, 'stroke-width': 1.5, 'stroke-dasharray': '5 4',
+      }));
+      if (opts.markerLabel) {
+        svg.appendChild(tag('text', {
+          x: PAD_L + plotW, y: y(opts.markerValue) - 6, fill: C.ink,
+          'font-size': 11, 'font-weight': 600, 'text-anchor': 'end',
+        }, opts.markerLabel));
+      }
+    }
+    if (opts.note) {
+      svg.appendChild(tag('text', {
+        x: PAD_L + plotW / 2, y: H - 8, fill: C.muted, 'font-size': 12,
+        'text-anchor': 'middle',
+      }, opts.note));
+    }
+    host.appendChild(svg);
+  }
+
+  /* ── drawScatter: named points on two measured axes ─────────────────────
+   * pts: {x, y, name, sub, shape ('circle'|'diamond'), tone ('better'|
+   * 'worse'|'ink'|'muted'|'good'|'warn'|'range'), r (radius, default 7),
+   * title}. opts: xMin/xMax/xStep, yMin/yMax/yStep, xLabel (under the axis),
+   * yLabel (rotated), zeroY {label} dashed line at y=0, xMarker {at, label}
+   * dashed vertical line, lines [{points: [{x,y}...], tone, dash, label}]
+   * measured overlays (a Pareto frontier is a FACT about the points, not a
+   * fit), xTick(v)/yTick(v) formatters, legend [{shape, tone, label}], aria,
+   * height, padRight.
+   * No trend lines, ever: a handful of points is not a statistic. The
+   * `lines` overlays are for computed frontiers/limits only.
+   */
+  function drawScatter(host, pts, opts) {
+    if (!host || !pts.length) return;
+    var C = palette();
+    var TONE = { better: C.better, worse: C.worse, ink: C.ink, muted: C.muted,
+                 good: '#166b34', warn: '#eda100', range: C.range };
+    var W = 900, H = opts.height || 440;
+    var PAD_L = 96, PAD_R = opts.padRight || 40, PAD_T = 46, PAD_B = 76;
+    var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+
+    function ext(get, min, max, pad) {
+      if (has(min) && has(max)) return [min, max];
+      var vs = pts.map(get);
+      var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
+      var p = (hi - lo || 1) * (pad || 0.15);
+      return [has(min) ? min : lo - p, has(max) ? max : hi + p];
+    }
+    var xe = ext(function (p) { return p.x; }, opts.xMin, opts.xMax);
+    var ye = ext(function (p) { return p.y; }, opts.yMin, opts.yMax);
+    var xs = opts.xStep || niceStep(xe[1] - xe[0]);
+    var ys = opts.yStep || niceStep(ye[1] - ye[0]);
+    function x(v) { return PAD_L + ((v - xe[0]) / (xe[1] - xe[0])) * plotW; }
+    function y(v) { return PAD_T + plotH - ((v - ye[0]) / (ye[1] - ye[0])) * plotH; }
+
+    var svg = baseSvg(W, H, opts.aria);
+    for (var gx = Math.ceil(xe[0] / xs) * xs; gx <= xe[1] + 1e-9; gx += xs) {
+      var gxv = Math.round(gx * 100) / 100;
+      svg.appendChild(tag('line', { x1: x(gxv), x2: x(gxv), y1: PAD_T,
+                                    y2: PAD_T + plotH, stroke: C.grid,
+                                    'stroke-width': 1 }));
+      svg.appendChild(tag('text', { x: x(gxv), y: PAD_T + plotH + 20,
+                                    fill: C.muted, 'font-size': 12,
+                                    'text-anchor': 'middle',
+                                    'font-variant-numeric': 'tabular-nums' },
+                          opts.xTick ? opts.xTick(gxv)
+                                     : fmt(gxv) + (opts.xTickUnit || '')));
+    }
+    for (var gy = Math.ceil(ye[0] / ys) * ys; gy <= ye[1] + 1e-9; gy += ys) {
+      var gyv = Math.round(gy * 100) / 100;
+      svg.appendChild(tag('line', { x1: PAD_L, x2: PAD_L + plotW,
+                                    y1: y(gyv), y2: y(gyv), stroke: C.grid,
+                                    'stroke-width': 1 }));
+      svg.appendChild(tag('text', { x: PAD_L - 10, y: y(gyv) + 4,
+                                    fill: C.muted, 'font-size': 12,
+                                    'text-anchor': 'end',
+                                    'font-variant-numeric': 'tabular-nums' },
+                          opts.yTick ? opts.yTick(gyv)
+                                     : fmt(gyv) + (opts.yTickUnit || '')));
+    }
+    if (opts.xMarker && has(opts.xMarker.at)
+        && opts.xMarker.at >= xe[0] && opts.xMarker.at <= xe[1]) {
+      svg.appendChild(tag('line', {
+        x1: x(opts.xMarker.at), x2: x(opts.xMarker.at),
+        y1: PAD_T, y2: PAD_T + plotH,
+        stroke: C.worse, 'stroke-width': 1.5, 'stroke-dasharray': '6 3',
+      }));
+      if (opts.xMarker.label) {
+        svg.appendChild(tag('text', {
+          x: x(opts.xMarker.at) - 6, y: PAD_T + 12, fill: C.worse,
+          'font-size': 11, 'font-weight': 600, 'text-anchor': 'end',
+        }, opts.xMarker.label));
+      }
+    }
+    (opts.lines || []).forEach(function (ln) {
+      if (!ln.points || ln.points.length < 2) return;
+      var d = '';
+      ln.points.forEach(function (p) {
+        d += (d ? ' L ' : 'M ') + x(p.x) + ' ' + y(p.y);
+      });
+      svg.appendChild(tag('path', {
+        d: d, fill: 'none', stroke: TONE[ln.tone] || C.muted,
+        'stroke-width': 2.5, 'stroke-dasharray': ln.dash || '6 3',
+        'stroke-linejoin': 'round',
+      }));
+      if (ln.label) {
+        var lp = ln.points[ln.points.length - 1];
+        svg.appendChild(tag('text', {
+          x: x(lp.x) + 6, y: y(lp.y) - 6, fill: TONE[ln.tone] || C.muted,
+          'font-size': 11, 'font-weight': 600,
+        }, ln.label));
+      }
+    });
+    if (opts.zeroY && ye[0] < 0 && ye[1] > 0) {
+      svg.appendChild(tag('line', {
+        x1: PAD_L, x2: PAD_L + plotW, y1: y(0), y2: y(0),
+        stroke: C.ink, 'stroke-width': 1.5, 'stroke-dasharray': '5 4',
+      }));
+      if (opts.zeroY.label) {
+        svg.appendChild(tag('text', {
+          x: PAD_L + 6, y: y(0) - 8, fill: C.ink, 'font-size': 12,
+          'font-weight': 600,
+        }, opts.zeroY.label));
+      }
+    }
+    if (opts.xLabel) {
+      svg.appendChild(tag('text', {
+        x: PAD_L + plotW / 2, y: H - 24, fill: C.muted, 'font-size': 12.5,
+        'text-anchor': 'middle',
+      }, opts.xLabel));
+    }
+    if (opts.yLabel) {
+      svg.appendChild(tag('text', {
+        x: 18, y: PAD_T + plotH / 2, fill: C.muted, 'font-size': 12.5,
+        'text-anchor': 'middle',
+        transform: 'rotate(-90 18 ' + (PAD_T + plotH / 2) + ')',
+      }, opts.yLabel));
+    }
+    var legX = PAD_L;
+    (opts.legend || []).forEach(function (it) {
+      var LX = legX + 8, LY = PAD_T - 30;
+      legX += 20 + it.label.length * 6.4 + 24;
+      if (it.shape === 'diamond') {
+        svg.appendChild(tag('rect', { x: LX - 6, y: LY - 6, width: 12,
+                                      height: 12, rx: 2,
+                                      fill: TONE[it.tone] || C.ink,
+                                      stroke: C.surface, 'stroke-width': 2,
+                                      transform: 'rotate(45 ' + LX + ' ' + LY + ')' }));
+      } else {
+        svg.appendChild(tag('circle', { cx: LX, cy: LY, r: 6,
+                                        fill: TONE[it.tone] || C.ink,
+                                        stroke: C.surface, 'stroke-width': 2 }));
+      }
+      svg.appendChild(tag('text', { x: LX + 12, y: LY + 4, fill: C.ink,
+                                    'font-size': 12 }, it.label));
+    });
+
+    pts.forEach(function (p) {
+      var g = tag('g', {});
+      var cx = x(p.x), cy = y(p.y);
+      var fill = TONE[p.tone] || C.ink;
+      var pr = p.r || 7;
+      if (p.shape === 'diamond') {
+        g.appendChild(tag('rect', {
+          x: cx - pr, y: cy - pr, width: pr * 2, height: pr * 2, rx: 2,
+          fill: fill, stroke: C.surface, 'stroke-width': 2,
+          transform: 'rotate(45 ' + cx + ' ' + cy + ')',
+        }));
+      } else {
+        g.appendChild(tag('circle', {
+          cx: cx, cy: cy, r: pr, fill: fill,
+          stroke: C.surface, 'stroke-width': 2,
+        }));
+      }
+      if (p.name) {
+        g.appendChild(tag('text', {
+          x: cx, y: cy - (p.r || 7) - 7, fill: TONE[p.nameTone] || C.ink,
+          'font-size': p.nameSize || 12.5,
+          'font-weight': 600, 'text-anchor': 'middle',
+        }, p.name));
+      }
+      if (p.sub) {
+        g.appendChild(tag('text', {
+          x: cx, y: cy + 24, fill: C.muted, 'font-size': 11.5,
+          'text-anchor': 'middle', 'font-variant-numeric': 'tabular-nums',
+        }, p.sub));
+      }
+      if (p.title) g.appendChild(tag('title', {}, p.title));
+      svg.appendChild(g);
+    });
+    host.appendChild(svg);
+  }
+
+  /* ── drawLine: values over an ordered category axis ─────────────────────
+   * The one honest use of a line: an ORDER (serial position, rounds) whose
+   * progression is the question. series: [{label, values[], tone}];
+   * opts: cats (x labels), yLabel, xLabel, yMin/yMax/yStep, aria, height,
+   * unit. Every point carries its value.
+   */
+  function drawLine(host, series, opts) {
+    if (!host || !series.length || !opts.cats || !opts.cats.length) return;
+    var C = palette();
+    var TONE = { better: C.better, worse: C.worse, ink: C.ink, muted: C.muted };
+    var W = 900, H = opts.height || 380;
+    var PAD_L = 84, PAD_R = 30, PAD_T = 40, PAD_B = 70;
+    var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+    var vals = [];
+    series.forEach(function (s) {
+      s.values.forEach(function (v) { if (has(v)) vals.push(v); });
+    });
+    if (!vals.length) return;
+    var lo = has(opts.yMin) ? opts.yMin : Math.min.apply(null, vals);
+    var hi = has(opts.yMax) ? opts.yMax : Math.max.apply(null, vals);
+    if (lo > 0 && !has(opts.yMin)) lo = 0;
+    if (hi < 0 && !has(opts.yMax)) hi = 0;
+    var pad = (hi - lo || 1) * 0.12;
+    if (!has(opts.yMin)) lo -= pad;
+    if (!has(opts.yMax)) hi += pad;
+    var step = opts.yStep || niceStep(hi - lo);
+    var n = opts.cats.length;
+    function x(i) { return PAD_L + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW); }
+    function y(v) { return PAD_T + plotH - ((v - lo) / (hi - lo)) * plotH; }
+
+    var svg = baseSvg(W, H, opts.aria);
+    for (var gy = Math.ceil(lo / step) * step; gy <= hi + 1e-9; gy += step) {
+      var gyv = Math.round(gy * 100) / 100;
+      svg.appendChild(tag('line', { x1: PAD_L, x2: PAD_L + plotW,
+                                    y1: y(gyv), y2: y(gyv),
+                                    stroke: gyv === 0 ? C.range : C.grid,
+                                    'stroke-width': gyv === 0 ? 1.75 : 1 }));
+      svg.appendChild(tag('text', { x: PAD_L - 10, y: y(gyv) + 4,
+                                    fill: C.muted, 'font-size': 11.5,
+                                    'text-anchor': 'end',
+                                    'font-variant-numeric': 'tabular-nums' },
+                          fmt(gyv) + (opts.unit || '')));
+    }
+    opts.cats.forEach(function (c, i) {
+      svg.appendChild(tag('text', {
+        x: x(i), y: PAD_T + plotH + 20, fill: C.muted, 'font-size': 11.5,
+        'text-anchor': 'middle',
+      }, String(c)));
+    });
+    if (opts.xLabel) {
+      svg.appendChild(tag('text', {
+        x: PAD_L + plotW / 2, y: H - 10, fill: C.muted, 'font-size': 12.5,
+        'text-anchor': 'middle',
+      }, opts.xLabel));
+    }
+    if (opts.yLabel) {
+      svg.appendChild(tag('text', {
+        x: 18, y: PAD_T + plotH / 2, fill: C.muted, 'font-size': 12.5,
+        'text-anchor': 'middle',
+        transform: 'rotate(-90 18 ' + (PAD_T + plotH / 2) + ')',
+      }, opts.yLabel));
+    }
+
+    series.forEach(function (s, si) {
+      var color = TONE[s.tone] || (si === 0 ? C.ink : C.muted);
+      var d = '';
+      s.values.forEach(function (v, i) {
+        if (!has(v)) return;
+        d += (d ? ' L ' : 'M ') + x(i) + ' ' + y(v);
+      });
+      if (d) {
+        svg.appendChild(tag('path', {
+          d: d, fill: 'none', stroke: color, 'stroke-width': 2.5,
+          'stroke-linejoin': 'round',
+          'stroke-dasharray': s.dash || null,
+        }));
+      }
+      s.values.forEach(function (v, i) {
+        if (!has(v)) return;
+        svg.appendChild(tag('circle', {
+          cx: x(i), cy: y(v), r: 5, fill: color,
+          stroke: C.surface, 'stroke-width': 2,
+        }));
+        svg.appendChild(tag('text', {
+          x: x(i), y: y(v) - 11, fill: C.ink, 'font-size': 11,
+          'font-weight': 600, 'text-anchor': 'middle',
+          'font-variant-numeric': 'tabular-nums',
+        }, fmt(Math.round(v * 100) / 100) + (opts.unit || '')));
+      });
+      if (s.label && series.length > 1) {
+        var li = s.values.length - 1;
+        while (li >= 0 && !has(s.values[li])) li--;
+        if (li >= 0) {
+          svg.appendChild(tag('text', {
+            x: x(li) + 10, y: y(s.values[li]) + 4, fill: color,
+            'font-size': 12, 'font-weight': 600,
+          }, s.label));
+        }
+      }
+    });
+    host.appendChild(svg);
+  }
+
+  /* ── dataTable: rule 3's second half, next to every chart ───────────────
+   * The same numbers as text, in a collapsed <details> — the pattern
+   * FL-012's chart-table.js produces for Chart.js charts, here for the
+   * hand-drawn ones. headers: [...], rows: [[...], ...].
+   */
+  function dataTable(host, summary, headers, rows) {
+    if (!host) return;
+    var details = document.createElement('details');
+    details.className = 'chart-data-table';
+    var sum = document.createElement('summary');
+    sum.textContent = summary;
+    details.appendChild(sum);
+    var table = document.createElement('table');
+    var thead = document.createElement('thead');
+    var trh = document.createElement('tr');
+    headers.forEach(function (h) {
+      var th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = h;
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    rows.forEach(function (r) {
+      var tr = document.createElement('tr');
+      r.forEach(function (v, i) {
+        var td = document.createElement(i === 0 ? 'th' : 'td');
+        if (i === 0) td.scope = 'row';
+        td.textContent = String(v);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    details.appendChild(table);
+    host.appendChild(details);
+  }
+
   window.PhrononCharts = {
     palette: palette,
     has: has,
@@ -474,5 +1161,11 @@
     tag: tag,
     declutter: declutter,
     drawRows: drawRows,
+    drawDotRows: drawDotRows,
+    drawShares: drawShares,
+    drawBars: drawBars,
+    drawScatter: drawScatter,
+    drawLine: drawLine,
+    dataTable: dataTable,
   };
 })();
