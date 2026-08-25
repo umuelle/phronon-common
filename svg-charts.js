@@ -1471,6 +1471,137 @@
     host.appendChild(svg);
   }
 
+  /* ── drawRadar: one closed profile per person, over shared spokes ───────
+   * The one form where a RADAR earns its place: several people answered the
+   * SAME items on the same scale, and the question is the shape of their
+   * disagreement rather than any single value. Every spoke is one item, the
+   * scale is identical on all of them, and the polygons are read against
+   * each other — which is exactly what a radar does well and what a stack of
+   * bars does badly.
+   *
+   * It is deliberately NOT offered for "one series, many attributes": a
+   * lone polygon invites area comparisons that mean nothing, because a
+   * radar's area depends on the arbitrary order of its spokes. Two or three
+   * series is the useful range; past that the polygons occlude one another.
+   *
+   * spokes: the item labels. series: [{label, values[], color}].
+   * opts: min, max, step, unit, aria, height, valueFormat(v) -> string,
+   * pointValues (default: on when spokes x series stays small enough to
+   * read — otherwise the data table carries them, which the caller should
+   * always draw).
+   */
+  function drawRadar(host, spokes, series, opts) {
+    if (!host || !spokes.length || !series.length) return;
+    var C = palette();
+    var TONE = { better: C.better, worse: C.worse, ink: C.ink, muted: C.muted,
+                 up: C.up, warn: '#eda100' };
+    var n = spokes.length;
+    var W = 900, H = opts.height || 520;
+    var legendH = 34;
+    var cx = W / 2, cy = (H - legendH) / 2 + 6;
+    // Room for the longest spoke label at the widest point.
+    var R = Math.min(cy - 46, W / 2 - 190);
+    var lo = has(opts.min) ? opts.min : 0;
+    var hi = has(opts.max) ? opts.max : 1;
+    var step = opts.step || niceStep(hi - lo);
+    var fmtv = opts.valueFormat || function (v) {
+      return String(Math.round(v * 100) / 100) + (opts.unit || '');
+    };
+    function angle(i) { return -Math.PI / 2 + (i / n) * Math.PI * 2; }
+    function radius(v) {
+      var f = (v - lo) / (hi - lo);
+      return Math.max(0, Math.min(1, f)) * R;
+    }
+    function px(i, v) { return cx + radius(v) * Math.cos(angle(i)); }
+    function py(i, v) { return cy + radius(v) * Math.sin(angle(i)); }
+
+    var svg = baseSvg(W, H, opts.aria);
+
+    // The rings, as polygons rather than circles: a circular grid reads as a
+    // different scale from the straight edges the data draws.
+    for (var t = lo; t <= hi + 1e-9; t += step) {
+      var pts = [];
+      for (var i = 0; i < n; i++) pts.push(px(i, t) + ',' + py(i, t));
+      svg.appendChild(tag('polygon', {
+        points: pts.join(' '), fill: 'none',
+        stroke: Math.abs(t - hi) < 1e-9 ? C.range : C.grid,
+        'stroke-width': Math.abs(t - hi) < 1e-9 ? 1.5 : 1,
+      }));
+      if (t > lo + 1e-9) {
+        // On the BISECTOR between the first two spokes, not up the vertical:
+        // spoke 0 sits at twelve o'clock, so ring labels stacked there ran
+        // straight through its own item label.
+        var la = angle(0) + (Math.PI * 2 / n) / 2;
+        svg.appendChild(tag('text', {
+          x: cx + radius(t) * Math.cos(la) + 2,
+          y: cy + radius(t) * Math.sin(la) + 3,
+          fill: C.muted, 'font-size': 10.5,
+          'font-variant-numeric': 'tabular-nums',
+        }, fmtv(Math.round(t * 100) / 100)));
+      }
+    }
+
+    // The spokes, and their item labels at the rim.
+    for (var i2 = 0; i2 < n; i2++) {
+      svg.appendChild(tag('line', {
+        x1: cx, y1: cy, x2: px(i2, hi), y2: py(i2, hi),
+        stroke: C.grid, 'stroke-width': 1,
+      }));
+      var a = angle(i2);
+      var lx = cx + (R + 14) * Math.cos(a), ly = cy + (R + 14) * Math.sin(a);
+      var cos = Math.cos(a);
+      svg.appendChild(tag('text', {
+        x: lx, y: ly + 4, fill: C.ink, 'font-size': 11.5, 'font-weight': 600,
+        'text-anchor': cos > 0.2 ? 'start' : cos < -0.2 ? 'end' : 'middle',
+      }, String(spokes[i2])));
+    }
+
+    var showValues = opts.pointValues !== undefined
+      ? opts.pointValues : (n * series.length <= 24);
+
+    series.forEach(function (se, si) {
+      var color = se.color || TONE[se.tone]
+                || [C.better, C.worse, C.ink][si % 3];
+      var pts = [];
+      for (var i3 = 0; i3 < n; i3++) {
+        var v = has(se.values[i3]) ? se.values[i3] : lo;
+        pts.push(px(i3, v) + ',' + py(i3, v));
+      }
+      svg.appendChild(tag('polygon', {
+        points: pts.join(' '), fill: color, 'fill-opacity': 0.12,
+        stroke: color, 'stroke-width': 2.5, 'stroke-linejoin': 'round',
+      }));
+      for (var i4 = 0; i4 < n; i4++) {
+        if (!has(se.values[i4])) continue;
+        var vx = px(i4, se.values[i4]), vy = py(i4, se.values[i4]);
+        var dot = tag('circle', {
+          cx: vx, cy: vy, r: 4.5, fill: color,
+          stroke: C.surface, 'stroke-width': 1.5,
+        });
+        dot.appendChild(tag('title', {},
+          se.label + ' — ' + spokes[i4] + ': ' + fmtv(se.values[i4])));
+        svg.appendChild(dot);
+        if (showValues) {
+          var aa = angle(i4);
+          svg.appendChild(tag('text', {
+            x: vx + 9 * Math.cos(aa), y: vy + 9 * Math.sin(aa) + 4,
+            fill: C.ink, 'font-size': 10.5, 'font-weight': 600,
+            'text-anchor': Math.cos(aa) > 0.2 ? 'start'
+                         : Math.cos(aa) < -0.2 ? 'end' : 'middle',
+            'font-variant-numeric': 'tabular-nums',
+          }, fmtv(se.values[i4])));
+        }
+      }
+    });
+
+    legendRow(svg, series.map(function (se, si) {
+      return { label: se.label,
+               fill: se.color || TONE[se.tone]
+                   || [C.better, C.worse, C.ink][si % 3] };
+    }), 40, H - 12);
+    host.appendChild(svg);
+  }
+
   /* A row of swatch+word legend chips. Identity is never colour-alone: the
    * swatch always sits beside its words, and the table repeats the numbers. */
   function legendRow(svg, items, x0, y0) {
@@ -1706,6 +1837,7 @@
     drawScatter: drawScatter,
     drawLine: drawLine,
     drawGroupedBars: drawGroupedBars,
+    drawRadar: drawRadar,
     drawStackedBars: drawStackedBars,
     drawPie: drawPie,
     legendRow: legendRow,
