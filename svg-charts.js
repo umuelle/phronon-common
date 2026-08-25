@@ -493,11 +493,13 @@
    *   a     hollow circle — the start / reference (optional)
    *   b     diamond — the result (optional)
    *   only  a single dot where there is no pair, drawn as the diamond
-   * opts: min, max, step, axisLeft, axisRight, betterIs ('higher'|'lower'|
-   *   null: null = no judgement, moves stay ink), unit (suffix on printed
-   *   values), verdict(delta) -> text (default signs the delta), rowH,
-   *   labelW, labelMax, labelSize, rightW, aria, marker {at, label} a
-   *   dashed reference line across all rows.
+   * opts: min, max, step, reverse (true = the HIGH end sits on the LEFT —
+   *   for scales like layoff rank 1..8 where the low number is the good
+   *   end and belongs on the right), axisLeft, axisRight, betterIs
+   *   ('higher'|'lower'|null: null = no judgement, moves stay ink), unit
+   *   (suffix on printed values), verdict(delta) -> text (default signs
+   *   the delta), rowH, labelW, labelMax, labelSize, rightW, aria,
+   *   marker {at, label} a dashed reference line across all rows.
    */
   function drawDotRows(host, rows, opts) {
     if (!host || !rows.length) return;
@@ -513,7 +515,7 @@
     if (!has(lo) || !has(hi)) {
       var vals = [];
       rows.forEach(function (r) {
-        ['a', 'b', 'only'].forEach(function (k) { if (has(r[k])) vals.push(r[k]); });
+        ['a', 'b', 'only', 'lo', 'hi'].forEach(function (k) { if (has(r[k])) vals.push(r[k]); });
       });
       if (opts.marker && has(opts.marker.at)) vals.push(opts.marker.at);
       if (!vals.length) return;
@@ -523,7 +525,10 @@
       hi = has(hi) ? hi : vmax + pad;
     }
     var step = opts.step || niceStep(hi - lo);
-    function x(v) { return plotX + ((v - lo) / (hi - lo)) * plotW; }
+    function x(v) {
+      var f = (v - lo) / (hi - lo);
+      return plotX + (opts.reverse ? 1 - f : f) * plotW;
+    }
 
     var svg = baseSvg(W, H, opts.aria);
 
@@ -585,6 +590,14 @@
         }, r.sub));
       }
 
+      // The track first, under everything (a CI, a spread).
+      if (has(r.lo) && has(r.hi)) {
+        var tlo = Math.min(x(r.lo), x(r.hi)), thi = Math.max(x(r.lo), x(r.hi));
+        row.appendChild(tag('rect', {
+          x: tlo, y: y - 4, width: Math.max(thi - tlo, 3), height: 8,
+          rx: 4, fill: C.range,
+        }));
+      }
       var a = r.a, b = has(r.b) ? r.b : r.only;
       var pair = has(a) && has(r.b);
       var delta = pair ? Math.round((r.b - a) * 100) / 100 : null;
@@ -593,8 +606,11 @@
         improved = delta === 0 ? null
                  : (opts.betterIs === 'higher' ? delta > 0 : delta < 0);
       }
+      var TONESET = { better: C.better, worse: C.worse, ink: C.ink,
+                      muted: C.muted };
       var moveColor = improved === null ? (pair ? C.muted : C.ink)
                     : (improved ? C.better : C.worse);
+      if (!pair && r.tone) moveColor = TONESET[r.tone] || C.ink;
 
       if (pair && Math.abs(x(r.b) - x(a)) > 1) {
         row.appendChild(tag('line', {
@@ -842,7 +858,11 @@
   /* ── drawScatter: named points on two measured axes ─────────────────────
    * pts: {x, y, name, sub, shape ('circle'|'diamond'), tone ('better'|
    * 'worse'|'ink'|'muted'|'good'|'warn'|'range'), r (radius, default 7),
-   * title}. opts: xMin/xMax/xStep, yMin/yMax/yStep, xLabel (under the axis),
+   * glyph (short text INSIDE the mark — the mark grows hollow with a toned
+   * ring so the glyph is legible; identity, said twice with the name),
+   * title}. opts.quadrants {x, y, labels: [TL, TR, BL, BR]} draws dashed
+   * dividers through (x, y) and italic corner labels — for panel charts
+   * whose四 corners mean something. opts: xMin/xMax/xStep, yMin/yMax/yStep, xLabel (under the axis),
    * yLabel (rotated), zeroY {label} dashed line at y=0, xMarker {at, label}
    * dashed vertical line, lines [{points: [{x,y}...], tone, dash, label}]
    * measured overlays (a Pareto frontier is a FACT about the points, not a
@@ -898,6 +918,28 @@
                                     'font-variant-numeric': 'tabular-nums' },
                           opts.yTick ? opts.yTick(gyv)
                                      : fmt(gyv) + (opts.yTickUnit || '')));
+    }
+    if (opts.quadrants) {
+      var q = opts.quadrants;
+      [[x(q.x), x(q.x), PAD_T, PAD_T + plotH], [PAD_L, PAD_L + plotW, y(q.y), y(q.y)]]
+        .forEach(function (l2) {
+          svg.appendChild(tag('line', {
+            x1: l2[0], x2: l2[1], y1: l2[2], y2: l2[3],
+            stroke: C.range, 'stroke-width': 1.5, 'stroke-dasharray': '6 4',
+          }));
+        });
+      var corners = [
+        [PAD_L + 8, PAD_T + 16, 'start'], [PAD_L + plotW - 8, PAD_T + 16, 'end'],
+        [PAD_L + 8, PAD_T + plotH - 8, 'start'], [PAD_L + plotW - 8, PAD_T + plotH - 8, 'end'],
+      ];
+      (q.labels || []).forEach(function (lab, i2) {
+        if (!lab) return;
+        svg.appendChild(tag('text', {
+          x: corners[i2][0], y: corners[i2][1], fill: C.muted,
+          'font-size': 11, 'font-style': 'italic',
+          'text-anchor': corners[i2][2],
+        }, lab));
+      });
     }
     if (opts.xMarker && has(opts.xMarker.at)
         && opts.xMarker.at >= xe[0] && opts.xMarker.at <= xe[1]) {
@@ -981,7 +1023,17 @@
       var cx = x(p.x), cy = y(p.y);
       var fill = TONE[p.tone] || C.ink;
       var pr = p.r || 7;
-      if (p.shape === 'diamond') {
+      if (p.glyph) {
+        // Hollow ring, toned; the glyph names the point inside it.
+        g.appendChild(tag('circle', {
+          cx: cx, cy: cy, r: pr, fill: C.surface,
+          stroke: fill, 'stroke-width': 2.5,
+        }));
+        g.appendChild(tag('text', {
+          x: cx, y: cy + 4.5, fill: C.ink, 'font-size': 13,
+          'font-weight': 700, 'text-anchor': 'middle',
+        }, p.glyph));
+      } else if (p.shape === 'diamond') {
         g.appendChild(tag('rect', {
           x: cx - pr, y: cy - pr, width: pr * 2, height: pr * 2, rx: 2,
           fill: fill, stroke: C.surface, 'stroke-width': 2,
@@ -1014,9 +1066,13 @@
 
   /* ── drawLine: values over an ordered category axis ─────────────────────
    * The one honest use of a line: an ORDER (serial position, rounds) whose
-   * progression is the question. series: [{label, values[], tone}];
-   * opts: cats (x labels), yLabel, xLabel, yMin/yMax/yStep, aria, height,
-   * unit. Every point carries its value.
+   * progression is the question. series: [{label, values[], tone OR color
+   * (hex — segment identity lines), dash}]; opts: cats (x labels), yLabel,
+   * xLabel, yMin/yMax/yStep, reverse (true = LOW values at the top, for
+   * rank scales where 1 is the good end), aria, height, unit, pointValues
+   * (false suppresses the per-point numbers when many series would collide
+   * — the data table carries them instead). Every point carries its value
+   * by default.
    */
   function drawLine(host, series, opts) {
     if (!host || !series.length || !opts.cats || !opts.cats.length) return;
@@ -1040,7 +1096,11 @@
     var step = opts.yStep || niceStep(hi - lo);
     var n = opts.cats.length;
     function x(i) { return PAD_L + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW); }
-    function y(v) { return PAD_T + plotH - ((v - lo) / (hi - lo)) * plotH; }
+    function y(v) {
+      var f = (v - lo) / (hi - lo);
+      if (opts.reverse) f = 1 - f;
+      return PAD_T + plotH - f * plotH;
+    }
 
     var svg = baseSvg(W, H, opts.aria);
     for (var gy = Math.ceil(lo / step) * step; gy <= hi + 1e-9; gy += step) {
@@ -1076,7 +1136,7 @@
     }
 
     series.forEach(function (s, si) {
-      var color = TONE[s.tone] || (si === 0 ? C.ink : C.muted);
+      var color = s.color || TONE[s.tone] || (si === 0 ? C.ink : C.muted);
       var d = '';
       s.values.forEach(function (v, i) {
         if (!has(v)) return;
@@ -1092,14 +1152,16 @@
       s.values.forEach(function (v, i) {
         if (!has(v)) return;
         svg.appendChild(tag('circle', {
-          cx: x(i), cy: y(v), r: 5, fill: color,
+          cx: x(i), cy: y(v), r: series.length > 3 ? 4 : 5, fill: color,
           stroke: C.surface, 'stroke-width': 2,
         }));
-        svg.appendChild(tag('text', {
-          x: x(i), y: y(v) - 11, fill: C.ink, 'font-size': 11,
-          'font-weight': 600, 'text-anchor': 'middle',
-          'font-variant-numeric': 'tabular-nums',
-        }, fmt(Math.round(v * 100) / 100) + (opts.unit || '')));
+        if (opts.pointValues !== false) {
+          svg.appendChild(tag('text', {
+            x: x(i), y: y(v) - 11, fill: C.ink, 'font-size': 11,
+            'font-weight': 600, 'text-anchor': 'middle',
+            'font-variant-numeric': 'tabular-nums',
+          }, fmt(Math.round(v * 100) / 100) + (opts.unit || '')));
+        }
       });
       if (s.label && series.length > 1) {
         var li = s.values.length - 1;
@@ -1154,6 +1216,306 @@
     host.appendChild(details);
   }
 
+  /* ── drawGroupedBars: categories on X, one bar per series ───────────────
+   * The classic comparison when the reader wants to see CATEGORIES side by
+   * side (employees, rounds) rather than one row per unit. cats: the x
+   * labels; series: [{label, values[], color}]. Every bar carries its value.
+   *
+   * opts: yLabel, yMin/yMax/yStep, reverse (true = the LOW value is the good
+   * end and is drawn at the TOP — rank scales), unit, aria, height, legend
+   * (false suppresses it; default on when there is more than one series),
+   * baseline (the value bars grow FROM; defaults to the axis floor, or 0
+   * when the scale spans it).
+   */
+  function drawGroupedBars(host, cats, series, opts) {
+    if (!host || !cats.length || !series.length) return;
+    var C = palette();
+    var W = 900, H = opts.height || 400;
+    var showLegend = opts.legend === true
+                   || (opts.legend !== false && series.length > 1);
+    var PAD_L = 76, PAD_R = 24;
+    var PAD_T = showLegend ? 46 : 26;
+    var PAD_B = opts.xLabel ? 74 : 56;
+    var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+
+    var vals = [];
+    series.forEach(function (se) {
+      se.values.forEach(function (v) { if (has(v)) vals.push(v); });
+    });
+    if (!vals.length) return;
+    var lo = has(opts.yMin) ? opts.yMin : Math.min.apply(null, vals);
+    var hi = has(opts.yMax) ? opts.yMax : Math.max.apply(null, vals);
+    if (!has(opts.yMin) && !has(opts.yMax)) {
+      var pad = (hi - lo || 1) * 0.18;
+      if (lo > 0) lo = 0; else lo -= pad;
+      if (hi < 0) hi = 0; else hi += pad;
+    }
+    var step = opts.yStep || niceStep(hi - lo);
+    function y(v) {
+      var f = (v - lo) / (hi - lo);
+      if (opts.reverse) f = 1 - f;
+      return PAD_T + plotH - f * plotH;
+    }
+    var base = has(opts.baseline) ? opts.baseline
+             : (lo <= 0 && hi >= 0 ? 0 : (opts.reverse ? hi : lo));
+
+    var svg = baseSvg(W, H, opts.aria);
+    for (var t = Math.ceil(lo / step) * step; t <= hi + 1e-9; t += step) {
+      var tv = Math.round(t * 100) / 100;
+      svg.appendChild(tag('line', {
+        x1: PAD_L, x2: PAD_L + plotW, y1: y(tv), y2: y(tv),
+        stroke: tv === base ? C.range : C.grid,
+        'stroke-width': tv === base ? 1.75 : 1,
+      }));
+      svg.appendChild(tag('text', {
+        x: PAD_L - 10, y: y(tv) + 4, fill: C.muted, 'font-size': 11.5,
+        'text-anchor': 'end', 'font-variant-numeric': 'tabular-nums',
+      }, fmt(tv) + (opts.unit || '')));
+    }
+    if (opts.yLabel) {
+      svg.appendChild(tag('text', {
+        x: 18, y: PAD_T + plotH / 2, fill: C.muted, 'font-size': 12.5,
+        'text-anchor': 'middle',
+        transform: 'rotate(-90 18 ' + (PAD_T + plotH / 2) + ')',
+      }, opts.yLabel));
+    }
+
+    var slot = plotW / cats.length;
+    var groupW = Math.min(slot * 0.7, 90);
+    var barW = groupW / series.length;
+    cats.forEach(function (cat, i) {
+      var cx = PAD_L + i * slot + slot / 2;
+      series.forEach(function (se, si) {
+        var v = se.values[i];
+        if (!has(v)) return;
+        var x0 = cx - groupW / 2 + si * barW;
+        var top = Math.min(y(v), y(base)), bot = Math.max(y(v), y(base));
+        var rect = tag('rect', {
+          x: x0 + 1, y: top, width: Math.max(barW - 2, 2),
+          height: Math.max(bot - top, 1),
+          fill: se.color || (si === 0 ? C.muted : C.better),
+        });
+        rect.appendChild(tag('title', {},
+          cat + ' — ' + (se.label || '') + ': ' + fmt(v) + (opts.unit || '')));
+        svg.appendChild(rect);
+        svg.appendChild(tag('text', {
+          x: x0 + barW / 2, y: top - 5, fill: C.ink, 'font-size': 11,
+          'font-weight': 600, 'text-anchor': 'middle',
+          'font-variant-numeric': 'tabular-nums',
+        }, fmt(Math.round(v * 100) / 100) + (opts.unit || '')));
+      });
+      svg.appendChild(tag('text', {
+        x: cx, y: PAD_T + plotH + 18, fill: C.ink, 'font-size': 11.5,
+        'text-anchor': 'middle',
+      }, cat));
+    });
+    if (opts.xLabel) {
+      svg.appendChild(tag('text', {
+        x: PAD_L + plotW / 2, y: H - 12, fill: C.muted, 'font-size': 12.5,
+        'text-anchor': 'middle',
+      }, opts.xLabel));
+    }
+    if (showLegend) legendRow(svg, series.map(function (se, si) {
+      return { label: se.label,
+               fill: se.color || (si === 0 ? C.muted : C.better) };
+    }), PAD_L, 22);
+    host.appendChild(svg);
+  }
+
+  /* A row of swatch+word legend chips. Identity is never colour-alone: the
+   * swatch always sits beside its words, and the table repeats the numbers. */
+  function legendRow(svg, items, x0, y0) {
+    var C = palette();
+    var lx = x0;
+    items.forEach(function (it) {
+      svg.appendChild(tag('rect', {
+        x: lx, y: y0 - 10, width: 13, height: 13, rx: 3,
+        fill: it.hollow ? 'none' : it.fill,
+        stroke: it.hollow ? C.range : 'none',
+        'stroke-width': it.hollow ? 1.5 : null,
+        'stroke-dasharray': it.hollow ? '3 2' : null,
+      }));
+      svg.appendChild(tag('text', {
+        x: lx + 19, y: y0 + 1, fill: C.muted, 'font-size': 12,
+      }, it.label));
+      lx += 19 + String(it.label).length * 6.4 + 22;
+    });
+  }
+
+  /* ── drawStackedBars: categories on X, one stack per category ───────────
+   * cats: x labels; keys: the segment order; rows: per category a {key:count}
+   * map; opts: fills, labels, darkText, yLabel, aria, height, total (a fixed
+   * denominator per category — the unfilled remainder then shows as a dashed
+   * frame, so a partly-answered category can never look complete).
+   */
+  function drawStackedBars(host, cats, rows, opts) {
+    if (!host || !cats.length) return;
+    var C = palette();
+    var KEYS = opts.keys || [];
+    var W = 900, H = opts.height || 420;
+    var PAD_L = 70, PAD_R = 24, PAD_T = 26, PAD_B = 84;
+    var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+    var maxY = 0;
+    rows.forEach(function (r, i) {
+      var sum = 0;
+      KEYS.forEach(function (k) { sum += (r && r[k]) || 0; });
+      maxY = Math.max(maxY, opts.total || sum);
+    });
+    maxY = maxY || 1;
+    var step = opts.yStep || Math.max(1, niceStep(maxY));
+    function y(v) { return PAD_T + plotH - (v / maxY) * plotH; }
+
+    var svg = baseSvg(W, H, opts.aria);
+    for (var t = 0; t <= maxY + 1e-9; t += step) {
+      svg.appendChild(tag('line', {
+        x1: PAD_L, x2: PAD_L + plotW, y1: y(t), y2: y(t),
+        stroke: C.grid, 'stroke-width': 1,
+      }));
+      svg.appendChild(tag('text', {
+        x: PAD_L - 10, y: y(t) + 4, fill: C.muted, 'font-size': 11.5,
+        'text-anchor': 'end', 'font-variant-numeric': 'tabular-nums',
+      }, fmt(Math.round(t))));
+    }
+    if (opts.yLabel) {
+      svg.appendChild(tag('text', {
+        x: 16, y: PAD_T + plotH / 2, fill: C.muted, 'font-size': 12.5,
+        'text-anchor': 'middle',
+        transform: 'rotate(-90 16 ' + (PAD_T + plotH / 2) + ')',
+      }, opts.yLabel));
+    }
+
+    var slot = plotW / cats.length;
+    var barW = Math.min(slot * 0.62, 74);
+    cats.forEach(function (cat, i) {
+      var cx = PAD_L + i * slot + slot / 2;
+      var r = rows[i] || {};
+      var total = opts.total || KEYS.reduce(function (a, k) {
+        return a + ((r[k]) || 0);
+      }, 0);
+      if (opts.total) {
+        svg.appendChild(tag('rect', {
+          x: cx - barW / 2, y: y(opts.total), width: barW,
+          height: plotH - (y(opts.total) - PAD_T),
+          fill: 'none', stroke: C.range, 'stroke-width': 1.5,
+          'stroke-dasharray': '4 3', rx: 3,
+        }));
+      }
+      var acc = 0;
+      KEYS.forEach(function (k) {
+        var n = (r[k]) || 0;
+        if (!n) return;
+        var yTop = y(acc + n), yBot = y(acc);
+        var rect = tag('rect', {
+          x: cx - barW / 2, y: yTop, width: barW,
+          height: Math.max(yBot - yTop, 1),
+          fill: (opts.fills && opts.fills[k]) || C.muted,
+          stroke: C.surface, 'stroke-width': 1.5,
+        });
+        rect.appendChild(tag('title', {},
+          cat + ' — ' + ((opts.labels && opts.labels[k]) || k) + ': '
+          + n + ' / ' + total));
+        svg.appendChild(rect);
+        if (yBot - yTop >= 14) {
+          svg.appendChild(tag('text', {
+            x: cx, y: (yTop + yBot) / 2 + 4.5,
+            fill: (opts.darkText && opts.darkText[k]) ? C.ink : C.surface,
+            'font-size': 11.5, 'text-anchor': 'middle',
+            'font-variant-numeric': 'tabular-nums', 'pointer-events': 'none',
+          }, String(n)));
+        }
+        acc += n;
+      });
+      svg.appendChild(tag('text', {
+        x: cx, y: PAD_T + plotH + 18, fill: C.ink, 'font-size': 11.5,
+        'text-anchor': 'middle',
+      }, cat));
+    });
+    var items = KEYS.map(function (k) {
+      return { label: (opts.labels && opts.labels[k]) || k,
+               fill: (opts.fills && opts.fills[k]) || C.muted };
+    });
+    if (opts.legendExtra) items.push({ label: opts.legendExtra, hollow: true });
+    legendRow(svg, items, PAD_L, H - 22);
+    host.appendChild(svg);
+  }
+
+  /* ── drawPie: shares of one whole ────────────────────────────────────────
+   * Reached for only when the reader's question really is "what fraction of
+   * one whole" and the slices are few. slices: [{label, value, fill}];
+   * opts: aria, height, unit, total (defaults to the sum). Every slice
+   * carries its count and percentage, on the slice where it fits and on the
+   * legend otherwise — a pie whose numbers live in a tooltip is unreadable
+   * from the back of a room.
+   */
+  function drawPie(host, slices, opts) {
+    if (!host || !slices.length) return;
+    var C = palette();
+    var live = slices.filter(function (sl) { return sl.value > 0; });
+    if (!live.length) return;
+    var total = opts.total
+      || slices.reduce(function (a, sl) { return a + (sl.value || 0); }, 0);
+    if (!total) return;
+    var W = 900, H = opts.height || 380;
+    var cx = 300, cy = H / 2 - 6, R = Math.min(cy - 24, 130);
+    var svg = baseSvg(W, H, opts.aria);
+
+    var angle = -Math.PI / 2;                 // start at 12 o'clock
+    live.forEach(function (sl) {
+      var frac = sl.value / total;
+      var end = angle + frac * Math.PI * 2;
+      var mid = (angle + end) / 2;
+      var big = frac > 0.5 ? 1 : 0;
+      var path;
+      if (frac >= 0.999) {
+        // A single full slice is a circle: an arc of exactly 360° collapses
+        // to a point and draws nothing at all.
+        path = tag('circle', { cx: cx, cy: cy, r: R, fill: sl.fill || C.muted,
+                               stroke: C.surface, 'stroke-width': 2 });
+      } else {
+        path = tag('path', {
+          d: 'M ' + cx + ' ' + cy
+            + ' L ' + (cx + R * Math.cos(angle)) + ' ' + (cy + R * Math.sin(angle))
+            + ' A ' + R + ' ' + R + ' 0 ' + big + ' 1 '
+            + (cx + R * Math.cos(end)) + ' ' + (cy + R * Math.sin(end)) + ' Z',
+          fill: sl.fill || C.muted, stroke: C.surface, 'stroke-width': 2,
+        });
+      }
+      var pct = (frac * 100).toFixed(1) + '%';
+      path.appendChild(tag('title', {},
+        sl.label + ': ' + sl.value + ' (' + pct + ')'));
+      svg.appendChild(path);
+      if (frac >= 0.08) {
+        svg.appendChild(tag('text', {
+          x: cx + R * 0.62 * Math.cos(mid), y: cy + R * 0.62 * Math.sin(mid) + 5,
+          fill: sl.darkText ? C.ink : C.surface, 'font-size': 14,
+          'font-weight': 700, 'text-anchor': 'middle',
+          'font-variant-numeric': 'tabular-nums', 'pointer-events': 'none',
+        }, pct));
+      }
+      angle = end;
+    });
+
+    // The legend doubles as the readout: every slice, its count and share,
+    // including the ones too thin to label on the pie.
+    var ly = cy - (slices.length - 1) * 15;
+    slices.forEach(function (sl) {
+      var pct = ((sl.value || 0) / total * 100).toFixed(1) + '%';
+      svg.appendChild(tag('rect', {
+        x: 520, y: ly - 11, width: 14, height: 14, rx: 3,
+        fill: sl.fill || C.muted,
+      }));
+      svg.appendChild(tag('text', {
+        x: 545, y: ly, fill: C.ink, 'font-size': 13,
+      }, sl.label));
+      svg.appendChild(tag('text', {
+        x: 880, y: ly, fill: C.muted, 'font-size': 13, 'text-anchor': 'end',
+        'font-variant-numeric': 'tabular-nums',
+      }, (sl.value || 0) + '  ·  ' + pct));
+      ly += 30;
+    });
+    host.appendChild(svg);
+  }
+
   window.PhrononCharts = {
     palette: palette,
     has: has,
@@ -1166,6 +1528,10 @@
     drawBars: drawBars,
     drawScatter: drawScatter,
     drawLine: drawLine,
+    drawGroupedBars: drawGroupedBars,
+    drawStackedBars: drawStackedBars,
+    drawPie: drawPie,
+    legendRow: legendRow,
     dataTable: dataTable,
   };
 })();
