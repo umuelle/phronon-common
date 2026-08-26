@@ -909,9 +909,16 @@
     var svg = baseSvg(W, H, opts.aria);
     for (var gx = Math.ceil(xe[0] / xs) * xs; gx <= xe[1] + 1e-9; gx += xs) {
       var gxv = Math.round(gx * 100) / 100;
-      svg.appendChild(tag('line', { x1: x(gxv), x2: x(gxv), y1: PAD_T,
-                                    y2: PAD_T + plotH, stroke: C.grid,
-                                    'stroke-width': 1 }));
+      // Scaffolding, drawn thin and dotted so it stays behind the data —
+      // and skipped where a quadrant line is about to be drawn, or the two
+      // would sit on top of each other and the zero line would read as a
+      // slightly darker gridline (owner, 26 August 2026).
+      if (!(opts.quadrants && Math.abs(gxv - opts.quadrants.x) < 1e-9)) {
+        svg.appendChild(tag('line', { x1: x(gxv), x2: x(gxv), y1: PAD_T,
+                                      y2: PAD_T + plotH, stroke: C.grid,
+                                      'stroke-width': 0.75,
+                                      'stroke-dasharray': '2 4' }));
+      }
       svg.appendChild(tag('text', { x: x(gxv), y: PAD_T + plotH + 20,
                                     fill: C.muted, 'font-size': 12,
                                     'text-anchor': 'middle',
@@ -921,9 +928,12 @@
     }
     for (var gy = Math.ceil(ye[0] / ys) * ys; gy <= ye[1] + 1e-9; gy += ys) {
       var gyv = Math.round(gy * 100) / 100;
-      svg.appendChild(tag('line', { x1: PAD_L, x2: PAD_L + plotW,
-                                    y1: y(gyv), y2: y(gyv), stroke: C.grid,
-                                    'stroke-width': 1 }));
+      if (!(opts.quadrants && Math.abs(gyv - opts.quadrants.y) < 1e-9)) {
+        svg.appendChild(tag('line', { x1: PAD_L, x2: PAD_L + plotW,
+                                      y1: y(gyv), y2: y(gyv), stroke: C.grid,
+                                      'stroke-width': 0.75,
+                                      'stroke-dasharray': '2 4' }));
+      }
       svg.appendChild(tag('text', { x: PAD_L - 10, y: y(gyv) + 4,
                                     fill: C.muted, 'font-size': 12,
                                     'text-anchor': 'end',
@@ -935,9 +945,13 @@
       var q = opts.quadrants;
       [[x(q.x), x(q.x), PAD_T, PAD_T + plotH], [PAD_L, PAD_L + plotW, y(q.y), y(q.y)]]
         .forEach(function (l2) {
+          // A THRESHOLD, not scaffolding: these are the lines that split the
+          // plot into its four meanings, so they are solid and three times
+          // the weight of a gridline. They were dashed at 1.5 and read as
+          // just another grid line (owner, 26 August 2026).
           svg.appendChild(tag('line', {
             x1: l2[0], x2: l2[1], y1: l2[2], y2: l2[3],
-            stroke: C.range, 'stroke-width': 1.5, 'stroke-dasharray': '6 4',
+            stroke: C.ink, 'stroke-width': 2.25, opacity: 0.55,
           }));
         });
       var corners = [
