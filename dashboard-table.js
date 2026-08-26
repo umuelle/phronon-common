@@ -28,6 +28,9 @@
  *   paginationId — id of a container for Prev/Next buttons + info line
  *   countId      — id of an element to fill with "14 sessions"
  *   countNoun    — the singular noun for that count (default "row")
+ *   filters      — [{selectId, key}, …]: each <select> narrows the table to
+ *                  rows whose data-{key} equals its value. An empty value
+ *                  means "no filter".
  */
 'use strict';
 
@@ -49,6 +52,13 @@ function initSortableTable(tableId, searchId, searchKeys, options) {
   const countEl = options && options.countId
     ? document.getElementById(options.countId) : null;
   const countNoun = (options && options.countNoun) || 'row';
+  // Dropdown filters, added 26 August 2026 with the tenth copy of this engine
+  // (FL-030). Inequality's sessions table narrows by status, mode and
+  // is-test, which is why it had kept a private re-implementation: search
+  // alone could not express it.
+  const filters = ((options && options.filters) || [])
+    .map(f => ({ el: document.getElementById(f.selectId), key: f.key }))
+    .filter(f => f.el);
 
   let pageSize = pageSizeSelect ? (parseInt(pageSizeSelect.value) || 0) : 0;
   let page = 1;
@@ -59,6 +69,14 @@ function initSortableTable(tableId, searchId, searchKeys, options) {
     const term    = searchInput ? searchInput.value.trim().toLowerCase() : '';
     const allRows = Array.from(tbody.querySelectorAll('tr'));
     visibleRows   = allRows.filter(row => {
+      // STRICT string compare against '', not a truthiness test: a filter
+      // whose values are "0" and "1" — "is this a test class?" — would treat
+      // "0" as "no filter selected" and silently show everything.
+      for (const f of filters) {
+        if (f.el.value !== '' && String(row.dataset[f.key]) !== f.el.value) {
+          return false;
+        }
+      }
       if (!term) return true;
       const haystack = (searchKeys || []).map(k => row.dataset[k] || '').join(' ').toLowerCase();
       return haystack.includes(term);
@@ -96,6 +114,9 @@ function initSortableTable(tableId, searchId, searchKeys, options) {
   if (searchInput) {
     searchInput.addEventListener('input', () => { page = 1; render(); });
   }
+  filters.forEach(f => {
+    f.el.addEventListener('change', () => { page = 1; render(); });
+  });
   if (pageSizeSelect) {
     pageSizeSelect.addEventListener('change', () => {
       pageSize = parseInt(pageSizeSelect.value) || 0;
