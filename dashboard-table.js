@@ -26,6 +26,8 @@
  * Optional (pass as 4th argument object):
  *   pageSizeId   — id of a <select> controlling rows per page
  *   paginationId — id of a container for Prev/Next buttons + info line
+ *   countId      — id of an element to fill with "14 sessions"
+ *   countNoun    — the singular noun for that count (default "row")
  */
 'use strict';
 
@@ -41,6 +43,12 @@ function initSortableTable(tableId, searchId, searchKeys, options) {
     ? document.getElementById(options.pageSizeId) : null;
   const paginationEl = options && options.paginationId
     ? document.getElementById(options.paginationId) : null;
+  // Optional running count ("14 sessions"), for pages that showed one before
+  // they were moved onto this engine. countNoun is singular; an "s" is added
+  // for every other number, which is all the fleet's nouns need.
+  const countEl = options && options.countId
+    ? document.getElementById(options.countId) : null;
+  const countNoun = (options && options.countNoun) || 'row';
 
   let pageSize = pageSizeSelect ? (parseInt(pageSizeSelect.value) || 0) : 0;
   let page = 1;
@@ -62,6 +70,10 @@ function initSortableTable(tableId, searchId, searchKeys, options) {
     visibleRows.slice(start, end).forEach(r => { r.style.display = ''; });
 
     if (emptyMsg) emptyMsg.hidden = visibleRows.length > 0;
+    if (countEl) {
+      countEl.textContent = visibleRows.length + ' ' + countNoun
+        + (visibleRows.length === 1 ? '' : 's');
+    }
     if (paginationEl) renderPagination();
   }
 
