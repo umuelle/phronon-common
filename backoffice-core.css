@@ -660,3 +660,43 @@ details.bo-section-card[open] > summary {
 }
 details[open] > summary > .bo-section-card__chevron { transform: rotate(90deg); }
 details[open] > summary > .bo-section-card__summary-hint { display: none; }
+
+/* ── The "what these buttons do" note ────────────────────────────────────
+   Promoted from Layoff 26 August 2026 (FL-030). It sits under a table of
+   destructive buttons and explains, per button, what they actually do —
+   including the one consequence an educator cannot check for themselves,
+   the effect on the cross-class aggregate. Four more tools need it, and a
+   class with no rule renders as unstyled body text, which reads as a
+   mistake rather than a footnote. */
+.bo-note {
+    margin-top: 1.75rem;
+    padding: 1.1rem 1.3rem;
+    background: var(--bo-surface);
+    border: 1px solid var(--bo-border);
+    border-radius: 10px;
+    /* As wide as the table it explains (owner, 26 August 2026). A 70ch
+       measure is right for prose you read start to finish; this is a
+       reference you scan for the one line about the button you are about to
+       press, and a narrow column under a full-width table reads as a
+       different page element rather than a footnote to that table. */
+}
+.bo-note__list dd { max-width: 95ch; }
+.bo-note h2 {
+    margin: 0 0 .7rem;
+    font-size: .95rem;
+    color: var(--bo-text);
+}
+.bo-note__list { margin: 0; }
+.bo-note__list dt {
+    font-weight: 700;
+    font-size: .88rem;
+    color: var(--bo-text);
+    margin-top: .7rem;
+}
+.bo-note__list dt:first-child { margin-top: 0; }
+.bo-note__list dd {
+    margin: .2rem 0 0;
+    font-size: .88rem;
+    line-height: 1.6;
+    color: var(--bo-muted);
+}
