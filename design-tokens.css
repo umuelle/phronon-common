@@ -77,6 +77,24 @@
  *        — online tools for practical judgment</p>
  *   </footer>
  */
+/* The footer sits at the bottom of the VIEWPORT when the page is shorter
+ * than the screen, and after the content when it is longer (owner,
+ * 27 August 2026: after short content — a join step, a login, a thank-you —
+ * the footer used to hang mid-screen and the page looked unfinished).
+ * Scoped with :has to pages whose <body> directly contains this footer, so
+ * markup without one is untouched; inside that scope the fixed 3rem gap
+ * becomes an auto margin — on a short page it grows to push the footer down,
+ * on a long page it collapses to zero and the footer's own border and
+ * padding do the separating. Tools that already lay <body> out as a flex
+ * column (CG, Moral Mirror, the entrances) declare the same thing twice,
+ * which is the compatible direction. */
+body:has(> .ph-footer) {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+body:has(> .ph-footer) > .ph-footer { margin-top: auto; }
+
 .ph-footer {
   margin-top: var(--ph-space-2xl, 3rem);
   padding: var(--ph-space-xl, 2rem) var(--ph-space-md, 1rem);
