@@ -1344,7 +1344,9 @@
                                 : String(Math.round(v * 100) / 100);
     }
     var slot = plotW / cats.length;
-    var groupW = Math.min(slot * 0.7, 90);
+    // groupFrac/groupMax loosen the default density for pages that want the
+    // bars to carry more of the slot (IE's projector view, 27 August 2026).
+    var groupW = Math.min(slot * (opts.groupFrac || 0.7), opts.groupMax || 90);
     var barW = groupW / series.length;
     cats.forEach(function (cat, i) {
       var cx = PAD_L + i * slot + slot / 2;
@@ -1374,10 +1376,12 @@
         // overrides the colour (opts.rangeOpacity with it, default 0.55) —
         // for pages whose bars are saturated enough that a same-hue range
         // mark disappears against its own bar (IE's gold, 27 August 2026).
+        var rangeTop = null;
         if (se.min && se.max
             && has(se.min[i]) && has(se.max[i]) && se.min[i] !== se.max[i]) {
           var ry1 = y(se.max[i]), ry2 = y(se.min[i]);
           var rcx = x0 + barW / 2;
+          rangeTop = Math.min(ry1, ry2);
           [[rcx - 2, ry1, 4, Math.abs(ry2 - ry1)],
            [rcx - 5, Math.min(ry1, ry2), 10, 2],
            [rcx - 5, Math.max(ry1, ry2) - 2, 10, 2]].forEach(function (r2) {
@@ -1388,6 +1392,10 @@
             }));
           });
         }
+        // The label sits above everything the bar carries — where a spread
+        // mark rises past the bar top, the value moves up with it rather
+        // than printing across the whisker (27 August 2026).
+        var labelTop = rangeTop === null ? top : Math.min(top, rangeTop);
         svg.appendChild(tag('text', {
           x: x0 + barW / 2,
           // Below the bar when it hangs downward from the baseline, or the
@@ -1396,14 +1404,15 @@
           // sits — for charts whose rare negative is a sliver at the axis
           // floor, where "below the tip" collides with the category label
           // (IE's −0.3% bottom quintile, 27 August 2026).
-          y: (v < base && !opts.reverse && !opts.negLabelsAbove) ? bot + 14 : top - 5,
-          fill: C.ink, 'font-size': 11,
+          y: (v < base && !opts.reverse && !opts.negLabelsAbove) ? bot + 14 : labelTop - 5,
+          fill: C.ink, 'font-size': opts.valueSize || 11,
           'font-weight': 600, 'text-anchor': 'middle',
           'font-variant-numeric': 'tabular-nums',
         }, fmt(show(v)) + (opts.unit || '')));
       });
       svg.appendChild(tag('text', {
-        x: cx, y: PAD_T + plotH + 18, fill: C.ink, 'font-size': 11.5,
+        x: cx, y: PAD_T + plotH + 18, fill: C.ink,
+        'font-size': opts.catSize || 11.5,
         'text-anchor': 'middle',
       }, cat));
     });
@@ -1651,6 +1660,16 @@
     var C = palette();
     var lx = x0;
     items.forEach(function (it) {
+      if (it.range) {
+        // A miniature of the capped min-max spread mark, so the whisker can
+        // be named in the legend like any series (27 August 2026).
+        [[lx + 5, y0 - 10, 3, 13], [lx + 2, y0 - 10, 9, 2], [lx + 2, y0 + 1, 9, 2]]
+          .forEach(function (r) {
+            svg.appendChild(tag('rect', {
+              x: r[0], y: r[1], width: r[2], height: r[3], fill: it.fill,
+            }));
+          });
+      } else {
       svg.appendChild(tag('rect', {
         x: lx, y: y0 - 10, width: 13, height: 13, rx: 3,
         fill: it.hollow ? 'none' : it.fill,
@@ -1658,6 +1677,7 @@
         'stroke-width': it.hollow ? 1.5 : null,
         'stroke-dasharray': it.hollow ? '3 2' : null,
       }));
+      }
       svg.appendChild(tag('text', {
         x: lx + 19, y: y0 + 1, fill: C.muted, 'font-size': 12,
       }, it.label));
