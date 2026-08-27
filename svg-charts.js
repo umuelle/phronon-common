@@ -1370,7 +1370,10 @@
         svg.appendChild(rect);
         // The range this average was taken over, behind the bar: a thin
         // capped line, in the bar's own colour at low opacity, so it reads
-        // as the spread rather than as a value of its own.
+        // as the spread rather than as a value of its own. opts.rangeFill
+        // overrides the colour (opts.rangeOpacity with it, default 0.55) —
+        // for pages whose bars are saturated enough that a same-hue range
+        // mark disappears against its own bar (IE's gold, 27 August 2026).
         if (se.min && se.max
             && has(se.min[i]) && has(se.max[i]) && se.min[i] !== se.max[i]) {
           var ry1 = y(se.max[i]), ry2 = y(se.min[i]);
@@ -1380,15 +1383,20 @@
            [rcx - 5, Math.max(ry1, ry2) - 2, 10, 2]].forEach(function (r2) {
             svg.appendChild(tag('rect', {
               x: r2[0], y: r2[1], width: r2[2], height: r2[3],
-              fill: fill, opacity: 0.55,
+              fill: opts.rangeFill || fill,
+              opacity: has(opts.rangeOpacity) ? opts.rangeOpacity : 0.55,
             }));
           });
         }
         svg.appendChild(tag('text', {
           x: x0 + barW / 2,
           // Below the bar when it hangs downward from the baseline, or the
-          // label lands inside the bar it belongs to.
-          y: (v < base && !opts.reverse) ? bot + 14 : top - 5,
+          // label lands inside the bar it belongs to. opts.negLabelsAbove
+          // puts it above the baseline instead — where every other value
+          // sits — for charts whose rare negative is a sliver at the axis
+          // floor, where "below the tip" collides with the category label
+          // (IE's −0.3% bottom quintile, 27 August 2026).
+          y: (v < base && !opts.reverse && !opts.negLabelsAbove) ? bot + 14 : top - 5,
           fill: C.ink, 'font-size': 11,
           'font-weight': 600, 'text-anchor': 'middle',
           'font-variant-numeric': 'tabular-nums',
