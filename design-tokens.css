@@ -310,15 +310,25 @@ body:has(> .ph-footer) > .ph-footer { margin-top: auto; }
 /* ── Skip link — WCAG 2.4.1 Bypass Blocks ────────────────────────────────────
    Lets a keyboard user jump straight past the header/nav to the main content
    instead of tabbing through it on every page.
-   It must stay in the tab order, so it is moved OFF-SCREEN rather than hidden
+   It must stay in the tab order, so it is visually clipped rather than hidden
    with display:none or visibility:hidden — either of those would remove it from
-   the tab order entirely and defeat the purpose. It becomes visible on :focus. */
+   the tab order entirely and defeat the purpose. It becomes visible on :focus.
+   Do NOT hide it with a physical off-screen offset (left: -9999px): under
+   direction: rtl the browser counts those pixels as real scrollable overflow,
+   and every page in an RTL locale opens on empty ground beside its own content
+   (measured in Layoff's Arabic locale before its copy was fixed). Clipping
+   keeps the link in the tab order without occupying space in either direction. */
 .skip-link {
   position: absolute;
-  left: -9999px;
   top: 0;
+  inset-inline-start: 0;
   z-index: 2000;
-  padding: 0.625rem 1rem;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   background: #041A36;
   color: #fff;
   font-weight: 600;
@@ -326,7 +336,11 @@ body:has(> .ph-footer) > .ph-footer { margin-top: auto; }
   border-radius: 0 0 4px 0;
 }
 .skip-link:focus {
-  left: 0;
+  width: auto;
+  height: auto;
+  padding: 0.625rem 1rem;
+  overflow: visible;
+  clip-path: none;
   outline: 3px solid #ffbf47;
   outline-offset: 0;
 }
