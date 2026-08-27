@@ -1290,7 +1290,14 @@
     var showLegend = opts.legend === true
                    || (opts.legend !== false && series.length > 1);
     var PAD_L = 76, PAD_R = 24;
-    var PAD_T = showLegend ? 46 : 26;
+    // staggerLabels lifts every second series' value label by one line, so a
+    // group of four or five bars can print all its numbers without them
+    // overlapping — the alternative at that density is dropping numbers the
+    // reader came for (IE's participant results, 27 August 2026). The extra
+    // head-room keeps a lifted label off the legend.
+    var stagger = opts.staggerLabels === true && series.length > 1;
+    var valueSize = opts.valueSize || 11;
+    var PAD_T = (showLegend ? 46 : 26) + (stagger ? valueSize + 4 : 0);
     var PAD_B = opts.xLabel ? 74 : 56;
     var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
 
@@ -1396,6 +1403,8 @@
         // mark rises past the bar top, the value moves up with it rather
         // than printing across the whisker (27 August 2026).
         var labelTop = rangeTop === null ? top : Math.min(top, rangeTop);
+        var lift = (stagger && si % 2 === 1) ? valueSize + 4 : 0;
+        var below = (v < base && !opts.reverse && !opts.negLabelsAbove);
         svg.appendChild(tag('text', {
           x: x0 + barW / 2,
           // Below the bar when it hangs downward from the baseline, or the
@@ -1404,8 +1413,8 @@
           // sits — for charts whose rare negative is a sliver at the axis
           // floor, where "below the tip" collides with the category label
           // (IE's −0.3% bottom quintile, 27 August 2026).
-          y: (v < base && !opts.reverse && !opts.negLabelsAbove) ? bot + 14 : labelTop - 5,
-          fill: C.ink, 'font-size': opts.valueSize || 11,
+          y: below ? bot + 14 + lift : labelTop - 5 - lift,
+          fill: C.ink, 'font-size': valueSize,
           'font-weight': 600, 'text-anchor': 'middle',
           'font-variant-numeric': 'tabular-nums',
         }, fmt(show(v)) + (opts.unit || '')));
