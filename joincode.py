@@ -10,6 +10,7 @@ in step.
 """
 from __future__ import annotations
 
+import re
 import secrets
 from typing import Callable
 
@@ -18,6 +19,30 @@ from typing import Callable
 # governs GENERATION only — an educator may still type a custom code containing
 # them, and codes already in the database keep working.
 ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"   # no I, O, 0, 1
+
+# The fleet's one rule for educator-TYPED codes (Polarity Profiler's shape,
+# adopted by Moral Mirror on 1 Sep 2026 — this is the shared third copy). The
+# full A–Z0–9 range on purpose: only generation avoids the look-alikes. The
+# 10-character ceiling is what the projected share card is verified to render
+# un-clipped (share_card_layout_check.py) and what a participant can retype.
+# Validation applies at CREATION only — codes already in a database keep
+# working whatever they contain.
+TYPED_CODE_PATTERN = re.compile(r"^[A-Z0-9]{3,10}$")
+
+
+def validate_typed_code(code: str) -> tuple[str, str]:
+    """Normalize and validate an educator-typed join code.
+
+    Returns (normalized_code, "") when valid, ("", error_message) when not —
+    the message is participant-of-the-educator facing and ready to render.
+    """
+    code = (code or "").strip().upper()
+    if len(code) < 3:
+        return "", "Join code must be at least 3 characters."
+    if not TYPED_CODE_PATTERN.match(code):
+        return "", ("Join code may only contain letters and digits "
+                    "(3–10 characters).")
+    return code, ""
 
 
 def generate_join_code(

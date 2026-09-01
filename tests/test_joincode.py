@@ -53,3 +53,33 @@ def test_it_raises_rather_than_return_a_duplicate():
     into someone else's session — louder is safer."""
     with pytest.raises(RuntimeError):
         generate_join_code(6, exists=lambda code: True, max_attempts=5)
+
+
+def test_typed_codes_are_normalized_and_validated():
+    from phronon_common.joincode import validate_typed_code
+
+    assert validate_typed_code("  esmt26  ") == ("ESMT26", "")
+    assert validate_typed_code("ABCDEFGHIJ") == ("ABCDEFGHIJ", "")   # 10 = ceiling
+    assert validate_typed_code("AB1") == ("AB1", "")                 # 3 = floor
+
+
+def test_typed_codes_may_contain_the_look_alikes_generation_avoids():
+    """The look-alike-free alphabet governs GENERATION only; an educator who
+    deliberately types O, 0, I or 1 gets exactly what they typed."""
+    from phronon_common.joincode import validate_typed_code
+
+    assert validate_typed_code("O0I1GO") == ("O0I1GO", "")
+
+
+def test_typed_code_rejections_name_the_rule():
+    from phronon_common.joincode import validate_typed_code
+
+    code, err = validate_typed_code("AB")
+    assert code == "" and "at least 3" in err
+    code, err = validate_typed_code("ABCDEFGHIJK")          # 11 — over the card
+    assert code == "" and "3–10" in err
+    code, err = validate_typed_code("__MYCLASS")            # reserved-prefix shapes fail on charset
+    assert code == "" and "letters and digits" in err
+    code, err = validate_typed_code("MY CLASS!")
+    assert code == "" and "letters and digits" in err
+    assert validate_typed_code("")[0] == ""
