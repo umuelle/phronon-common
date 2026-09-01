@@ -227,8 +227,18 @@
   /* Readable from the back of a lecture theatre, but sized against the card
      (cqi) so it also fits a narrow backoffice column. */
   font-size: clamp(1.9rem, 11cqi, 4.4rem);
-  line-height: 1;
+  line-height: 1.05;
   font-weight: 800;
+  /* A code longer than the column WRAPS instead of clipping. Generated codes
+     are 6 characters and stay on one line; Layoff, PP and (since 1 Sep 2026)
+     Moral Mirror accept educator-TYPED codes up to 10, and overflow:hidden
+     above turned that surplus into missing letters on the projected sheet —
+     the one string the room must read and type (three live incidents; see
+     share_card_layout_check.py, which gates this on every deploy).
+     text-wrap:balance splits a wrapped code into even halves where supported;
+     overflow-wrap:anywhere is the guarantee underneath it. */
+  overflow-wrap: anywhere;
+  text-wrap: balance;
   /* text-indent cancels the trailing letter-space so the code stays centred. */
   letter-spacing: .22em;
   text-indent: .22em;
