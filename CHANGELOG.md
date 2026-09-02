@@ -4,6 +4,13 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.27.1 — 2026-09-02
+
+- German legal templates: `_controller.html` and `_logging.html` said
+  "Lehrende" for the educator; the fleet word is "Lehrperson" (README §9).
+  Found on the live PP notice minutes after 1.27.0 went out — the fleet
+  vocabulary gate scans the tools' templates, not this package's.
+
 ## 1.27.0 — 2026-09-02
 
 - **The container is a SESSION, fleet-wide** (owner's decision, README §9).
