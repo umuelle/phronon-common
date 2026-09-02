@@ -224,11 +224,11 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
      input selectors are identical across the fleet too, but a bare element
      rule in a SHARED sheet reaches pages nobody checked.
 
-   LOAD ORDER IS NOT UNIFORM, and that is why only identical rules are here:
-   five tools load this sheet AFTER their own backoffice.css (so this wins),
-   Controversy Generator loads it before (so its own wins), and Inequality
-   and LSR-profiler load only this one. Identical bodies make the order
-   irrelevant. Nothing else may be added without settling that first. */
+   LOAD ORDER WAS SETTLED ON 3 SEPTEMBER 2026: this sheet loads LAST in every
+   backoffice base (after Bootstrap where a tool still carries it, after the
+   tool's own backoffice.css), so a rule here is the fleet's rule. That is
+   what let the dashboard vocabulary at the foot of this file be promoted
+   from Whiteout rather than copied eight times. */
 
 .btn:active { opacity: .85; }
 .btn-primary { background: var(--bo-primary); color: #fff; }
@@ -699,4 +699,66 @@ details[open] > summary > .bo-section-card__summary-hint { display: none; }
     font-size: .88rem;
     line-height: 1.6;
     color: var(--bo-muted);
+}
+
+/* ══ The dashboard vocabulary (3 September 2026) ═══════════════════════
+
+   Owner's decision from eight dashboards side by side: Whiteout's is the
+   reference — its buttons, its page header, its code chips, its container
+   width. Promoted from Whiteout/static/css/backoffice.css verbatim; the
+   tools that had their own versions (Bootstrap's blue .btn-primary,
+   Inequality's yellow .btn-accent, three different .bo-content widths)
+   now get these because this sheet loads last. `.bo-content` at 1320px is
+   the width decision the 26 August note above left open — the owner took
+   it: "equal width across all projects". */
+.bo-content { flex: 1; max-width: 1320px; margin: 0 auto; width: 100%; padding: 1.75rem 1.5rem; }
+.bo-page-header {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.bo-page-header h1 { font-size: 1.4rem; font-weight: 700; flex: 1; margin: 0; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
+  padding: .5rem 1.1rem;
+  border: none; border-radius: var(--radius-sm, 6px);
+  font: 600 .875rem/1 var(--font, inherit);
+  cursor: pointer; text-decoration: none;
+  transition: background .15s, opacity .15s;
+  white-space: nowrap;
+}
+.btn:active { opacity: .85; }
+.btn-primary   { background: var(--bo-primary); color: #fff; }
+.btn-primary:hover { background: var(--bo-primary-h, var(--bo-primary)); color: #fff; text-decoration: none; }
+.btn-secondary { background: transparent; color: var(--bo-primary); border: 1.5px solid var(--bo-primary); }
+.btn-secondary:hover { background: #f0f0f0; text-decoration: none; }
+.btn-danger    { background: var(--bo-danger); color: #fff; }
+.btn-danger:hover { background: #a93226; text-decoration: none; }
+.btn-sm        { padding: .3rem .75rem; font-size: .8rem; }
+.btn-link      { background: none; border: none; color: var(--bo-muted); font: inherit; cursor: pointer; padding: 0; }
+.btn:disabled  { opacity: .4; cursor: not-allowed; pointer-events: none; }
+.bo-table-wrap { overflow-x: auto; }
+.bo-table tr:hover td { background: #f7f7f7; }
+.bo-table .row-test td { background: #fdfaf5; }
+.badge-test { background: #efefef; color: #4f4f4f; border: 1px solid #d7d7d7; font-size: .7rem; }
+code, .code-chip {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: .82rem; background: #f1f1f1; color: #2f2f2f;
+  padding: .15rem .45rem; border-radius: 4px;
+}
+a.code-chip { text-decoration: none; transition: background .12s; }
+a.code-chip:hover { background: #e2e2e2; }
+.table-search { width: 100%; max-width: 360px; }
+.table-page-size-label {
+  display: flex; align-items: center; gap: .4rem;
+  font-size: .85rem; color: var(--bo-muted); white-space: nowrap;
+}
+.table-page-size {
+  padding: .2rem .4rem; font-size: .85rem;
+  border: 1px solid var(--bo-border); border-radius: 4px; background: var(--bo-surface, #fff);
+  -webkit-appearance: auto; appearance: auto;
+}
+.table-empty-msg {
+  margin-top: 1rem; padding: 1rem; color: var(--bo-muted);
+  background: #f6f6f6; border-radius: var(--radius-sm, 6px);
+  text-align: center; font-size: .9rem;
 }
