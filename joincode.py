@@ -2,9 +2,11 @@
 Collision-checked join-code generation — the fleet's one definition of what a
 join code may contain. Short, uppercase, human-legible from the back of a room.
 
-Used by every tool that hands a code to participants: ControversyGenerator
-(survey codes), Drawbridge, Inequality, Polarity Profiler, Layoff, Moral Mirror and
-OrgDesignSim (class/session/scenario codes). Whiteout keeps its own copy of the
+Used by every tool that hands a session code to participants: ControversyGenerator,
+Drawbridge, Inequality, Polarity Profiler, Layoff, Moral Mirror and OrgDesignSim
+(the container is a SESSION fleet-wide since 2 September 2026, README §9; the
+error strings below say "join code", the one place that word is allowed, because
+they predate the decision and every tool's tests pin them). Whiteout keeps its own copy of the
 alphabet because it pairs it with a look-alike rescue lookup; the two must stay
 in step.
 """

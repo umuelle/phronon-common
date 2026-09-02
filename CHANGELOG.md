@@ -4,6 +4,31 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.27.0 — 2026-09-02
+
+- **The container is a SESSION, fleet-wide** (owner's decision, README §9).
+  `legal_conf.py`: every one of the nine notices says *session* where it said
+  class, survey, scenario or "class/session"; German says *Session* (not
+  Kurs / Sitzung / Klasse) and *Lehrperson* (not Lehrende / Moderierende); the
+  participant cookies are "participant tokens", no longer "session tokens",
+  and OrgDesignSim's retention list no longer uses "sessions" for three
+  different tables. **Every tool's `notice_version` is now `2026-09`**, set
+  explicitly per block (Controversy Generator, Inequality, OrgDesignSim and
+  the hub had inherited the fleet default until now — CG-011). The fleet
+  default `NOTICE_VERSION` and `LAST_UPDATED` move with it. The consent and
+  acknowledgement wordings that changed in the tools are archived in
+  `server-ops/CONSENT-WORDING-ARCHIVE.md` under the same date.
+- `svg-charts.js`: the band label reads "everyone in the session ranked
+  between …" (was "the whole class …"). Synced to the six tools that load it.
+- `joincode.py`, `audit.py`, `share-card.css`: comments only — the `class_*`
+  audit action names and the `.share-class-code` selector are identifiers and
+  keep their names; the docstrings now say so instead of listing per-tool nouns.
+- `tests/test_locale_promises_match.py` follows the wording ("small session" /
+  "kleinen Session").
+
+(1.25.0 — `joincode.validate_typed_code`, and 1.26.0 — `retention_heartbeat`,
+both 1 September 2026, shipped without a changelog entry; see git tags.)
+
 ## 1.24.0 — 2026-08-25
 
 - **Whiteout notice `2026-08-o`**: the required participation box is an

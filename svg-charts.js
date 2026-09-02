@@ -202,7 +202,7 @@
       }));
       var bandText = opts.bandLabel
         ? opts.bandLabel(band.best, band.worst)
-        : 'the whole class ranked between ' + fmt(band.best)
+        : 'everyone in the session ranked between ' + fmt(band.best)
           + ' and ' + fmt(band.worst);
       svg.appendChild(tag('text', {
         x: (x(band.best) + x(band.worst)) / 2, y: PAD_T - 16,

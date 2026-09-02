@@ -66,8 +66,8 @@ import re
 
 # Version stamp shown on every legal document, fleet-wide. Bump the version
 # when wording changes substantively; git is the audit trail for the text.
-NOTICE_VERSION = "2026-07"
-LAST_UPDATED = "2026-08-19"
+NOTICE_VERSION = "2026-09"
+LAST_UPDATED = "2026-09-02"
 
 # nginx logs to /var/log/nginx/access.log, logrotate: daily, rotate 14.
 # Verified on the server 2026-07-30. If the rotation policy changes, change it
@@ -121,6 +121,13 @@ TOOLS = {
         "domain": "controversygenerator.org",
         "tool_name": "Controversy Generator",
         "languages": ["en"],
+        # 2026-09 (2 September): the container is a SESSION fleet-wide (README
+        # §9). Every "survey" that named the thing an educator creates and
+        # participants join now reads "session"; "survey" survives only for
+        # the activity itself. First explicit version for this tool (CG-011):
+        # rows stamped 2026-07 resolve to the wording before this change.
+        "notice_version": "2026-09",
+        "last_updated": "2026-09-02",
         "art9": True,  # statement bank can probe political/moral positions
         "purpose": {
             "en": "The Controversy Generator collects short survey responses to "
@@ -130,11 +137,11 @@ TOOLS = {
         },
         "collect": {
             "en": """
-<h3>From survey participants</h3>
+<h3>From session participants</h3>
 <ul>
   <li><strong>Name or username</strong> — as entered by you; a pseudonym is fine.</li>
-  <li><strong>E-mail address</strong> — <strong>optional unless your educator turns it on</strong> for a particular survey, in which case it is required to submit. Each survey says which applies.</li>
-  <li><strong>Survey code</strong> — attributes your response to the correct survey.</li>
+  <li><strong>E-mail address</strong> — <strong>optional unless your educator turns it on</strong> for a particular session, in which case it is required to submit. Each session says which applies.</li>
+  <li><strong>Session code</strong> — attributes your response to the correct session.</li>
   <li><strong>Survey responses</strong> — your answers to the opinion statements, stored as numerical values. Depending on the statements chosen by your educator, your answers can reveal personal views.</li>
   <li><strong>Submission timestamp.</strong></li>
 </ul>
@@ -142,14 +149,14 @@ TOOLS = {
 <ul>
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
-  <li><strong>Survey data</strong> — titles, items and settings of surveys you create.</li>
+  <li><strong>Session data</strong> — titles, items and settings of sessions you create.</li>
 </ul>""",
         },
         "basis": {
             "en": """
 <ul>
-  <li><strong>Running the survey and pairing discussion partners</strong> — Art. 6(1)(a) GDPR, your consent, given by ticking the required box before you submit. You can withdraw it at any time until the survey is consolidated (see Retention), using the link on your confirmation page; withdrawing does not affect processing that already happened. Every answer here is treated as data about your personal views — including political, religious or philosophical positions — whatever the statements happen to ask, so this is always explicit consent within the meaning of Art. 9(2)(a). We do not judge that statement by statement.</li>
-  <li><strong>Research and teaching beyond your class</strong> — Art. 6(1)(a) GDPR, a separate optional consent. Declining changes nothing about your participation, your results or your discussion pairing; it means your answers are deleted at the retention deadline rather than counted into the anonymous totals described under Retention.</li>
+  <li><strong>Running the survey and pairing discussion partners</strong> — Art. 6(1)(a) GDPR, your consent, given by ticking the required box before you submit. You can withdraw it at any time until the session is consolidated (see Retention), using the link on your confirmation page; withdrawing does not affect processing that already happened. Every answer here is treated as data about your personal views — including political, religious or philosophical positions — whatever the statements happen to ask, so this is always explicit consent within the meaning of Art. 9(2)(a). We do not judge that statement by statement.</li>
+  <li><strong>Research and teaching beyond your session</strong> — Art. 6(1)(a) GDPR, a separate optional consent. Declining changes nothing about your participation, your results or your discussion pairing; it means your answers are deleted at the retention deadline rather than counted into the anonymous totals described under Retention.</li>
   <li><strong>Educator and administrator accounts</strong> — Art. 6(1)(b) GDPR, performance of the arrangement under which the account was created.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR, our legitimate interest in operating the service securely.</li>
 </ul>""",
@@ -157,24 +164,24 @@ TOOLS = {
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see participant names, e-mail addresses (where provided) and individual responses for their own surveys only.</li>
-  <li><strong>Anonymous statement statistics are shared between educators.</strong> Once a survey is consolidated, what remains is a count of how many people chose each point on the scale for each statement, per half-year. Those totals are pooled across all classes and are visible to every educator using the same statement from the shared library. They are shown only where at least two different surveys and at least five responses stand behind the figure, so no single class can be read out of them, and they contain nothing that identifies a person, a class or a date.</li>
+  <li><strong>Educators</strong> see participant names, e-mail addresses (where provided) and individual responses for their own sessions only.</li>
+  <li><strong>Anonymous statement statistics are shared between educators.</strong> Once a session is consolidated, what remains is a count of how many people chose each point on the scale for each statement, per half-year. Those totals are pooled across all sessions and are visible to every educator using the same statement from the shared library. They are shown only where at least two different sessions and at least five responses stand behind the figure, so no single session can be read out of them, and they contain nothing that identifies a person, a session or a date.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security purposes only.</li>
 </ul>""",
         },
         "retention": {
             "en": """
 <ul>
-  <li><strong>One deadline, set when your survey closes.</strong> Thirty days after your educator closes a survey, it is <em>consolidated</em>: the individual responses are erased — names, e-mail addresses, submission times and the record of who was paired with whom. Answers from participants who ticked the optional research box are first counted into anonymous per-statement totals; everyone else's are deleted without being counted. A daily job enforces this.</li>
-  <li><strong>If a survey is never closed</strong>, it is consolidated 30 days after the last response instead, so nothing can stay open indefinitely.</li>
-  <li><strong>If a survey never receives a response</strong>, it is simply deleted 90 days after it was created.</li>
-  <li><strong>Postponement:</strong> the educator is warned 14 days before the date and can push it back by 30 days, at most three times — no later than 120 days after the survey closed or the last response, which is 90 days beyond the original deletion date. If you gave an e-mail address, you are warned 7 days before.</li>
-  <li><strong>After consolidation</strong> only anonymous totals remain, and they are kept indefinitely. They cannot be traced back to you, to your class or to a date, which is also why a response cannot be withdrawn once that day has passed.</li>
-  <li><strong>Manual deletion:</strong> educators and administrators can delete whole surveys or individual submissions at any time before then.</li>
+  <li><strong>One deadline, set when your session closes.</strong> Thirty days after your educator closes a session, it is <em>consolidated</em>: the individual responses are erased — names, e-mail addresses, submission times and the record of who was paired with whom. Answers from participants who ticked the optional research box are first counted into anonymous per-statement totals; everyone else's are deleted without being counted. A daily job enforces this.</li>
+  <li><strong>If a session is never closed</strong>, it is consolidated 30 days after the last response instead, so nothing can stay open indefinitely.</li>
+  <li><strong>If a session never receives a response</strong>, it is simply deleted 90 days after it was created.</li>
+  <li><strong>Postponement:</strong> the educator is warned 14 days before the date and can push it back by 30 days, at most three times — no later than 120 days after the session closed or the last response, which is 90 days beyond the original deletion date. If you gave an e-mail address, you are warned 7 days before.</li>
+  <li><strong>After consolidation</strong> only anonymous totals remain, and they are kept indefinitely. They cannot be traced back to you, to your session or to a date, which is also why a response cannot be withdrawn once that day has passed.</li>
+  <li><strong>Manual deletion:</strong> educators and administrators can delete whole sessions or individual submissions at any time before then.</li>
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Until your survey is consolidated you can withdraw your
+            "en": """<p>Until your session is consolidated you can withdraw your
 response yourself, using the withdrawal link on your confirmation page, or ask
 your educator (who can delete individual submissions) or us. The date is shown
 to you before you submit, and if you gave an e-mail address you are reminded
@@ -189,7 +196,7 @@ rather than merely stripped of a name.</p>""",
             "en": """<p>Providing data is neither a statutory nor a contractual
 requirement. A name (which may be a pseudonym) is needed to take part so that
 your educator can attribute responses. The e-mail address is optional by
-default; an educator can make it required for their own survey, and where they
+default; an educator can make it required for their own session, and where they
 have, you cannot submit without it.</p>""",
         },
         "provenance": {
@@ -207,12 +214,12 @@ the responsibility of the educator who writes them.</p>""",
         # and the no-banner conclusion must be revisited.
         "cookies": [
             ("student_session", "Keeps your survey progress and marks your submission (signed, HTTP-only).", "2 hours", "participants"),
-            ("quiz_code / answers / user", "Carry the survey code and your in-progress answers between pages.", "browser session / 2 hours", "participants"),
-            ("norms_&lt;code&gt; / privacy_&lt;code&gt;", "Record that the survey's ground-rules and privacy note were shown.", "1 hour", "participants"),
+            ("quiz_code / answers / user", "Carry the session code and your in-progress answers between pages.", "browser session / 2 hours", "participants"),
+            ("norms_&lt;code&gt; / privacy_&lt;code&gt;", "Record that the session's ground-rules and privacy note were shown.", "1 hour", "participants"),
             ("withdrawal_token", "Lets you withdraw your submission right after submitting.", "5–10 minutes", "participants"),
             ("backoffice_user", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("cg_pending_totp / cg_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
-            ("dismiss_anonymize_until", "Remembers that an educator dismissed the \"these surveys need anonymising\" reminder, so it is not shown again for a week. Set only when the educator clicks dismiss.", "7 days", "backoffice"),
+            ("dismiss_anonymize_until", "Remembers that an educator dismissed the \"these sessions need anonymising\" reminder, so it is not shown again for a week. Set only when the educator clicks dismiss.", "7 days", "backoffice"),
         ],
     },
 
@@ -238,8 +245,12 @@ the responsibility of the educator who writes them.</p>""",
         # -b, later the same day: the collection list named neither the
         # randomly-assigned question version (which IS the experiment) nor the
         # record that this notice was shown. Both are stored per participant.
-        "notice_version": "2026-08-d",
-        "last_updated": "2026-08-19",
+        # 2026-09 (2 September): the container is a SESSION fleet-wide (README
+        # §9); every "class" that named it now reads "session", and the
+        # duplicate-check bullet no longer says "browser session" for a cookie,
+        # because the word now has one meaning on the page.
+        "notice_version": "2026-09",
+        "last_updated": "2026-09-02",
         "art9": True,  # moral-judgment attributions
         "purpose": {
             "en": "The Drawbridge Drama presents a short illustrated narrative and "
@@ -248,18 +259,18 @@ the responsibility of the educator who writes them.</p>""",
         },
         "collect": {
             "en": """
-<h3>From class participants</h3>
+<h3>From session participants</h3>
 <p>We do not ask for your name, e-mail address, phone number or any account.
 The data we store is <strong>pseudonymous</strong>, per submission:</p>
 <ul>
-  <li><strong>Class code</strong> — attributes the response to the correct class; it is not linked to you personally.</li>
+  <li><strong>Session code</strong> — attributes the response to the correct session; it is not linked to you personally.</li>
   <li><strong>Story-path code</strong> — which version of the story flow was shown.</li>
   <li><strong>Your responses</strong> — your responsibility attribution, certainty rating and optional follow-ups; a free-text explanation if you choose "Other". Your answers can reveal your moral views. The free-text box is the one field we cannot check for you: please do not type your name or anything that identifies you or another person, and we ask you not to on the page itself.</li>
   <li><strong>Optional demographics</strong> — age bracket, gender, childhood country/region, prior familiarity. All optional.</li>
   <li><strong>Submission timestamp.</strong></li>
   <li><strong>A deletion code</strong> — shown to you once when you submit, and stored so that entering it later finds your response. It is the only thing that can, since no name or address is collected. Keep it if you might want your answers removed; we cannot re-send it.</li>
   <li><strong>Your answer to the optional research question</strong>, with the date and the version of the wording you were shown — this is how we can demonstrate what you agreed to.</li>
-  <li><strong>Short one-way hashes of your session cookie and browser identifier</strong> — checked before a response is accepted, so that one browser session cannot submit twice. The original cookie and browser string are not retained in these fields, but the hashes can still single out the same browser session; clearing your cookies starts a new session, so this prevents accidental double submission rather than a determined one. Because such a key exists, the data is pseudonymous rather than anonymous.</li>
+  <li><strong>Short one-way hashes of your participant cookie and browser identifier</strong> — checked before a response is accepted, so that one browser cannot submit twice. The original cookie and browser string are not retained in these fields, but the hashes can still single out the same browser; clearing your cookies gives you a fresh cookie, so this prevents accidental double submission rather than a determined one. Because such a key exists, the data is pseudonymous rather than anonymous.</li>
 </ul>
 <h3>From baseline (Prolific) participants</h3>
 <ul>
@@ -269,14 +280,14 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
 <ul>
   <li><strong>E-mail address, display name</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
-  <li><strong>Class data</strong> — names, codes and configuration of classes you create.</li>
+  <li><strong>Session data</strong> — names, codes and configuration of sessions you create.</li>
 </ul>""",
         },
         "basis": {
             "en": """
 <ul>
   <li><strong>Running the study and aggregate visualisations</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
-  <li><strong>Keeping a stripped research row after the class is erased</strong> — Art. 6(1)(a) GDPR, your separate, optional consent. The box is not pre-selected, declining changes nothing about the exercise, and you can withdraw at any time with your deletion code.</li>
+  <li><strong>Keeping a stripped research row after the session is erased</strong> — Art. 6(1)(a) GDPR, your separate, optional consent. The box is not pre-selected, declining changes nothing about the exercise, and you can withdraw at any time with your deletion code.</li>
   <li><strong>Educator and administrator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
@@ -284,16 +295,16 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see aggregate counts and the pseudonymous response-level data for their own classes, plus aggregated comparison figures from the baseline sample. No stored field identifies a participant directly.</li>
+  <li><strong>Educators</strong> see aggregate counts and the pseudonymous response-level data for their own sessions, plus aggregated comparison figures from the baseline sample. No stored field identifies a participant directly.</li>
   <li><strong>The administrator</strong> has technical access for maintenance, backups and security only, and is the only role that can open or export the raw baseline (Prolific) sample.</li>
 </ul>""",
         },
         "retention": {
             "en": """
 <ul>
-  <li><strong>Class responses</strong> — erased automatically <strong>30 days</strong> after the class is closed, or 30 days after the last response if it is never closed. A class nobody ever joined is removed 90 days after it was created. Erasure removes the whole class: every response, the free-text answers, the optional demographics and the browser hashes. Educators are warned 14 days beforehand and may postpone up to three times by 30 days. The latest possible date is <strong>120 days after</strong> the class closed or the last response — 90 days beyond the original deletion date.</li>
-  <li><strong>If you tick the optional research box</strong> — one row of yours is kept after that date: the experimental story version and factor levels, your choice, certainty, optional closed-choice follow-up, and any demographics you gave. <strong>Your free-text explanation is never copied.</strong> The row has no class code or class name and no date finer than the half-year. It does carry a new random cohort key shared by people who answered in the same class, so co-membership can be analysed without retaining which class it was. Those rows are <strong>pseudonymous, not anonymous</strong>: the deletion code you were given still matches yours, which is exactly what lets you withdraw it. If you do not tick it, nothing of yours survives the deadline.</li>
-  <li><strong>Baseline (Prolific) responses</strong> — a one-time benchmark sample, collected as research from the outset with consent given through Prolific and retained as part of that dataset. It is not on the class clock above. The Prolific ID is held only for deduplication and for withdrawal through Prolific.</li>
+  <li><strong>Session responses</strong> — erased automatically <strong>30 days</strong> after the session is closed, or 30 days after the last response if it is never closed. A session nobody ever joined is removed 90 days after it was created. Erasure removes the whole session: every response, the free-text answers, the optional demographics and the browser hashes. Educators are warned 14 days beforehand and may postpone up to three times by 30 days. The latest possible date is <strong>120 days after</strong> the session closed or the last response — 90 days beyond the original deletion date.</li>
+  <li><strong>If you tick the optional research box</strong> — one row of yours is kept after that date: the experimental story version and factor levels, your choice, certainty, optional closed-choice follow-up, and any demographics you gave. <strong>Your free-text explanation is never copied.</strong> The row has no session code or session name and no date finer than the half-year. It does carry a new random cohort key shared by people who answered in the same session, so co-membership can be analysed without retaining which session it was. Those rows are <strong>pseudonymous, not anonymous</strong>: the deletion code you were given still matches yours, which is exactly what lets you withdraw it. If you do not tick it, nothing of yours survives the deadline.</li>
+  <li><strong>Baseline (Prolific) responses</strong> — a one-time benchmark sample, collected as research from the outset with consent given through Prolific and retained as part of that dataset. It is not on the session clock above. The Prolific ID is held only for deduplication and for withdrawal through Prolific.</li>
   <li><strong>Educator accounts</strong> — retained until deactivated or deleted by an administrator.</li>
 </ul>""",
         },
@@ -320,7 +331,7 @@ parable; the illustrated narrative, story-flow design, and site are original
 works.</p>""",
         },
         "cookies": [
-            ("drawbridge_session", "Signed, HTTP-only session cookie: holds the anonymous session and CSRF value so your pass through the story stays consistent.", "4 hours", "participants"),
+            ("drawbridge_session", "Signed, HTTP-only participant cookie: holds your anonymous pass through the story and the CSRF value, so the pass stays consistent.", "4 hours", "participants"),
             ("drawbridge_progress", "Remembers how far you have read through the story, so returning to the page does not restart it (signed, HTTP-only). Cleared when you finish.", "4 hours", "participants"),
             ("drawbridge_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("bo_csrf", "Protects backoffice forms against cross-site request forgery (signed, HTTP-only).", "1 hour", "backoffice"),
@@ -334,6 +345,12 @@ works.</p>""",
         "domain": "inequality-explorer.org",
         "tool_name": "Inequality Explorer",
         "languages": ["en"],
+        # 2026-09 (2 September): the container is a SESSION fleet-wide (README
+        # §9); the four places this notice still said "class" now say session.
+        # First explicit version for this tool: rows stamped 2026-07 resolve
+        # to the wording before this change.
+        "notice_version": "2026-09",
+        "last_updated": "2026-09-02",
         "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
                        # items (pol_redistribution, pol_regulation), stored as enums.
                        # Political opinions are Art. 9(1) data — the earlier False was wrong.
@@ -366,7 +383,7 @@ works.</p>""",
         "basis": {
             "en": """
 <ul>
-  <li><strong>Running the survey and the class debrief</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
+  <li><strong>Running the survey and the session debrief</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
   <li><strong>The two political-opinion questions</strong> — <strong>Art. 9(2)(a) explicit consent</strong>, given by ticking the dedicated box on the demographics page. This is a separate box from the research one on purpose: you can help with research and still decline the political questions. Without that tick the answers are not stored at all.</li>
   <li><strong>Keeping demographics and reflection answers past the 30-day window, and using them outside your own educator's teaching</strong> — your separate consent (Art. 6(1)(a)), also its own unticked box. Within the window and within your educator's own courses, those answers feed the session debrief and your educator's cross-session summary on Art. 6(1)(f); that is the teaching the session is part of. If you decline, they are <strong>deleted</strong> at the 30-day mark instead of being kept.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
@@ -383,7 +400,7 @@ works.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>After 30 days, what happens depends on your consent.</strong> In every case your name and e-mail address are removed, and the <strong>free-text reflection box is emptied for everyone</strong>. If you did <em>not</em> consent to research use, your demographic and reflection answers are <strong>deleted outright</strong> at the same moment. If you did consent, they are kept — but the record is <strong>cut loose from your class</strong>: the link to the session is removed and the timestamp is reduced to the month, so the answers sit in a large cross-class pool instead of a group of twenty where a combination of age, gender and income could point at one person.</li>
+  <li><strong>After 30 days, what happens depends on your consent.</strong> In every case your name and e-mail address are removed, and the <strong>free-text reflection box is emptied for everyone</strong>. If you did <em>not</em> consent to research use, your demographic and reflection answers are <strong>deleted outright</strong> at the same moment. If you did consent, they are kept — but the record is <strong>cut loose from your session</strong>: the link to it is removed and the timestamp is reduced to the month, so the answers sit in a large cross-session pool instead of a group of twenty where a combination of age, gender and income could point at one person.</li>
   <li><strong>What that means for you:</strong> once the 30 days have passed we can no longer find your individual response, so a withdrawal request has to reach us before then. Until then, write to us and we will delete it.</li>
   <li>This routine had been broken since the feature was written — the database rejected the deletion every time, and it only ran at start-up — and was repaired on 2026-07-30/31. A test now executes the deletion itself on every deploy rather than merely checking that the code exists.</li>
   <li><strong>Manual anonymisation:</strong> educators can anonymise or archive a session at any time before the 30-day window ends. Doing so applies exactly the steps described above, immediately — it is the same routine, not a lighter version of it.</li>
@@ -393,7 +410,7 @@ works.</p>""",
             "en": """<p>Within the first 30 days, ask your educator (who can delete
 individual entries) or write to us naming the session and the name you used —
 your entry can be found and removed. After 30 days the record has been
-anonymised and, if you consented to research use, detached from your class, so
+anonymised and, if you consented to research use, detached from your session, so
 we genuinely cannot identify which row was yours. You can also withdraw a
 consent you gave at any time by writing to us; that stops any further use,
 though it cannot reach a record we can no longer locate.</p>""",
@@ -404,7 +421,7 @@ requirement. A name or pseudonym is needed so your educator can see who has
 responded. Everything on the demographics page is voluntary: every field
 offers &ldquo;prefer not to say&rdquo;, the whole page can be skipped, and
 neither consent box has to be ticked. Declining any of it does not affect your
-results, the class discussion, or anything else.</p>""",
+results, the session debrief, or anything else.</p>""",
         },
         "provenance": {
             "en": """<p>The comparison data on real wealth distributions is drawn
@@ -429,8 +446,11 @@ from published public sources; the survey design and site are original works.</p
         # says educators also see cross-class AGGREGATE analytics, which they
         # always could. And the audit trail is database records, not a monthly
         # rotating file; it has been a table since 12 August (FL-002).
-        "notice_version": "2026-08-b",
-        "last_updated": "2026-08-19",
+        # 2026-09 (2 September): the container is a SESSION fleet-wide (README
+        # §9) — "class"/"Klasse"/"Kurs" become session/Session in both
+        # languages, and the German educator is "Lehrperson" throughout.
+        "notice_version": "2026-09",
+        "last_updated": "2026-09-02",
         "art9": False,  # ranking/structural decisions
         "purpose": {
             "en": "The Layoff Exercise asks participants to rank candidates in a "
@@ -446,7 +466,7 @@ from published public sources; the survey design and site are original works.</p
 <h3>From participants</h3>
 <ul>
   <li><strong>E-mail address</strong> — required; identifies your submission and prevents duplicates.</li>
-  <li><strong>Class code</strong> — groups participants by class.</li>
+  <li><strong>Session code</strong> — groups participants by session.</li>
   <li><strong>Ranking decisions</strong> — your responses to the exercise.</li>
   <li><strong>Optional demographics</strong> — only the fields you choose to answer.</li>
   <li><strong>Submission timestamps.</strong></li>
@@ -455,63 +475,63 @@ from published public sources; the survey design and site are original works.</p
 <ul>
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
-  <li><strong>Class data</strong> — names, codes, configuration, responses.</li>
+  <li><strong>Session data</strong> — names, codes, configuration, responses.</li>
   <li><strong>An audit record of backoffice actions</strong> — the educator's e-mail address and the <strong>IP address</strong> an action came from, stored as database records. This is a security record: it is how an account compromise is reconstructed. Records are deleted after <strong>12 months</strong>.</li>
 </ul>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
 <ul>
   <li><strong>E-Mail-Adresse</strong> — erforderlich; identifiziert Ihre Abgabe und verhindert Doppel­abgaben.</li>
-  <li><strong>Klassencode</strong> — ordnet Teilnehmende einer Klasse zu.</li>
+  <li><strong>Session-Code</strong> — ordnet Teilnehmende einer Session zu.</li>
   <li><strong>Reihungs­entscheidungen</strong> — Ihre Antworten in der Übung.</li>
   <li><strong>Freiwillige demografische Angaben</strong> — nur die Felder, die Sie ausfüllen.</li>
   <li><strong>Zeitstempel der Abgabe.</strong></li>
 </ul>
-<h3>Von Lehrenden</h3>
+<h3>Von Lehrpersonen</h3>
 <ul>
   <li><strong>E-Mail-Adresse</strong> — für die Anmeldung im Backoffice.</li>
   <li><strong>Passwort</strong> — ausschließlich als bcrypt-Hash gespeichert.</li>
-  <li><strong>Klassendaten</strong> — Namen, Codes, Konfiguration, Antworten.</li>
+  <li><strong>Session-Daten</strong> — Namen, Codes, Konfiguration, Antworten.</li>
   <li><strong>Protokoll der Backoffice-Aktionen</strong> — die E-Mail-Adresse der Lehrperson und die <strong>IP-Adresse</strong>, von der eine Aktion ausging, als Datenbank­einträge gespeichert. Dies ist eine Sicherheitsaufzeichnung: Damit lässt sich eine Kontokompromittierung nachvollziehen. Die Einträge werden nach <strong>12 Monaten</strong> gelöscht.</li>
 </ul>""",
         },
         "basis": {
             "en": """
 <ul>
-  <li><strong>Running the exercise and the class debrief</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
+  <li><strong>Running the exercise and the session debrief</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Durchführung der Übung und der Auswertung im Kurs</strong> — Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an der Unterstützung des Bildungsprogramms, an dem die Teilnehmenden teilnehmen.</li>
-  <li><strong>Konten von Lehrenden</strong> — Art. 6 Abs. 1 lit. b DSGVO.</li>
+  <li><strong>Durchführung der Übung und der Auswertung in der Session</strong> — Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an der Unterstützung des Bildungsprogramms, an dem die Teilnehmenden teilnehmen.</li>
+  <li><strong>Konten von Lehrpersonen</strong> — Art. 6 Abs. 1 lit. b DSGVO.</li>
   <li><strong>Sicherheit, Rate-Limiting und Missbrauchs­abwehr</strong> — Art. 6 Abs. 1 lit. f DSGVO.</li>
 </ul>""",
         },
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see the participants of their own classes (e-mail addresses) and the class's responses for the debrief. They can also open <strong>aggregate analytics across all classes</strong> — combined figures only, with small groups suppressed, never another class's individual responses or addresses.</li>
+  <li><strong>Educators</strong> see the participants of their own sessions (e-mail addresses) and the session's responses for the debrief. They can also open <strong>aggregate analytics across all sessions</strong> — combined figures only, with small groups suppressed, never another session's individual responses or addresses.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Lehrende</strong> sehen die Teilnehmenden ihrer eigenen Klassen (E-Mail-Adressen) und die Antworten der Klasse für die Auswertung. Zusätzlich können sie <strong>aggregierte Auswertungen über alle Klassen hinweg</strong> aufrufen — ausschließlich zusammengefasste Werte, kleine Gruppen unterdrückt, niemals Einzelantworten oder Adressen einer anderen Klasse.</li>
+  <li><strong>Lehrpersonen</strong> sehen die Teilnehmenden ihrer eigenen Sessions (E-Mail-Adressen) und die Antworten der Session für die Auswertung. Zusätzlich können sie <strong>aggregierte Auswertungen über alle Sessions hinweg</strong> aufrufen — ausschließlich zusammengefasste Werte, kleine Gruppen unterdrückt, niemals Einzelantworten oder Adressen einer anderen Session.</li>
   <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit.</li>
 </ul>""",
         },
         "retention": {
             "en": """
 <ul>
-  <li><strong>Automatic pseudonymisation:</strong> classes whose responses are older than 60 days are pseudonymised automatically (hourly check), whichever rounds the class ran. E-mail addresses are replaced by stable per-class labels; rankings, optional demographics, the class link and submission timestamps remain joined for aggregate analysis. These rows are <strong>not anonymous</strong>.</li>
-  <li><strong>Educator-triggered pseudonymisation:</strong> educators are asked to pseudonymise a class as soon as the session is finished, and can do so at any time.</li>
+  <li><strong>Automatic pseudonymisation:</strong> sessions whose responses are older than 60 days are pseudonymised automatically (hourly check), whichever rounds the session ran. E-mail addresses are replaced by stable per-session labels; rankings, optional demographics, the session link and submission timestamps remain joined for aggregate analysis. These rows are <strong>not anonymous</strong>.</li>
+  <li><strong>Educator-triggered pseudonymisation:</strong> educators are asked to pseudonymise a session as soon as it is finished, and can do so at any time.</li>
   <li><strong>Backoffice audit log:</strong> kept as database records and deleted after <strong>12 months</strong>.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Automatische Pseudonymisierung:</strong> Klassen, deren Antworten älter als 60 Tage sind, werden automatisch pseudonymisiert (stündliche Prüfung) — unabhängig davon, welche Runden die Klasse durchlaufen hat. E-Mail-Adressen werden durch stabile, klassenbezogene Kennzeichnungen ersetzt; Reihungen, freiwillige demografische Angaben, Klassenzuordnung und Abgabezeitpunkte bleiben für aggregierte Auswertungen miteinander verknüpft. Diese Datensätze sind <strong>nicht anonym</strong>.</li>
-  <li><strong>Pseudonymisierung durch Lehrende:</strong> Lehrende werden gebeten, eine Klasse unmittelbar nach der Sitzung zu pseudonymisieren, und können dies jederzeit tun.</li>
+  <li><strong>Automatische Pseudonymisierung:</strong> Sessions, deren Antworten älter als 60 Tage sind, werden automatisch pseudonymisiert (stündliche Prüfung) — unabhängig davon, welche Runden die Session durchlaufen hat. E-Mail-Adressen werden durch stabile, sessionbezogene Kennzeichnungen ersetzt; Reihungen, freiwillige demografische Angaben, Session-Zuordnung und Abgabezeitpunkte bleiben für aggregierte Auswertungen miteinander verknüpft. Diese Datensätze sind <strong>nicht anonym</strong>.</li>
+  <li><strong>Pseudonymisierung durch Lehrpersonen:</strong> Lehrpersonen werden gebeten, eine Session unmittelbar nach ihrem Ende zu pseudonymisieren, und können dies jederzeit tun.</li>
   <li><strong>Backoffice-Protokoll:</strong> als Datenbank­einträge gespeichert und nach <strong>12 Monaten</strong> gelöscht.</li>
 </ul>""",
         },
@@ -519,13 +539,13 @@ from published public sources; the survey design and site are original works.</p
             "en": """<p>Before pseudonymisation, write to us or to your educator naming
 the e-mail address you used; the submission can be located and deleted. After
 pseudonymisation the address is gone, so we can normally no longer identify
-which stable per-class row was yours; the retained rows remain pseudonymous,
+which stable per-session row was yours; the retained rows remain pseudonymous,
 not anonymous.</p>""",
             "de": """<p>Vor der Pseudonymisierung schreiben Sie uns oder Ihrer Lehrperson
 unter Angabe der verwendeten E-Mail-Adresse; die Abgabe kann gefunden und
 gelöscht werden. Nach der Pseudonymisierung ist die Adresse gelöscht; daher
 können wir in der Regel nicht mehr feststellen, welche stabile,
-klassenbezogene Zeile zu Ihnen gehörte. Die gespeicherten Zeilen bleiben
+sessionbezogene Zeile zu Ihnen gehörte. Die gespeicherten Zeilen bleiben
 pseudonym und sind nicht anonym.</p>""",
         },
         "provision": {
@@ -543,7 +563,7 @@ Abgabe gespeichert werden. Demografische Felder sind freiwillig.</p>""",
 original works created for teaching.</p>""",
         },
         "cookies": [
-            ("layoff_participant", "Carries your e-mail and class code between the exercise steps (signed, HTTP-only).", "30 minutes", "participants"),
+            ("layoff_participant", "Carries your e-mail and session code between the exercise steps (signed, HTTP-only).", "30 minutes", "participants"),
             ("layoff_flash", "Carries a one-off status message between two pages.", "5 minutes", "all"),
             ("layoff_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("lo_pending_totp / layoff_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
@@ -555,7 +575,7 @@ original works created for teaching.</p>""",
         # cookies, or if a lifetime cell disagrees between the languages.
         # `closing_audit.py` reads both and understands Stunde/Minute/Tag.
         "cookies_de": [
-            ('layoff_participant', 'Überträgt Ihre E-Mail-Adresse und den Kurscode zwischen den Schritten der Übung (signiert, HTTP-only).',
+            ('layoff_participant', 'Überträgt Ihre E-Mail-Adresse und den Session-Code zwischen den Schritten der Übung (signiert, HTTP-only).',
              '30 Minuten', 'Teilnehmende'),
             ('layoff_flash', 'Überträgt eine einmalige Statusmeldung von einer Seite zur nächsten.',
              '5 Minuten', 'alle'),
@@ -583,22 +603,25 @@ original works created for teaching.</p>""",
         # contradicted anything published; both are things a reader is entitled
         # to see listed, and an inventory that omits them is not the inventory
         # Art. 13 asks for.
-        "notice_version": "2026-08-c",
-        "last_updated": "2026-08-19",
+        # 2026-09 (2 September): the container is a SESSION fleet-wide (README
+        # §9) — "class"/"Klasse"/"Kurs" become session/Session in both
+        # languages, and the German educator is "Lehrperson" throughout.
+        "notice_version": "2026-09",
+        "last_updated": "2026-09-02",
         "art9": False,  # leadership-style point allocations
         "purpose": {
             "en": "The Polarity Profiler collects scenario-based point allocations and "
                   "produces a personal leadership-style repertoire report, with an "
-                  "optional class comparison, for use in executive education.",
+                  "optional session comparison, for use in executive education.",
             "de": "Der Polarity Profiler erhebt szenariobasierte Punktverteilungen und "
                   "erstellt einen persönlichen Bericht zum Führungsstil-Repertoire, "
-                  "mit optionalem Klassenvergleich, für die Führungskräfte­bildung.",
+                  "mit optionalem Session-Vergleich, für die Führungskräfte­bildung.",
         },
         "collect": {
             "en": """
 <h3>From participants</h3>
 <ul>
-  <li><strong>E-mail address</strong> — <strong>required</strong> to take part. It is used to send your PDF report, to include you in the class comparison, and to give you a withdrawal link.</li>
+  <li><strong>E-mail address</strong> — <strong>required</strong> to take part. It is used to send your PDF report, to include you in the session comparison, and to give you a withdrawal link.</li>
   <li><strong>Questionnaire responses</strong> — point allocations, context answers, derived style scores.</li>
   <li><strong>Optional demographics</strong> — only fields you fill in; used for aggregate analysis only.</li>
   <li><strong>Submission timestamp.</strong></li>
@@ -609,67 +632,67 @@ original works created for teaching.</p>""",
 <ul>
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
-  <li><strong>Class data</strong> — names and codes of classes you create.</li>
+  <li><strong>Session data</strong> — names and codes of sessions you create.</li>
 </ul>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
 <ul>
-  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong> für die Teilnahme. Sie wird verwendet, um Ihnen Ihren PDF-Bericht zu senden, Sie in den Klassenvergleich einzubeziehen und Ihnen einen Widerrufslink bereitzustellen.</li>
+  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong> für die Teilnahme. Sie wird verwendet, um Ihnen Ihren PDF-Bericht zu senden, Sie in den Session-Vergleich einzubeziehen und Ihnen einen Widerrufslink bereitzustellen.</li>
   <li><strong>Fragebogen­antworten</strong> — Punktverteilungen, Kontextantworten, abgeleitete Stilwerte.</li>
   <li><strong>Freiwillige demografische Angaben</strong> — nur Felder, die Sie ausfüllen; ausschließlich für aggregierte Auswertungen.</li>
   <li><strong>Zeitstempel der Abgabe.</strong></li>
   <li><strong>Zwei Zugangs-Token</strong> — eines öffnet den Link zu Ihrem Bericht, eines den Link zum Widerruf. Sie sind es, die diese Links ohne Passwort funktionieren lassen; wer einen Link hat, kann ihn verwenden — behandeln Sie sie daher vertraulich.</li>
   <li><strong>Ein Nachweis darüber, was Ihnen gezeigt wurde und wie Sie entschieden haben</strong> — wann Sie diesen Hinweis zur Kenntnis genommen haben und, falls Sie die Forschungsfrage auf Ihrer Ergebnisseite beantwortet haben, Ihre Antwort mit Datum und der Version des Wortlauts, den Sie gesehen haben. So können wir belegen, worin Sie eingewilligt haben — das verlangt das Gesetz von uns.</li>
 </ul>
-<h3>Von Lehrenden und Administratoren</h3>
+<h3>Von Lehrpersonen und Administratoren</h3>
 <ul>
   <li><strong>E-Mail-Adresse</strong> — für die Anmeldung im Backoffice.</li>
   <li><strong>Passwort</strong> — ausschließlich als bcrypt-Hash gespeichert.</li>
-  <li><strong>Klassendaten</strong> — Namen und Codes der von Ihnen angelegten Klassen.</li>
+  <li><strong>Session-Daten</strong> — Namen und Codes der von Ihnen angelegten Sessions.</li>
 </ul>""",
         },
         "basis": {
             "en": """
 <ul>
-  <li><strong>Running the profiler, generating the class aggregate, sending the PDF report</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the executive-education programme in which participants are enrolled.</li>
-  <li><strong>Research and cross-class benchmark use</strong> — your consent (Art. 6(1)(a)), offered on your results page once you have seen what your answers produced. It is entirely optional and separate from taking part: declining changes nothing about your report or your place in the class comparison, and you can give or withdraw it at any time from that page. The tick-box on the first page is a different thing — it confirms you have read this notice, and is not a consent to research use.</li>
+  <li><strong>Running the profiler, generating the session aggregate, sending the PDF report</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the executive-education programme in which participants are enrolled.</li>
+  <li><strong>Research and cross-session benchmark use</strong> — your consent (Art. 6(1)(a)), offered on your results page once you have seen what your answers produced. It is entirely optional and separate from taking part: declining changes nothing about your report or your place in the session comparison, and you can give or withdraw it at any time from that page. The tick-box on the first page is a different thing — it confirms you have read this notice, and is not a consent to research use.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Durchführung des Profilers, Klassen­aggregat, Versand des PDF-Berichts</strong> — Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an der Unterstützung des Weiterbildungs­programms, in dem die Teilnehmenden eingeschrieben sind.</li>
-  <li><strong>Forschungs- und klassen­übergreifende Benchmark-Nutzung</strong> — Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die Ihnen auf Ihrer Ergebnisseite angeboten wird, nachdem Sie gesehen haben, was Ihre Antworten ergeben. Sie ist vollkommen freiwillig und von der Teilnahme unabhängig: Eine Ablehnung ändert nichts an Ihrem Bericht oder Ihrem Platz im Klassenvergleich, und Sie können sie dort jederzeit erteilen oder widerrufen. Das Kästchen auf der ersten Seite ist etwas anderes — es bestätigt, dass Sie diese Erklärung gelesen haben, und ist keine Einwilligung in die Forschungsnutzung.</li>
-  <li><strong>Konten von Lehrenden</strong> — Art. 6 Abs. 1 lit. b DSGVO.</li>
+  <li><strong>Durchführung des Profilers, Session-Aggregat, Versand des PDF-Berichts</strong> — Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an der Unterstützung des Weiterbildungs­programms, in dem die Teilnehmenden eingeschrieben sind.</li>
+  <li><strong>Forschungs- und sessionübergreifende Benchmark-Nutzung</strong> — Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die Ihnen auf Ihrer Ergebnisseite angeboten wird, nachdem Sie gesehen haben, was Ihre Antworten ergeben. Sie ist vollkommen freiwillig und von der Teilnahme unabhängig: Eine Ablehnung ändert nichts an Ihrem Bericht oder Ihrem Platz im Session-Vergleich, und Sie können sie dort jederzeit erteilen oder widerrufen. Das Kästchen auf der ersten Seite ist etwas anderes — es bestätigt, dass Sie diese Erklärung gelesen haben, und ist keine Einwilligung in die Forschungsnutzung.</li>
+  <li><strong>Konten von Lehrpersonen</strong> — Art. 6 Abs. 1 lit. b DSGVO.</li>
   <li><strong>Sicherheit, Rate-Limiting und Missbrauchs­abwehr</strong> — Art. 6 Abs. 1 lit. f DSGVO.</li>
 </ul>""",
         },
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see a completion list for their class (e-mail address and submission time). They do not see individual scores.</li>
+  <li><strong>Educators</strong> see a completion list for their session (e-mail address and submission time). They do not see individual scores.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Lehrende</strong> sehen eine Abgabeliste ihrer Klasse (E-Mail-Adresse und Abgabezeitpunkt). Individuelle Ergebnisse sehen sie nicht.</li>
+  <li><strong>Lehrpersonen</strong> sehen eine Abgabeliste ihrer Session (E-Mail-Adresse und Abgabezeitpunkt). Individuelle Ergebnisse sehen sie nicht.</li>
   <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit.</li>
 </ul>""",
         },
         "retention": {
             "en": """
 <ul>
-  <li><strong>Live-class mode:</strong> report access and withdrawal expire 14 days after the class is closed; educators can postpone this in limited 7-day steps. At that deadline your e-mail address, name, withdrawal token and class linkage are removed. What happens to the answers themselves depends on the research choice on your results page: <strong>if you consented</strong>, the pseudonymised answers, scores and demographics are kept for aggregate analysis and research; <strong>if you did not</strong>, the entire response — answers, scores and demographics — is deleted at that deadline. Not choosing counts as not consenting.</li>
+  <li><strong>Live-session mode:</strong> report access and withdrawal expire 14 days after the session is closed; educators can postpone this in limited 7-day steps. At that deadline your e-mail address, name, withdrawal token and session linkage are removed. What happens to the answers themselves depends on the research choice on your results page: <strong>if you consented</strong>, the pseudonymised answers, scores and demographics are kept for aggregate analysis and research; <strong>if you did not</strong>, the entire response — answers, scores and demographics — is deleted at that deadline. Not choosing counts as not consenting.</li>
   <li><strong>Self-guided mode:</strong> the same 14-day window, counted from submission.</li>
-  <li><strong>Responses anonymised before 1 August 2026:</strong> the research choice above only became reachable on 31 July 2026 — before that the control existed but nothing in the interface called it, so nobody could give or decline it. Responses already anonymised at that point were kept in pseudonymised form under the older rule and are <strong>not</strong> retrospectively deleted. They carry no e-mail address, name, withdrawal token or class link. If you took part before that date and want yours removed, write to us and we will delete the whole set for the period you name.</li>
+  <li><strong>Responses anonymised before 1 August 2026:</strong> the research choice above only became reachable on 31 July 2026 — before that the control existed but nothing in the interface called it, so nobody could give or decline it. Responses already anonymised at that point were kept in pseudonymised form under the older rule and are <strong>not</strong> retrospectively deleted. They carry no e-mail address, name, withdrawal token or session link. If you took part before that date and want yours removed, write to us and we will delete the whole set for the period you name.</li>
   <li><strong>Educator accounts:</strong> retained until deleted by the administrator.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Kursmodus:</strong> Berichtszugriff und Widerruf enden 14 Tage nach Schließung der Klasse; Lehrende können dies in begrenzten 7-Tage-Schritten aufschieben. Zu diesem Stichtag werden E-Mail-Adresse, Name, Widerrufstoken und Klassenzuordnung entfernt. Was mit den Antworten selbst geschieht, hängt von der Forschungs-Entscheidung auf Ihrer Ergebnisseite ab: <strong>Haben Sie eingewilligt</strong>, bleiben die pseudonymisierten Antworten, Werte und demografischen Angaben für aggregierte Auswertungen und Forschung erhalten; <strong>haben Sie nicht eingewilligt</strong>, wird die gesamte Antwort — Antworten, Werte und demografische Angaben — zu diesem Stichtag gelöscht. Keine Entscheidung zu treffen gilt als Nicht-Einwilligung.</li>
+  <li><strong>Live-Session-Modus:</strong> Berichtszugriff und Widerruf enden 14 Tage nach Schließung der Session; Lehrpersonen können dies in begrenzten 7-Tage-Schritten aufschieben. Zu diesem Stichtag werden E-Mail-Adresse, Name, Widerrufstoken und Session-Zuordnung entfernt. Was mit den Antworten selbst geschieht, hängt von der Forschungs-Entscheidung auf Ihrer Ergebnisseite ab: <strong>Haben Sie eingewilligt</strong>, bleiben die pseudonymisierten Antworten, Werte und demografischen Angaben für aggregierte Auswertungen und Forschung erhalten; <strong>haben Sie nicht eingewilligt</strong>, wird die gesamte Antwort — Antworten, Werte und demografische Angaben — zu diesem Stichtag gelöscht. Keine Entscheidung zu treffen gilt als Nicht-Einwilligung.</li>
   <li><strong>Selbststudium:</strong> dieselbe 14-Tage-Frist, gerechnet ab der Abgabe.</li>
-  <li><strong>Vor dem 1. August 2026 anonymisierte Antworten:</strong> Die oben beschriebene Forschungs-Entscheidung war erst ab dem 31. Juli 2026 erreichbar — zuvor existierte die Funktion, wurde aber von der Oberfläche nie aufgerufen, sodass niemand einwilligen oder ablehnen konnte. Zu diesem Zeitpunkt bereits anonymisierte Antworten wurden nach der früheren Regel in pseudonymisierter Form aufbewahrt und werden <strong>nicht</strong> rückwirkend gelöscht. Sie enthalten weder E-Mail-Adresse noch Namen, Widerrufstoken oder Kurszuordnung. Wenn Sie vor diesem Datum teilgenommen haben und Ihre Daten entfernt haben möchten, schreiben Sie uns; wir löschen dann den gesamten Bestand des von Ihnen genannten Zeitraums.</li>
-  <li><strong>Konten von Lehrenden:</strong> bis zur Löschung durch den Administrator.</li>
+  <li><strong>Vor dem 1. August 2026 anonymisierte Antworten:</strong> Die oben beschriebene Forschungs-Entscheidung war erst ab dem 31. Juli 2026 erreichbar — zuvor existierte die Funktion, wurde aber von der Oberfläche nie aufgerufen, sodass niemand einwilligen oder ablehnen konnte. Zu diesem Zeitpunkt bereits anonymisierte Antworten wurden nach der früheren Regel in pseudonymisierter Form aufbewahrt und werden <strong>nicht</strong> rückwirkend gelöscht. Sie enthalten weder E-Mail-Adresse noch Namen, Widerrufstoken oder Session-Zuordnung. Wenn Sie vor diesem Datum teilgenommen haben und Ihre Daten entfernt haben möchten, schreiben Sie uns; wir löschen dann den gesamten Bestand des von Ihnen genannten Zeitraums.</li>
+  <li><strong>Konten von Lehrpersonen:</strong> bis zur Löschung durch den Administrator.</li>
 </ul>""",
         },
         "erasure": {
@@ -741,12 +764,16 @@ design are original works created for executive teaching.</p>""",
         # -b, later the same day: the collection list named neither the
         # randomly-assigned question version (which IS the experiment) nor the
         # record that this notice was shown. Both are stored per participant.
-        "notice_version": "2026-08-b",
-        "last_updated": "2026-08-19",
+        # 2026-09 (2 September): the container is a SESSION fleet-wide (README
+        # §9). "Class code" and "class-level" become session; the participant
+        # cookie is "a pseudonymous token", no longer a "session token", so the
+        # word means one thing on the page.
+        "notice_version": "2026-09",
+        "last_updated": "2026-09-02",
         "art9": True,  # moral judgments
         "purpose": {
-            "en": "Moral Mirror lets a class observe patterns in its own moral "
-                  "judgment: participants answer short ethical questions and the "
+            "en": "Moral Mirror lets the participants in a session observe patterns in "
+                  "their own moral judgment: they answer short ethical questions and the "
                   "group sees aggregate results. It is descriptive, not "
                   "prescriptive.",
         },
@@ -758,8 +785,8 @@ submission:</p>
 <ul>
   <li><strong>Your answers</strong> to the activity's questions. Your answers can reveal your moral views.</li>
   <li><strong>Optional demographics</strong> — only the fields you choose to answer.</li>
-  <li><strong>A class code</strong> — attaches responses to the correct session, not to you.</li>
-  <li><strong>A pseudonymous session token</strong> in a cookie, so your answers within one session hang together. Because such a token exists, the data is pseudonymous rather than anonymous.</li>
+  <li><strong>A session code</strong> — attaches responses to the correct session, not to you.</li>
+  <li><strong>A pseudonymous token</strong> in a cookie, so your answers within one session hang together. Because such a token exists, the data is pseudonymous rather than anonymous.</li>
   <li><strong>Which version of a question you were shown</strong> — some questions exist in more than one wording, and which one you saw is assigned at random and recorded. Comparing those groups is the point of the activity.</li>
   <li><strong>A record that this notice was shown to you</strong> — the moment you pressed "I understand" and the version of the wording you saw. It is not a consent, and nothing here depends on your agreeing: it records that you were informed, which we must be able to show either way.</li>
 </ul>
@@ -772,7 +799,7 @@ submission:</p>
         "basis": {
             "en": """
 <ul>
-  <li><strong>Running the activity and showing group results</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the class in which participants take part.</li>
+  <li><strong>Running the activity and showing group results</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the session in which participants take part.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
@@ -792,15 +819,15 @@ one.</p>""",
             "en": """
 <ul>
   <li><strong>Session responses</strong> — deleted automatically <strong>30 days</strong> after the session is closed, or 30 days after the last answer if it is never closed. A session nobody ever joined is removed 90 days after it was created. Deletion removes the whole session: every answer, the optional demographics and the condition each participant was assigned. Educators are warned 14 days beforehand and can postpone up to three times by 30 days. The latest possible date is <strong>120 days after</strong> the session closed or the last answer — 90 days beyond the original deletion date.</li>
-  <li><strong>Class-level figures</strong> — when an educator closes a session, its answers are added to cross-session benchmarks as <strong>counts only</strong>. Those counts contain no participant records and are not affected by the deletion above; they cannot be traced to a session or a person.</li>
+  <li><strong>Session-level figures</strong> — when an educator closes a session, its answers are added to cross-session benchmarks as <strong>counts only</strong>. Those counts contain no participant records and are not affected by the deletion above; they cannot be traced to a session or a person.</li>
   <li><strong>Educator accounts</strong> — retained until deleted.</li>
 </ul>""",
         },
         "erasure": {
             "en": """<p>We store no name or e-mail address, so we usually cannot
-locate a specific response after the fact. Within the lifetime of your session
-cookie your submission can still be identified via the session token — contact
-us promptly from the same browser session and we will delete it. Educators can
+locate a specific response after the fact. Within the lifetime of the
+participant cookie your submission can still be identified via its token — contact
+us promptly from the same browser and we will delete it. Educators can
 delete whole sessions at any time.</p>""",
         },
         "provision": {
@@ -814,7 +841,7 @@ original works; individual questions draw on widely discussed cases in ethics
 teaching.</p>""",
         },
         "cookies": [
-            ("moralmirror_pax", "Pseudonymous session token: keeps your answers within one session together (signed, HTTP-only).", "24 hours", "participants"),
+            ("moralmirror_pax", "Pseudonymous participant token: keeps your answers within one session together (signed, HTTP-only).", "24 hours", "participants"),
             ("moralmirror_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("mm_pending_totp / moralmirror_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
@@ -825,6 +852,14 @@ teaching.</p>""",
         "domain": "orgdesignsim.org",
         "tool_name": "OrgDesignSim",
         "languages": ["en"],
+        # 2026-09 (2 September): the container is a SESSION fleet-wide (README
+        # §9). The retention list had three consecutive "sessions" meaning
+        # three different tables; the participant's own run is now a "run"
+        # and their 24-hour pass a "pass", so "session" means one thing. First
+        # explicit version for this tool: rows stamped 2026-07 resolve to the
+        # wording before this change.
+        "notice_version": "2026-09",
+        "last_updated": "2026-09-02",
         "art9": False,  # structural/organisational decisions
         "purpose": {
             "en": "OrgDesignSim is an organisational-design simulation: "
@@ -835,7 +870,7 @@ teaching.</p>""",
             "en": """
 <h3>From participants</h3>
 <ul>
-  <li><strong>E-mail address</strong> — required to enter a simulation session.</li>
+  <li><strong>E-mail address</strong> — required to enter a session.</li>
   <li><strong>Display name</strong> — optional; derived from the e-mail address if omitted.</li>
   <li><strong>Session code</strong> — links you to a specific educator's session.</li>
   <li><strong>Simulation data</strong> — the decisions you make and the results your run produces.</li>
@@ -846,13 +881,13 @@ teaching.</p>""",
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
   <li><strong>Session data</strong> — names, codes, configuration, participant results.</li>
-  <li><strong>An audit record of backoffice actions</strong> — which account did what (creating, editing, closing, archiving or deleting a scenario), when, and the <strong>IP address</strong> it came from. This is a security record: it is how an account compromise or an accidental deletion is reconstructed. It is kept for <strong>12 months</strong> and then deleted automatically.</li>
+  <li><strong>An audit record of backoffice actions</strong> — which account did what (creating, editing, closing, archiving or deleting a session), when, and the <strong>IP address</strong> it came from. This is a security record: it is how an account compromise or an accidental deletion is reconstructed. It is kept for <strong>12 months</strong> and then deleted automatically.</li>
 </ul>""",
         },
         "basis": {
             "en": """
 <ul>
-  <li><strong>Running the simulation and the class debrief</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
+  <li><strong>Running the simulation and the session debrief</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
@@ -867,9 +902,9 @@ teaching.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>Abandoned sessions</strong> are deleted automatically by an hourly job.</li>
-  <li><strong>Completed sessions</strong> are anonymised automatically 90 days after completion — the personal identifiers are removed; the score is kept for educator statistics.</li>
-  <li><strong>Login sessions</strong> expire automatically after 24 hours.</li>
+  <li><strong>Abandoned runs</strong> — a participant who joined but never finished — are deleted automatically by an hourly job.</li>
+  <li><strong>Completed runs</strong> are anonymised automatically 90 days after completion — the personal identifiers are removed; the score is kept for educator statistics.</li>
+  <li><strong>A participant's pass</strong> expires automatically after 24 hours.</li>
   <li><strong>The backoffice audit record</strong> (educator account, action and IP address) is deleted automatically after <strong>12 months</strong>, by the same hourly job.</li>
   <li><strong>Educators</strong> can delete or archive a session at any time.</li>
 </ul>""",
@@ -889,7 +924,7 @@ without it you cannot take part. The display name is optional.</p>""",
 original works created for teaching organisational design.</p>""",
         },
         "cookies": [
-            ("orgdesignsim_participant", "Keeps your simulation session while you play (signed, HTTP-only).", "24 hours", "participants"),
+            ("orgdesignsim_participant", "Keeps your saved game while you play (signed, HTTP-only).", "24 hours", "participants"),
             ("orgdesignsim_backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("os_pending_totp / orgdesignsim_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
@@ -902,6 +937,10 @@ original works created for teaching organisational design.</p>""",
         "languages": ["en"],
         "art9": False,
         "is_hub": True,
+        # 2026-09 (2 September): the container is a SESSION fleet-wide (README
+        # §9); the overview bullets no longer hedge "class/session".
+        "notice_version": "2026-09",
+        "last_updated": "2026-09-02",
         "purpose": {
             "en": "phronon.org is the umbrella site for the Phronon online "
                   "tools. Each tool runs on its own domain and "
@@ -916,7 +955,7 @@ original works created for teaching organisational design.</p>""",
   <li><strong>Administrator credentials</strong> — for the private administration area; the password is stored only as a bcrypt hash.</li>
 </ul>
 <ul>
-  <li><strong>Fleet overview (administration area only)</strong> — when a signed-in administrator opens the overview, this site queries each tool over the server's own loopback interface and displays that tool's class/session titles, join codes, the <strong>educator e-mail address</strong> that owns each one, its status, response count and last activity. This data is read live and shown on screen; the hub does not store it.</li>
+  <li><strong>Fleet overview (administration area only)</strong> — when a signed-in administrator opens the overview, this site queries each tool over the server's own loopback interface and displays that tool's session titles, session codes, the <strong>educator e-mail address</strong> that owns each one, its status, response count and last activity. This data is read live and shown on screen; the hub does not store it.</li>
 </ul>
 <p>This umbrella site does not collect questionnaire responses or participant
 demographics — that processing happens inside the individual tools, each of
@@ -933,7 +972,7 @@ which has its own privacy notice describing it.</p>""",
         "access": {
             "en": """<p>Only the administrator has access to the administration
 area, including the fleet overview described above. No participant responses
-are shown there — class titles, join codes, counts and the owning educator's
+are shown there — session titles, session codes, counts and the owning educator's
 e-mail address are.</p>""",
         },
         "retention": {
@@ -1002,8 +1041,13 @@ linked from this site are original works.</p>""",
         # round, and its per-group counts gained an audience — they may now
         # also appear in the class results handout, not only on the wall.
         # Both change what a participant is agreeing to when they answer.
-        "notice_version": "2026-08-o",
-        "last_updated": "2026-08-24",
+        # 2026-09 (2 September): the container is a SESSION fleet-wide (README
+        # §9). English drops "class" for it; German drops Kurs, Sitzung and
+        # Klasse for "Session" and "moderierende Person" for "Lehrperson"; the
+        # participant cookie is a "participant token", no longer a "session
+        # token". Whiteout's checkbox wording moves with it (wo-ack-2026-09-02).
+        "notice_version": "2026-09",
+        "last_updated": "2026-09-02",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
@@ -1017,17 +1061,17 @@ linked from this site are original works.</p>""",
             "en": """
 <h3>From participants</h3>
 <ul>
-  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your educator in the session's participant list. <strong>We send mail to it in exactly two cases:</strong> if someone tries to rejoin your session with your address from a device that is not already signed in, we send a one-time link so that only you can continue; and seven days before the class is erased we send you one notice with your personal withdrawal link. There is no newsletter and no other use.</li>
+  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your educator in the session's participant list. <strong>We send mail to it in exactly two cases:</strong> if someone tries to rejoin your session with your address from a device that is not already signed in, we send a one-time link so that only you can continue; and seven days before the session is erased we send you one notice with your personal withdrawal link. There is no newsletter and no other use.</li>
   <li><strong>Your acknowledgment and consents, as a record</strong> — that you ticked the required box confirming you read this notice (taking part itself rests on our legitimate interest above, not on consent), whether you ticked the genuinely optional research and demographics boxes, when, and which version of this notice and of the wording you were shown. For the optional boxes we keep it because we must be able to show that consent was actually given (Art. 7(1)); for the required box it records that you were informed.</li>
-  <li><strong>A pseudonymous session token</strong> in a cookie, linking your responses within one session.</li>
-  <li><strong>Session code</strong> — attributes your response to the correct group session.</li>
+  <li><strong>A pseudonymous participant token</strong> in a cookie, linking your responses within one session.</li>
+  <li><strong>Session code</strong> — attributes your response to the correct session.</li>
   <li><strong>Your item rankings</strong> — individual and, where applicable, the group ranking.</li>
     <li><strong>Submission timestamp.</strong></li>
-  <li><strong>Your prediction</strong> — on the screen after your ranking you are asked, in one click, how you think it will compare with the rest of the class. It is <strong>required</strong>: the gap between what a class expected and what happened is part of what the exercise teaches. It is stored with your ranking and shown to your educator as class totals and as one unnamed point per person on a chart of predictions against results — never labelled with your name. In a small class, an educator who can see everyone's score could work out which point is yours.</li>
+  <li><strong>Your prediction</strong> — on the screen after your ranking you are asked, in one click, how you think it will compare with the rest of the session. It is <strong>required</strong>: the gap between what a session expected and what happened is part of what the exercise teaches. It is stored with your ranking and shown to your educator as session totals and as one unnamed point per person on a chart of predictions against results — never labelled with your name. In a small session, an educator who can see everyone's score could work out which point is yours.</li>
   <li><strong>How often you are outdoors in winter</strong> — asked on that same screen and <strong>optional</strong>; "prefer not to say" is preselected. If you answer, the answer is stored with your response — on the same record as your e-mail address, like your ranking, <strong>not</strong> behind the demographics consent described below. Your educator sees it only as averages over at least five people, never next to your name, and it is not part of the data export.</li>
-  <li><strong>Closing questions, in sessions that include them</strong> — some sessions end a group round with two short private questions: which considerations came up in your group's discussion, and what happened to what you yourself knew. <strong>Required in those sessions</strong>, stored with your response, and shown to your educator only in combined form — per group as majority counts, and the self-descriptions only as totals over at least five people. If you gave the separate research consent, these answers are among those kept beyond the class; <strong>the group's written reason for its decision is not kept</strong>, because free text can contain anything and no consent can cover what nobody can predict.</li>
-  <li><strong>What your group had decided</strong> — once your group's agreement on a ranking is final, you are asked privately what your group had explicitly agreed to do in the situation: stay, leave, split the group, no agreement, or not discussed as a separate question. In sessions with the optional second round this happens before the second round's material is shown. <strong>Required</strong>, stored with your response, shown as counts per group — never next to your name. Your educator may show those counts to the class after the exercise and include them in the class results handout, so a group that answers unanimously can be read off them. Deleted with the class, and <strong>not</strong> part of the research data.</li>
-  <li><strong>What you yourself would have done, in sessions with the optional second round</strong> — after you have read the shared update and your own recollection, and before your group talks again, you are asked privately whether you would stay with the van or try to reach help. <strong>Required in those sessions</strong>, stored with your response, shown as counts per group — never next to your name. Your educator may show those counts to the class after the exercise, so a group that leans unanimously can be read off them. Deleted with the class, and <strong>not</strong> part of the research data.</li>
+  <li><strong>Closing questions, in sessions that include them</strong> — some sessions end a group round with two short private questions: which considerations came up in your group's discussion, and what happened to what you yourself knew. <strong>Required in those sessions</strong>, stored with your response, and shown to your educator only in combined form — per group as majority counts, and the self-descriptions only as totals over at least five people. If you gave the separate research consent, these answers are among those kept beyond the session; <strong>the group's written reason for its decision is not kept</strong>, because free text can contain anything and no consent can cover what nobody can predict.</li>
+  <li><strong>What your group had decided</strong> — once your group's agreement on a ranking is final, you are asked privately what your group had explicitly agreed to do in the situation: stay, leave, split the group, no agreement, or not discussed as a separate question. In sessions with the optional second round this happens before the second round's material is shown. <strong>Required</strong>, stored with your response, shown as counts per group — never next to your name. Your educator may show those counts to everyone in the session after the exercise and include them in the session results handout, so a group that answers unanimously can be read off them. Deleted with the session, and <strong>not</strong> part of the research data.</li>
+  <li><strong>What you yourself would have done, in sessions with the optional second round</strong> — after you have read the shared update and your own recollection, and before your group talks again, you are asked privately whether you would stay with the van or try to reach help. <strong>Required in those sessions</strong>, stored with your response, shown as counts per group — never next to your name. Your educator may show those counts to everyone in the session after the exercise, so a group that leans unanimously can be read off them. Deleted with the session, and <strong>not</strong> part of the research data.</li>
   <li><strong>Optional demographics</strong> — age band, gender, years of work experience, experience leading a team, field of study or work, and country. <strong>Every one of these is optional, the whole page can be skipped, and nothing is stored unless you tick the consent box.</strong> They are shown to your educator only as group averages, and never for a group of fewer than five people. Your country answer is also shown grouped into a world region. We record when you consented and which version of this notice and of the consent wording you saw.</li>
 </ul>
 <h3>From educators</h3>
@@ -1038,23 +1082,23 @@ linked from this site are original works.</p>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
 <ul>
-  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong>, um an einer Sitzung teilzunehmen. Sie wird zusammen mit Ihrer Reihung gespeichert und ist für die moderierende Person in der Teilnehmendenliste sichtbar. <strong>In genau zwei Fällen senden wir eine Nachricht an diese Adresse:</strong> Versucht jemand, mit Ihrer Adresse von einem nicht angemeldeten Gerät aus wieder einzusteigen, schicken wir einen einmalig gültigen Link, damit nur Sie fortfahren können; und sieben Tage vor der Löschung des Kurses senden wir Ihnen eine Nachricht mit Ihrem persönlichen Widerrufslink. Es gibt keinen Newsletter und keine weitere Verwendung.</li>
+  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong>, um an einer Session teilzunehmen. Sie wird zusammen mit Ihrer Reihung gespeichert und ist für die Lehrperson in der Teilnehmendenliste sichtbar. <strong>In genau zwei Fällen senden wir eine Nachricht an diese Adresse:</strong> Versucht jemand, mit Ihrer Adresse von einem nicht angemeldeten Gerät aus wieder einzusteigen, schicken wir einen einmalig gültigen Link, damit nur Sie fortfahren können; und sieben Tage vor der Löschung der Session senden wir Ihnen eine Nachricht mit Ihrem persönlichen Widerrufslink. Es gibt keinen Newsletter und keine weitere Verwendung.</li>
   <li><strong>Ihre Kenntnisnahme und Einwilligungen als Nachweis</strong> — dass Sie das Pflichtkästchen angekreuzt haben, das bestätigt, dass Sie diese Erklärung gelesen haben (die Teilnahme selbst stützt sich auf unser oben genanntes berechtigtes Interesse, nicht auf eine Einwilligung), ob Sie die wirklich freiwilligen Forschungs- und Demografie-Kästchen angekreuzt haben, wann, und welche Fassung dieser Erklärung und des Wortlauts Ihnen angezeigt wurde. Für die freiwilligen Kästchen speichern wir das, weil wir nachweisen können müssen, dass eine Einwilligung tatsächlich erteilt wurde (Art. 7 Abs. 1); für das Pflichtkästchen dokumentiert es, dass Sie informiert wurden.</li>
-  <li><strong>Ein pseudonymes Sitzungstoken</strong> in einem Cookie, das Ihre Antworten innerhalb einer Sitzung verknüpft.</li>
-  <li><strong>Sitzungscode</strong> — ordnet Ihre Antwort der richtigen Gruppensitzung zu.</li>
+  <li><strong>Ein pseudonymes Teilnahme-Token</strong> in einem Cookie, das Ihre Antworten innerhalb einer Session verknüpft.</li>
+  <li><strong>Session-Code</strong> — ordnet Ihre Antwort der richtigen Session zu.</li>
   <li><strong>Ihre Reihungen</strong> — individuell und ggf. die Gruppenreihung.</li>
     <li><strong>Zeitstempel der Abgabe.</strong></li>
-  <li><strong>Ihre Einschätzung</strong> — auf dem Bildschirm nach Ihrer Reihung werden Sie mit einem Klick gefragt, wie diese im Vergleich zum Rest des Kurses abschneiden wird. Diese Angabe ist <strong>erforderlich</strong>: der Abstand zwischen Erwartung und Ergebnis gehört zum Lernziel der Übung. Sie wird zusammen mit Ihrer Reihung gespeichert und der Lehrperson als Gesamtwert für den Kurs sowie als je ein unbeschrifteter Punkt pro Person in einem Diagramm angezeigt, das Einschätzungen und Ergebnisse gegenüberstellt — nie mit Ihrem Namen beschriftet. In einer kleinen Klasse könnte eine Lehrperson, die alle Punktzahlen sieht, allerdings erschließen, welcher Punkt Ihrer ist.</li>
-  <li><strong>Wie oft Sie im Winter draußen sind</strong> — auf demselben Bildschirm wie die Einschätzung gefragt und <strong>freiwillig</strong>; „keine Angabe“ ist voreingestellt. Wenn Sie antworten, wird die Angabe zusammen mit Ihrer Antwort gespeichert — im selben Datensatz wie Ihre E-Mail-Adresse, wie Ihre Reihung, <strong>nicht</strong> hinter der unten beschriebenen Einwilligung für demografische Angaben. Die moderierende Person sieht sie ausschließlich als Durchschnittswerte über mindestens fünf Personen, nie neben Ihrem Namen; im Datenexport ist sie nicht enthalten.</li>
-  <li><strong>Abschlussfragen, in Sessions, die sie enthalten</strong> — manche Sessions beenden eine Gruppenrunde mit zwei kurzen privaten Fragen: welche Überlegungen in der Diskussion Ihrer Gruppe zur Sprache kamen, und was mit dem geschah, was Sie selbst wussten. In diesen Sessions <strong>erforderlich</strong>; gespeichert mit Ihrer Antwort und der Lehrperson ausschließlich zusammengefasst angezeigt — je Gruppe als Mehrheitszählung, die Selbstauskünfte nur als Summen über mindestens fünf Personen. Wenn Sie die gesonderte Forschungseinwilligung erteilt haben, gehören diese Antworten zu den über den Kurs hinaus aufbewahrten; <strong>die schriftliche Begründung der Gruppe wird nicht aufbewahrt</strong>, weil Freitext alles enthalten kann und keine Einwilligung abdecken kann, was niemand vorhersehen kann.</li>
-  <li><strong>Was Ihre Gruppe entschieden hatte</strong> — sobald die Einigung Ihrer Gruppe auf eine Reihung endgültig ist, werden Sie privat gefragt, was Ihre Gruppe in der Situation ausdrücklich vereinbart hatte: bleiben, aufbrechen, die Gruppe aufteilen, keine Einigung, oder nicht als eigene Frage besprochen. In Sessions mit der optionalen zweiten Runde geschieht das, bevor das Material der zweiten Runde angezeigt wird. <strong>Erforderlich</strong>; gespeichert mit Ihrer Antwort, als Zählung je Gruppe angezeigt — nie neben Ihrem Namen. Ihre Lehrperson kann diese Zählung der Klasse nach der Übung zeigen und in die Ergebnisunterlagen der Klasse aufnehmen; bei einer einstimmigen Gruppe lässt sich die einzelne Antwort daran ablesen. Mit dem Kurs gelöscht und <strong>nicht</strong> Teil der Forschungsdaten.</li>
-  <li><strong>Was Sie selbst getan hätten, in Sessions mit der optionalen zweiten Runde</strong> — nachdem Sie die gemeinsame Ergänzung und Ihre eigene Erinnerung gelesen haben und bevor Ihre Gruppe erneut spricht, werden Sie privat gefragt, ob Sie beim Van bleiben oder versuchen würden, Hilfe zu erreichen. <strong>In diesen Sessions erforderlich</strong>, zusammen mit Ihrer Antwort gespeichert, als Zählung pro Gruppe angezeigt — nie neben Ihrem Namen. Ihre Lehrperson kann diese Zählung der Klasse nach der Übung zeigen; bei einer einstimmigen Gruppe lässt sich die einzelne Antwort daran ablesen. Mit dem Kurs gelöscht und <strong>nicht</strong> Teil der Forschungsdaten.</li>
-  <li><strong>Freiwillige demografische Angaben</strong> — Altersgruppe, Geschlecht, Jahre Berufserfahrung, Erfahrung in der Teamleitung, Studien- oder Tätigkeitsfeld sowie Land. <strong>Jede dieser Angaben ist freiwillig, die gesamte Seite kann übersprungen werden, und ohne Ihr angekreuztes Einverständnis wird nichts gespeichert.</strong> Der moderierenden Person werden sie ausschließlich als Gruppendurchschnitte angezeigt, und nie für Gruppen mit weniger als fünf Personen. Ihre Länderangabe wird zusätzlich zu einer Weltregion zusammengefasst angezeigt. Wir erfassen, wann Sie eingewilligt haben und welche Fassung dieser Erklärung und des Einwilligungstextes Ihnen angezeigt wurde.</li>
+  <li><strong>Ihre Einschätzung</strong> — auf dem Bildschirm nach Ihrer Reihung werden Sie mit einem Klick gefragt, wie diese im Vergleich zum Rest der Session abschneiden wird. Diese Angabe ist <strong>erforderlich</strong>: der Abstand zwischen Erwartung und Ergebnis gehört zum Lernziel der Übung. Sie wird zusammen mit Ihrer Reihung gespeichert und der Lehrperson als Gesamtwert für die Session sowie als je ein unbeschrifteter Punkt pro Person in einem Diagramm angezeigt, das Einschätzungen und Ergebnisse gegenüberstellt — nie mit Ihrem Namen beschriftet. In einer kleinen Session könnte eine Lehrperson, die alle Punktzahlen sieht, allerdings erschließen, welcher Punkt Ihrer ist.</li>
+  <li><strong>Wie oft Sie im Winter draußen sind</strong> — auf demselben Bildschirm wie die Einschätzung gefragt und <strong>freiwillig</strong>; „keine Angabe“ ist voreingestellt. Wenn Sie antworten, wird die Angabe zusammen mit Ihrer Antwort gespeichert — im selben Datensatz wie Ihre E-Mail-Adresse, wie Ihre Reihung, <strong>nicht</strong> hinter der unten beschriebenen Einwilligung für demografische Angaben. Die Lehrperson sieht sie ausschließlich als Durchschnittswerte über mindestens fünf Personen, nie neben Ihrem Namen; im Datenexport ist sie nicht enthalten.</li>
+  <li><strong>Abschlussfragen, in Sessions, die sie enthalten</strong> — manche Sessions beenden eine Gruppenrunde mit zwei kurzen privaten Fragen: welche Überlegungen in der Diskussion Ihrer Gruppe zur Sprache kamen, und was mit dem geschah, was Sie selbst wussten. In diesen Sessions <strong>erforderlich</strong>; gespeichert mit Ihrer Antwort und der Lehrperson ausschließlich zusammengefasst angezeigt — je Gruppe als Mehrheitszählung, die Selbstauskünfte nur als Summen über mindestens fünf Personen. Wenn Sie die gesonderte Forschungseinwilligung erteilt haben, gehören diese Antworten zu den über die Session hinaus aufbewahrten; <strong>die schriftliche Begründung der Gruppe wird nicht aufbewahrt</strong>, weil Freitext alles enthalten kann und keine Einwilligung abdecken kann, was niemand vorhersehen kann.</li>
+  <li><strong>Was Ihre Gruppe entschieden hatte</strong> — sobald die Einigung Ihrer Gruppe auf eine Reihung endgültig ist, werden Sie privat gefragt, was Ihre Gruppe in der Situation ausdrücklich vereinbart hatte: bleiben, aufbrechen, die Gruppe aufteilen, keine Einigung, oder nicht als eigene Frage besprochen. In Sessions mit der optionalen zweiten Runde geschieht das, bevor das Material der zweiten Runde angezeigt wird. <strong>Erforderlich</strong>; gespeichert mit Ihrer Antwort, als Zählung je Gruppe angezeigt — nie neben Ihrem Namen. Ihre Lehrperson kann diese Zählung nach der Übung allen in der Session zeigen und in die Ergebnisunterlagen der Session aufnehmen; bei einer einstimmigen Gruppe lässt sich die einzelne Antwort daran ablesen. Mit der Session gelöscht und <strong>nicht</strong> Teil der Forschungsdaten.</li>
+  <li><strong>Was Sie selbst getan hätten, in Sessions mit der optionalen zweiten Runde</strong> — nachdem Sie die gemeinsame Ergänzung und Ihre eigene Erinnerung gelesen haben und bevor Ihre Gruppe erneut spricht, werden Sie privat gefragt, ob Sie beim Van bleiben oder versuchen würden, Hilfe zu erreichen. <strong>In diesen Sessions erforderlich</strong>, zusammen mit Ihrer Antwort gespeichert, als Zählung pro Gruppe angezeigt — nie neben Ihrem Namen. Ihre Lehrperson kann diese Zählung nach der Übung allen in der Session zeigen; bei einer einstimmigen Gruppe lässt sich die einzelne Antwort daran ablesen. Mit der Session gelöscht und <strong>nicht</strong> Teil der Forschungsdaten.</li>
+  <li><strong>Freiwillige demografische Angaben</strong> — Altersgruppe, Geschlecht, Jahre Berufserfahrung, Erfahrung in der Teamleitung, Studien- oder Tätigkeitsfeld sowie Land. <strong>Jede dieser Angaben ist freiwillig, die gesamte Seite kann übersprungen werden, und ohne Ihr angekreuztes Einverständnis wird nichts gespeichert.</strong> Der Lehrperson werden sie ausschließlich als Gruppendurchschnitte angezeigt, und nie für Gruppen mit weniger als fünf Personen. Ihre Länderangabe wird zusätzlich zu einer Weltregion zusammengefasst angezeigt. Wir erfassen, wann Sie eingewilligt haben und welche Fassung dieser Erklärung und des Einwilligungstextes Ihnen angezeigt wurde.</li>
 </ul>
-<h3>Von Moderierenden</h3>
+<h3>Von Lehrpersonen</h3>
 <ul>
   <li><strong>Anmeldedaten</strong> — das Passwort wird ausschließlich als bcrypt-Hash gespeichert.</li>
-  <li><strong>Sitzungsdaten</strong> — Namen, Codes und Konfiguration der von Ihnen angelegten Sitzungen.</li>
+  <li><strong>Session-Daten</strong> — Namen, Codes und Konfiguration der von Ihnen angelegten Sessions.</li>
 </ul>""",
         },
         "basis": {
@@ -1062,7 +1106,7 @@ linked from this site are original works.</p>""",
 <ul>
   <li><strong>Running the exercise and producing group results</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>
   <li><strong>Optional demographics</strong> — Art. 6(1)(a) GDPR, your consent. You give it by ticking a box that is not ticked for you, you can skip the page entirely without any effect on the exercise, and you may withdraw it at any time by writing to us, after which the answers are deleted.</li>
-  <li><strong>Keeping your answers beyond the class, for research and teaching</strong> — Art. 6(1)(a) GDPR, your separate consent, with the safeguards of Art. 89(1). It is a second box, also not ticked for you, on the same screen as the first. <strong>Leaving it unticked changes nothing about taking part</strong>: you are grouped, you see your results, and everything of yours is simply erased with the rest of the class. Ticking it means one row is kept after the class is erased — see "How long we keep data" — and you can withdraw that consent at any time, with no deadline, using the link we e-mail you before the class is erased.</li>
+  <li><strong>Keeping your answers beyond the session, for research and teaching</strong> — Art. 6(1)(a) GDPR, your separate consent, with the safeguards of Art. 89(1). It is a second box, also not ticked for you, on the same screen as the first. <strong>Leaving it unticked changes nothing about taking part</strong>: you are grouped, you see your results, and everything of yours is simply erased with the rest of the session. Ticking it means one row is kept after the session is erased — see "How long we keep data" — and you can withdraw that consent at any time, with no deadline, using the link we e-mail you before the session is erased.</li>
   <li><strong>Educator accounts</strong> — Art. 6(1)(b) GDPR.</li>
   <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>
 </ul>""",
@@ -1070,8 +1114,8 @@ linked from this site are original works.</p>""",
 <ul>
   <li><strong>Durchführung der Übung und Erstellung der Gruppenergebnisse</strong> — Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an der Unterstützung des Bildungsprogramms, an dem die Teilnehmenden teilnehmen.</li>
   <li><strong>Freiwillige demografische Angaben</strong> — Art. 6 Abs. 1 lit. a DSGVO, Ihre Einwilligung. Sie erteilen sie durch Ankreuzen eines nicht vorausgewählten Kästchens, Sie können die Seite folgenlos überspringen und Ihre Einwilligung jederzeit widerrufen; die Angaben werden dann gelöscht.</li>
-  <li><strong>Aufbewahrung Ihrer Antworten über den Kurs hinaus, für Forschung und Lehre</strong> — Art. 6 Abs. 1 lit. a DSGVO, Ihre gesonderte Einwilligung, mit den Garantien des Art. 89 Abs. 1. Es ist ein zweites, ebenfalls nicht vorausgewähltes Kästchen auf demselben Bildschirm wie das erste. <strong>Bleibt es leer, ändert das nichts an Ihrer Teilnahme</strong>: Sie werden einer Gruppe zugeordnet, sehen Ihre Ergebnisse, und alles von Ihnen wird zusammen mit dem übrigen Kurs gelöscht. Kreuzen Sie es an, bleibt bei der Löschung des Kurses ein Datensatz erhalten — siehe „Wie lange wir Daten speichern“ — und Sie können diese Einwilligung jederzeit und ohne Frist widerrufen, über den Link, den wir Ihnen vor der Löschung des Kurses zusenden.</li>
-  <li><strong>Konten von Moderierenden</strong> — Art. 6 Abs. 1 lit. b DSGVO.</li>
+  <li><strong>Aufbewahrung Ihrer Antworten über die Session hinaus, für Forschung und Lehre</strong> — Art. 6 Abs. 1 lit. a DSGVO, Ihre gesonderte Einwilligung, mit den Garantien des Art. 89 Abs. 1. Es ist ein zweites, ebenfalls nicht vorausgewähltes Kästchen auf demselben Bildschirm wie das erste. <strong>Bleibt es leer, ändert das nichts an Ihrer Teilnahme</strong>: Sie werden einer Gruppe zugeordnet, sehen Ihre Ergebnisse, und alles von Ihnen wird zusammen mit der übrigen Session gelöscht. Kreuzen Sie es an, bleibt bei der Löschung der Session ein Datensatz erhalten — siehe „Wie lange wir Daten speichern“ — und Sie können diese Einwilligung jederzeit und ohne Frist widerrufen, über den Link, den wir Ihnen vor der Löschung der Session zusenden.</li>
+  <li><strong>Konten von Lehrpersonen</strong> — Art. 6 Abs. 1 lit. b DSGVO.</li>
   <li><strong>Sicherheit, Rate-Limiting und Missbrauchs­abwehr</strong> — Art. 6 Abs. 1 lit. f DSGVO.</li>
 </ul>""",
         },
@@ -1079,65 +1123,65 @@ linked from this site are original works.</p>""",
             "en": """
 <ul>
   <li><strong>Educators</strong> see, for their own sessions, the participant list <strong>including each participant's e-mail address</strong>, alongside the individual and group rankings. Demographics are shown to them <strong>only as averages over at least five people</strong> — never next to a name. Answers given by fewer than five people are not shown separately; they are either withheld or combined with other rare answers into a single "everyone else" figure that also covers at least five people.</li>
-  <li><strong>Your class</strong> may be shown those same demographic averages during the debrief, and they may be included in a written summary your educator hands out afterwards. That is part of the discussion the answers are collected for. The five-person floor and the "everyone else" pooling apply exactly as above, so nothing is shown that stands for fewer than five people — but be aware that <strong>five people in a room where everyone knows each other are not anonymous in the way five strangers would be</strong>. If you would rather your answers were not part of that, skip the questions, or ask your educator to delete them.</li>
+  <li><strong>Everyone in your session</strong> may be shown those same demographic averages during the debrief, and they may be included in a written summary your educator hands out afterwards. That is part of the discussion the answers are collected for. The five-person floor and the "everyone else" pooling apply exactly as above, so nothing is shown that stands for fewer than five people — but be aware that <strong>five people in a room where everyone knows each other are not anonymous in the way five strangers would be</strong>. If you would rather your answers were not part of that, skip the questions, or ask your educator to delete them.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Moderierende</strong> sehen für ihre eigenen Sitzungen die Teilnehmendenliste <strong>einschließlich der E-Mail-Adressen</strong> sowie die individuellen und die Gruppenreihungen. Demografische Angaben sehen sie <strong>ausschließlich als Durchschnittswerte über mindestens fünf Personen</strong> — nie neben einem Namen. Antworten, die weniger als fünf Personen gegeben haben, werden nicht einzeln ausgewiesen; sie werden entweder zurückgehalten oder mit anderen seltenen Antworten zu einem einzigen Wert „alle Übrigen“ zusammengefasst, der ebenfalls mindestens fünf Personen umfasst.</li>
-  <li><strong>Ihr Kurs</strong> bekommt diese demografischen Durchschnittswerte unter Umständen ebenfalls zu sehen, und sie können in einer schriftlichen Zusammenfassung enthalten sein, die Ihre Lehrperson im Anschluss austeilt. Das ist Teil der Auswertung, für die die Angaben erhoben werden. Die Fünf-Personen-Grenze und die Zusammenfassung zu „alle Übrigen“ gelten dabei unverändert, es wird also nichts angezeigt, was für weniger als fünf Personen steht — bedenken Sie aber, dass <strong>eine Gruppe von fünf Personen in einem Raum, in dem man sich kennt, nicht in demselben Sinne anonym ist wie fünf Fremde</strong>. Wenn Sie das nicht möchten, überspringen Sie die Fragen oder bitten Sie Ihre Lehrperson, Ihre Angaben zu löschen.</li>
+  <li><strong>Lehrpersonen</strong> sehen für ihre eigenen Sessions die Teilnehmendenliste <strong>einschließlich der E-Mail-Adressen</strong> sowie die individuellen und die Gruppenreihungen. Demografische Angaben sehen sie <strong>ausschließlich als Durchschnittswerte über mindestens fünf Personen</strong> — nie neben einem Namen. Antworten, die weniger als fünf Personen gegeben haben, werden nicht einzeln ausgewiesen; sie werden entweder zurückgehalten oder mit anderen seltenen Antworten zu einem einzigen Wert „alle Übrigen“ zusammengefasst, der ebenfalls mindestens fünf Personen umfasst.</li>
+  <li><strong>Alle in Ihrer Session</strong> bekommen diese demografischen Durchschnittswerte unter Umständen ebenfalls zu sehen, und sie können in einer schriftlichen Zusammenfassung enthalten sein, die Ihre Lehrperson im Anschluss austeilt. Das ist Teil der Auswertung, für die die Angaben erhoben werden. Die Fünf-Personen-Grenze und die Zusammenfassung zu „alle Übrigen“ gelten dabei unverändert, es wird also nichts angezeigt, was für weniger als fünf Personen steht — bedenken Sie aber, dass <strong>eine Gruppe von fünf Personen in einem Raum, in dem man sich kennt, nicht in demselben Sinne anonym ist wie fünf Fremde</strong>. Wenn Sie das nicht möchten, überspringen Sie die Fragen oder bitten Sie Ihre Lehrperson, Ihre Angaben zu löschen.</li>
   <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit.</li>
 </ul>""",
         },
         "retention": {
             "en": """
 <ul>
-  <li><strong>Everything from a class is erased 30 days after the session finishes.</strong> That means your e-mail address, your ranking, your group, your votes, the boards, the results page and the session itself. It runs automatically, it cannot be undone, and it is the same date for everyone in the class. A session that is never finished is erased 30 days after its last submission instead; a session nobody ever joined is deleted 90 days after it was created.</li>
-  <li><strong>Your educator can postpone that date by 30 days, up to three times</strong> — never further, and never earlier than a date you have already been told. They are warned 14 days before, and if the date is still approaching, <strong>you are e-mailed 7 days before</strong> so you can withdraw first. That is the only such message you get for a class.</li>
-  <li><strong>If you gave the separate research consent</strong>, one row of yours is kept when the class is erased, and kept indefinitely: your ranking, your score, your group's result, your optional answers about yourself, your answers to the closing round in sessions that include one, and the half-year it happened in. <strong>Nothing is kept from anyone who did not tick that box</strong> — their answers are deleted with the class and never counted. It carries no e-mail address, no name, no class, no group name and no date more precise than the half-year, and the link between it and you is destroyed with the class. It is not anonymous — a ranking plus several bands can still be rare — so we treat it as personal data throughout, keep it only for research and teaching, and never publish anything that stands for fewer than five people. <strong>You can withdraw it at any time, with no time limit</strong>, using the link in that 7-day e-mail.</li>
+  <li><strong>Everything from a session is erased 30 days after it finishes.</strong> That means your e-mail address, your ranking, your group, your votes, the boards, the results page and the session itself. It runs automatically, it cannot be undone, and it is the same date for everyone in the session. A session that is never finished is erased 30 days after its last submission instead; a session nobody ever joined is deleted 90 days after it was created.</li>
+  <li><strong>Your educator can postpone that date by 30 days, up to three times</strong> — never further, and never earlier than a date you have already been told. They are warned 14 days before, and if the date is still approaching, <strong>you are e-mailed 7 days before</strong> so you can withdraw first. That is the only such message you get for a session.</li>
+  <li><strong>If you gave the separate research consent</strong>, one row of yours is kept when the session is erased, and kept indefinitely: your ranking, your score, your group's result, your optional answers about yourself, your answers to the closing round in sessions that include one, and the half-year it happened in. <strong>Nothing is kept from anyone who did not tick that box</strong> — their answers are deleted with the session and never counted. It carries no e-mail address, no name, no session code, no group name and no date more precise than the half-year, and the link between it and you is destroyed with the session. It is not anonymous — a ranking plus several bands can still be rare — so we treat it as personal data throughout, keep it only for research and teaching, and never publish anything that stands for fewer than five people. <strong>You can withdraw it at any time, with no time limit</strong>, using the link in that 7-day e-mail.</li>
   <li><strong>Educator accounts</strong> — retained until deactivated or deleted by an administrator.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Alles aus einem Kurs wird 30 Tage nach dessen Abschluss gelöscht.</strong> Das umfasst Ihre E-Mail-Adresse, Ihre Reihung, Ihre Gruppe, Ihre Stimmen, die Gruppentafeln, die Ergebnisseite und die Sitzung selbst. Das geschieht automatisch, ist nicht rückgängig zu machen und gilt für alle im Kurs zum selben Datum. Eine nie abgeschlossene Sitzung wird stattdessen 30 Tage nach der letzten Abgabe gelöscht; eine Sitzung, der nie jemand beigetreten ist, 90 Tage nach ihrer Erstellung.</li>
-  <li><strong>Ihre Lehrperson kann dieses Datum um jeweils 30 Tage verschieben, höchstens dreimal</strong> — nicht weiter und nie auf ein früheres als das Ihnen bereits genannte Datum. Sie wird 14 Tage vorher benachrichtigt; steht das Datum dann weiterhin bevor, <strong>erhalten Sie 7 Tage vorher eine E-Mail</strong>, damit Sie vorher widerrufen können. Es ist die einzige Nachricht dieser Art zu einem Kurs.</li>
-  <li><strong>Wenn Sie die gesonderte Forschungseinwilligung erteilt haben</strong>, bleibt bei der Löschung des Kurses ein Datensatz von Ihnen erhalten, und zwar unbefristet: Ihre Reihung, Ihr Ergebnis, das Ergebnis Ihrer Gruppe, Ihre freiwilligen Angaben zur Person, in Sitzungen mit Abschlussrunde Ihre Antworten darin, sowie das Halbjahr. <strong>Von Personen ohne dieses Häkchen wird nichts aufbewahrt</strong> — ihre Antworten werden mit dem Kurs gelöscht und niemals gezählt. Er enthält keine E-Mail-Adresse, keinen Namen, keinen Kurs, keinen Gruppennamen und kein Datum genauer als das Halbjahr; die Verbindung zwischen ihm und Ihnen wird mit dem Kurs vernichtet. Er ist nicht anonym — eine Reihung zusammen mit mehreren Angaben kann selten sein —, deshalb behandeln wir ihn durchgehend als personenbezogenes Datum, verwenden ihn nur für Forschung und Lehre und veröffentlichen nichts, was für weniger als fünf Personen steht. <strong>Sie können ihn jederzeit und ohne Frist widerrufen</strong>, über den Link in dieser E-Mail nach 7 Tagen.</li>
-  <li><strong>Konten von Moderierenden</strong> — bis zur Deaktivierung oder Löschung durch einen Administrator.</li>
+  <li><strong>Alles aus einer Session wird 30 Tage nach deren Abschluss gelöscht.</strong> Das umfasst Ihre E-Mail-Adresse, Ihre Reihung, Ihre Gruppe, Ihre Stimmen, die Gruppentafeln, die Ergebnisseite und die Session selbst. Das geschieht automatisch, ist nicht rückgängig zu machen und gilt für alle in der Session zum selben Datum. Eine nie abgeschlossene Session wird stattdessen 30 Tage nach der letzten Abgabe gelöscht; eine Session, der nie jemand beigetreten ist, 90 Tage nach ihrer Erstellung.</li>
+  <li><strong>Ihre Lehrperson kann dieses Datum um jeweils 30 Tage verschieben, höchstens dreimal</strong> — nicht weiter und nie auf ein früheres als das Ihnen bereits genannte Datum. Sie wird 14 Tage vorher benachrichtigt; steht das Datum dann weiterhin bevor, <strong>erhalten Sie 7 Tage vorher eine E-Mail</strong>, damit Sie vorher widerrufen können. Es ist die einzige Nachricht dieser Art zu einer Session.</li>
+  <li><strong>Wenn Sie die gesonderte Forschungseinwilligung erteilt haben</strong>, bleibt bei der Löschung der Session ein Datensatz von Ihnen erhalten, und zwar unbefristet: Ihre Reihung, Ihr Ergebnis, das Ergebnis Ihrer Gruppe, Ihre freiwilligen Angaben zur Person, in Sessions mit Abschlussrunde Ihre Antworten darin, sowie das Halbjahr. <strong>Von Personen ohne dieses Häkchen wird nichts aufbewahrt</strong> — ihre Antworten werden mit der Session gelöscht und niemals gezählt. Er enthält keine E-Mail-Adresse, keinen Namen, keinen Session-Code, keinen Gruppennamen und kein Datum genauer als das Halbjahr; die Verbindung zwischen ihm und Ihnen wird mit der Session vernichtet. Er ist nicht anonym — eine Reihung zusammen mit mehreren Angaben kann selten sein —, deshalb behandeln wir ihn durchgehend als personenbezogenes Datum, verwenden ihn nur für Forschung und Lehre und veröffentlichen nichts, was für weniger als fünf Personen steht. <strong>Sie können ihn jederzeit und ohne Frist widerrufen</strong>, über den Link in dieser E-Mail nach 7 Tagen.</li>
+  <li><strong>Konten von Lehrpersonen</strong> — bis zur Deaktivierung oder Löschung durch einen Administrator.</li>
 </ul>""",
         },
         "erasure": {
-            "en": """<p><strong>While the class still exists</strong> your e-mail
+            "en": """<p><strong>While the session still exists</strong> your e-mail
 address identifies your submission, so we can always find and delete it: write
 to us, or ask your educator, naming the session code and the address you
 joined with. Educators can delete a single participant's response, or a whole
 session, at any time. If you gave optional demographics, withdrawing that
 consent deletes those answers and nothing else — the exercise results are
 unaffected.</p>
-<p><strong>After the class is erased</strong> there is nothing of yours left to
+<p><strong>After the session is erased</strong> there is nothing of yours left to
 find unless you gave the separate research consent. That row we cannot find
 either — by design, it carries no address and nothing linking it to you — so it
 can only be reached with the personal link in the e-mail we send you seven days
-before the class is erased. <strong>Keep that e-mail.</strong> Opening the link
+before the session is erased. <strong>Keep that e-mail.</strong> Opening the link
 shows you what would be removed and removes nothing until you confirm; use it
-before the deadline and it deletes your class answers as well. There is no time
+before the deadline and it deletes your session answers as well. There is no time
 limit on it.</p>""",
-            "de": """<p><strong>Solange der Kurs besteht</strong>, identifiziert
+            "de": """<p><strong>Solange die Session besteht</strong>, identifiziert
 Ihre E-Mail-Adresse Ihre Abgabe, wir können sie also jederzeit finden und
-löschen: Schreiben Sie uns oder Ihrer moderierenden Person unter Angabe des
-Sitzungscodes und der verwendeten Adresse. Moderierende können einzelne
-Antworten oder ganze Sitzungen jederzeit löschen. Wenn Sie freiwillige
+löschen: Schreiben Sie uns oder Ihrer Lehrperson unter Angabe des
+Session-Codes und der verwendeten Adresse. Lehrpersonen können einzelne
+Antworten oder ganze Sessions jederzeit löschen. Wenn Sie freiwillige
 demografische Angaben gemacht haben, führt der Widerruf dieser Einwilligung
 ausschließlich zur Löschung dieser Angaben; die Übungsergebnisse bleiben davon
 unberührt.</p>
-<p><strong>Nach der Löschung des Kurses</strong> ist von Ihnen nichts mehr
+<p><strong>Nach der Löschung der Session</strong> ist von Ihnen nichts mehr
 vorhanden — es sei denn, Sie haben die gesonderte Forschungseinwilligung
 erteilt. Diesen Datensatz können auch wir nicht finden: Er enthält
 absichtsvoll keine Adresse und nichts, was ihn mit Ihnen verbindet. Erreichbar
 ist er ausschließlich über den persönlichen Link in der E-Mail, die wir Ihnen
-sieben Tage vor der Löschung des Kurses senden. <strong>Bewahren Sie diese
+sieben Tage vor der Löschung der Session senden. <strong>Bewahren Sie diese
 E-Mail auf.</strong> Der Link zeigt Ihnen zunächst, was gelöscht würde, und
 löscht nichts, bevor Sie bestätigen; vor dem Stichtag verwendet, löscht er auch
-Ihre Kursantworten. Eine Frist gibt es dafür nicht.</p>""",
+Ihre Session-Antworten. Eine Frist gibt es dafür nicht.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
@@ -1145,7 +1189,7 @@ requirement, but an e-mail address is <strong>technically required</strong> to
 join a session — without it a submission cannot be recorded.</p>""",
             "de": """<p>Die Bereitstellung von Daten ist weder gesetzlich noch
 vertraglich vorgeschrieben; eine E-Mail-Adresse ist jedoch <strong>technisch
-erforderlich</strong>, um an einer Sitzung teilzunehmen — ohne sie kann keine
+erforderlich</strong>, um an einer Session teilzunehmen — ohne sie kann keine
 Abgabe gespeichert werden.</p>""",
         },
         "provenance": {

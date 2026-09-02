@@ -72,7 +72,12 @@ ACTIONS = (
     # Added 16 August 2026, after an external review found each of them already
     # happening in a tool with no row to show for it.
     #
-    # `class_edited` covers the CONFIGURATION of a class/session/survey — its
+    # The `class_*` action names are IDENTIFIERS and keep their historic prefix:
+    # the fleet vocabulary is "session" (README §9, 2 September 2026), but a
+    # rename here would rewrite what stored audit rows mean. Nothing visible
+    # prints them.
+    #
+    # `class_edited` covers the CONFIGURATION of a session — its
     # code, date, mode, and the items it asks. Editing those after responses
     # exist changes what the collected answers mean, so "who changed the
     # questions" is exactly the sort of question the trail is for.

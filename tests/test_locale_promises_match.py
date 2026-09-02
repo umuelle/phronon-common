@@ -46,12 +46,13 @@ def test_whiteouts_prediction_bullet_says_the_same_thing_in_both():
     """The specific one that went wrong, named so the next reader sees it."""
     collect = legal_conf.TOOLS["whiteout"]["collect"]
     en, de = _strip(collect["en"]), _strip(collect["de"])
-    # English: an unnamed point per person, and a small class can be worked out.
+    # English: an unnamed point per person, and a small session can be worked
+    # out. ("class" → "session" on 2 September 2026, README §9.)
     assert "unnamed point per person" in en
-    assert "small class" in en
+    assert "small session" in en
     # German: the same two facts, or the German reader is promised more.
     assert "unbeschrifteter Punkt pro Person" in de
-    assert "kleinen Klasse" in de
+    assert "kleinen Session" in de
     assert "als Gesamtwert für den Kurs angezeigt, nie neben Ihrem Namen" not in de, (
         "the old, stronger German promise is back"
     )

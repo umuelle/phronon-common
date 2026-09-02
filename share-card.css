@@ -47,7 +47,9 @@
   padding: 1.35rem 1.5rem;
   /* THE ONE COLOUR EACH TOOL SETS FOR ITSELF (17 August 2026).
      The card is otherwise identical everywhere on purpose — same layout, same
-     class vocabulary, one file synced to eight repos — but a join sheet is the
+     CSS class names (`.share-class-code` is a selector, kept as an identifier
+     after the 2 September 2026 session-vocabulary decision), one file synced
+     to eight repos — but a join sheet is the
      thing an educator projects, and it should look like the tool it belongs to.
      So the header bar reads a per-tool token, declared in that tool's own
      static/css/brand.css, and falls back to the fleet near-black for anything
