@@ -19,7 +19,9 @@ our own database):
   inequality   startup_auto_anonymize()          30 days after last response
   lsr          lifecycle.py                      14 days, postponable by educator
   orgsim       _retention_worker()               hourly; completed anonymized at 90 d
-  layoff       auto_anonymize_old_classes()      60 days, hourly check
+  layoff       auto_anonymize_old_classes()      30 days after last response,
+                                                 hourly; 14/7-day warnings and
+                                                 3 x 30-day postponements
   moralmirror  NO JOB EXISTS — the text says so honestly (open item)
   drawbridge   no job — retention reviewed periodically (stated as such)
   whiteout     no job — educator-deleted (stated as such)
@@ -449,7 +451,8 @@ from published public sources; the survey design and site are original works.</p
         # 2026-09 (2 September): the container is a SESSION fleet-wide (README
         # §9) — "class"/"Klasse"/"Kurs" become session/Session in both
         # languages, and the German educator is "Lehrperson" throughout.
-        "notice_version": "2026-09",
+        # 2026-09-02-retention: converged the lifecycle to the fleet clock.
+        "notice_version": "2026-09-02-retention",
         "last_updated": "2026-09-02",
         "art9": False,  # ranking/structural decisions
         "purpose": {
@@ -524,13 +527,17 @@ from published public sources; the survey design and site are original works.</p
         "retention": {
             "en": """
 <ul>
-  <li><strong>Automatic pseudonymisation:</strong> sessions whose responses are older than 60 days are pseudonymised automatically (hourly check), whichever rounds the session ran. E-mail addresses are replaced by stable per-session labels; rankings, optional demographics, the session link and submission timestamps remain joined for aggregate analysis. These rows are <strong>not anonymous</strong>.</li>
+  <li><strong>Automatic pseudonymisation:</strong> sessions are pseudonymised automatically 30 days after their last response (hourly check), whichever rounds the session ran. E-mail addresses are replaced by stable per-session labels; rankings, optional demographics, the session link and submission timestamps remain joined for aggregate analysis. These rows are <strong>not anonymous</strong>.</li>
+  <li><strong>Warnings and postponement:</strong> educators are warned 14 days before that date and may postpone it by 30 days, up to three times. Participants with an e-mail address are warned 7 days before. A later response moves the last-response anchor and causes fresh warnings for the new date.</li>
+  <li><strong>Unused sessions:</strong> a session nobody joins is deleted 90 days after it was created.</li>
   <li><strong>Educator-triggered pseudonymisation:</strong> educators are asked to pseudonymise a session as soon as it is finished, and can do so at any time.</li>
   <li><strong>Backoffice audit log:</strong> kept as database records and deleted after <strong>12 months</strong>.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Automatische Pseudonymisierung:</strong> Sessions, deren Antworten älter als 60 Tage sind, werden automatisch pseudonymisiert (stündliche Prüfung) — unabhängig davon, welche Runden die Session durchlaufen hat. E-Mail-Adressen werden durch stabile, sessionbezogene Kennzeichnungen ersetzt; Reihungen, freiwillige demografische Angaben, Session-Zuordnung und Abgabezeitpunkte bleiben für aggregierte Auswertungen miteinander verknüpft. Diese Datensätze sind <strong>nicht anonym</strong>.</li>
+  <li><strong>Automatische Pseudonymisierung:</strong> Sessions werden 30 Tage nach ihrer letzten Antwort automatisch pseudonymisiert (stündliche Prüfung) — unabhängig davon, welche Runden die Session durchlaufen hat. E-Mail-Adressen werden durch stabile, sessionbezogene Kennzeichnungen ersetzt; Reihungen, freiwillige demografische Angaben, Session-Zuordnung und Abgabezeitpunkte bleiben für aggregierte Auswertungen miteinander verknüpft. Diese Datensätze sind <strong>nicht anonym</strong>.</li>
+  <li><strong>Warnungen und Aufschub:</strong> Lehrpersonen werden 14 Tage vor diesem Datum gewarnt und können es bis zu dreimal um jeweils 30 Tage aufschieben. Teilnehmende mit E-Mail-Adresse werden 7 Tage vorher gewarnt. Eine spätere Antwort verschiebt den Anker der letzten Antwort und löst neue Warnungen für das neue Datum aus.</li>
+  <li><strong>Ungenutzte Sessions:</strong> Eine Session, der niemand beitritt, wird 90 Tage nach ihrer Erstellung gelöscht.</li>
   <li><strong>Pseudonymisierung durch Lehrpersonen:</strong> Lehrpersonen werden gebeten, eine Session unmittelbar nach ihrem Ende zu pseudonymisieren, und können dies jederzeit tun.</li>
   <li><strong>Backoffice-Protokoll:</strong> als Datenbank­einträge gespeichert und nach <strong>12 Monaten</strong> gelöscht.</li>
 </ul>""",
