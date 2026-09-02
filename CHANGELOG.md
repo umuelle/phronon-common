@@ -4,6 +4,19 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.28.1 — 2026-09-03
+
+- **The dashboard vocabulary** (owner's decision from eight screenshots:
+  Whiteout's dashboard is the fleet's). `backoffice-core.css` gains, verbatim
+  from Whiteout, `.btn` and its `-primary/-secondary/-danger/-sm/-link`
+  variants with hover states, `.bo-page-header`, `.code-chip`, `.badge-test`,
+  `.bo-table` hover and test-row tints, the `.table-*` controls, and the
+  width decision the 26 August note left open: `.bo-content` is 1320px
+  everywhere. Load order is settled with it — this sheet loads LAST in every
+  backoffice base. Gate: `server-ops/fleet_dashboard_check.py`; standard:
+  README §3 "The dashboard has one shape". (v1.28.0 is the same stylesheet
+  tagged a minute early, before `pyproject.toml` moved; nothing pins it.)
+
 ## 1.27.2 — 2026-09-02
 
 - English legal templates: `_controller.html` "cross-class research use" →
