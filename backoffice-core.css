@@ -701,6 +701,39 @@ details[open] > summary > .bo-section-card__summary-hint { display: none; }
     color: var(--bo-muted);
 }
 
+/* ══ The backoffice palette (3 September 2026) ═════════════════════════
+
+   Whiteout's tokens, fleet-wide. Promoted after Polarity Profiler shipped a
+   dashboard whose buttons were white on nothing: its base never loaded the
+   sheet that declared `--bo-primary`, so every shared rule below resolved to
+   no colour at all — the same hole the Inequality rebuild had found the same
+   morning. A shared rule that reads a token the shared sheet does not define
+   is a rule that works only by accident of what else a tool happens to load.
+   Owner's rule for the dashboards: Whiteout's colours for the buttons, the
+   background and the quick-start box — so these are Whiteout's values, and
+   because this sheet loads last they win over a tool's own palette. */
+:root {
+  --bo-bg:          #efefef;
+  --bo-surface:     #ffffff;
+  --bo-border:      #d4d4d4;
+  --bo-text:        #171717;
+  --bo-muted:       #666666;
+  --bo-primary:     #232323;
+  --bo-primary-h:   #0f0f0f;
+  --bo-danger:      #c0392b;
+  --bo-danger-bg:   #fdecea;
+  --bo-success:     #276749;
+  --bo-success-bg:  #edfaf2;
+  --bo-warn:        #9a6700;
+  --bo-warn-bg:     #fffbea;
+  --radius-sm: 5px;
+  --radius:    8px;
+  --radius-lg: 12px;
+  --shadow-card: 0 1px 6px rgba(0,0,0,.07);
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.bo-body, .bo-layout { background: var(--bo-bg); color: var(--bo-text); font-family: var(--font); }
+
 /* ══ The dashboard vocabulary (3 September 2026) ═══════════════════════
 
    Owner's decision from eight dashboards side by side: Whiteout's is the

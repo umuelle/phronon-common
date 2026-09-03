@@ -4,6 +4,15 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.28.2 — 2026-09-03
+
+- `backoffice-core.css` declares the `--bo-*` palette, radii and font itself
+  (Whiteout's values). Polarity Profiler's dashboard shipped with invisible
+  buttons because its base never loaded the sheet that declared the tokens the
+  shared rules read; Inequality had the same hole. The shared sheet loads last,
+  so these values now apply to every backoffice, including Moral Mirror's own
+  warm palette, which the owner's dashboard rule overrides.
+
 ## 1.28.1 — 2026-09-03
 
 - **The dashboard vocabulary** (owner's decision from eight screenshots:
