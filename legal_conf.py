@@ -16,9 +16,18 @@ most damaging false statement possible, because the disproving evidence is in
 our own database):
 
   controversy  auto_anonymize_old_surveys()      12 months, daily worker
-  inequality   startup_auto_anonymize()          30 days after last response
-  lsr          lifecycle.py                      14 days, postponable by educator
-  orgsim       _retention_worker()               hourly; completed anonymized at 90 d
+  inequality   _anonymise_worker()               30 days after close (or last
+                                                 response), hourly; 14/7-day
+                                                 warnings, 3 x 30-day postponements,
+                                                 unused sessions deleted at 90 d
+                                                 (converged 2026-09-03)
+  lsr          lifecycle.py                      30 days, postponable by educator
+                                                 (converged 2026-09-03)
+  orgsim       _retention_worker()               hourly; completed runs anonymised
+                                                 30 d after close (or last completed
+                                                 run); 14/7-day warnings, 3 x 30-day
+                                                 postponements, unused sessions
+                                                 deleted at 90 d (converged 2026-09-03)
   layoff       auto_anonymize_old_classes()      30 days after last response,
                                                  hourly; 14/7-day warnings and
                                                  3 x 30-day postponements
@@ -351,8 +360,12 @@ works.</p>""",
         # §9); the four places this notice still said "class" now say session.
         # First explicit version for this tool: rows stamped 2026-07 resolve
         # to the wording before this change.
-        "notice_version": "2026-09",
-        "last_updated": "2026-09-02",
+        # 2026-09-03-retention: the lifecycle converged on the fleet clock —
+        # one deadline per session (30 days after close or last response),
+        # 14/7-day warnings, 3 x 30-day postponements, unused sessions
+        # deleted at 90 days. Previously 30 days after EACH response.
+        "notice_version": "2026-09-03-retention",
+        "last_updated": "2026-09-03",
         "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
                        # items (pol_redistribution, pol_regulation), stored as enums.
                        # Political opinions are Art. 9(1) data — the earlier False was wrong.
@@ -402,20 +415,22 @@ works.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>After 30 days, what happens depends on your consent.</strong> In every case your name and e-mail address are removed, and the <strong>free-text reflection box is emptied for everyone</strong>. If you did <em>not</em> consent to research use, your demographic and reflection answers are <strong>deleted outright</strong> at the same moment. If you did consent, they are kept — but the record is <strong>cut loose from your session</strong>: the link to it is removed and the timestamp is reduced to the month, so the answers sit in a large cross-session pool instead of a group of twenty where a combination of age, gender and income could point at one person.</li>
-  <li><strong>What that means for you:</strong> once the 30 days have passed we can no longer find your individual response, so a withdrawal request has to reach us before then. Until then, write to us and we will delete it.</li>
-  <li>This routine had been broken since the feature was written — the database rejected the deletion every time, and it only ran at start-up — and was repaired on 2026-07-30/31. A test now executes the deletion itself on every deploy rather than merely checking that the code exists.</li>
-  <li><strong>Manual anonymisation:</strong> educators can anonymise or archive a session at any time before the 30-day window ends. Doing so applies exactly the steps described above, immediately — it is the same routine, not a lighter version of it.</li>
+  <li><strong>One deadline per session.</strong> Names and e-mail addresses are anonymised automatically 30 days after your educator closes the session — or, if it is never closed, 30 days after its last response. Reopening a session does not restart that clock. The routine runs hourly.</li>
+  <li><strong>What happens at that deadline depends on your consent.</strong> In every case your name and e-mail address are removed, and the <strong>free-text reflection box is emptied for everyone</strong>. If you did <em>not</em> consent to research use, your demographic and reflection answers are <strong>deleted outright</strong> at the same moment. If you did consent, they are kept — but the record is <strong>cut loose from your session</strong>: the link to it is removed and the timestamp is reduced to the month, so the answers sit in a large cross-session pool instead of a group of twenty where a combination of age, gender and income could point at one person.</li>
+  <li><strong>Warnings and postponement:</strong> educators are warned 14 days before the deadline and may postpone it by 30 days, up to three times. Participants who left an e-mail address are warned 7 days before.</li>
+  <li><strong>Unused sessions:</strong> a session nobody joins is deleted 90 days after it was created.</li>
+  <li><strong>What that means for you:</strong> once the deadline has passed we can no longer find your individual response, so a withdrawal request has to reach us before then. Until then, write to us and we will delete it.</li>
+  <li><strong>Manual anonymisation:</strong> educators can anonymise or archive a session at any time before the deadline. Doing so applies exactly the steps described above, immediately — it is the same routine, not a lighter version of it.</li>
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Within the first 30 days, ask your educator (who can delete
-individual entries) or write to us naming the session and the name you used —
-your entry can be found and removed. After 30 days the record has been
-anonymised and, if you consented to research use, detached from your session, so
-we genuinely cannot identify which row was yours. You can also withdraw a
-consent you gave at any time by writing to us; that stops any further use,
-though it cannot reach a record we can no longer locate.</p>""",
+            "en": """<p>Until the session's anonymisation deadline (30 days after it
+was closed, or after its last response — the date is shown to your educator),
+write to us or to your educator naming the name you joined with; your response
+can be located and deleted. After that deadline the record has been anonymised
+and cannot be found again. You can also withdraw any consent you gave at any
+time by writing to us; that stops any further use, though it cannot reach a
+record we can no longer locate.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
@@ -866,8 +881,12 @@ teaching.</p>""",
         # and their 24-hour pass a "pass", so "session" means one thing. First
         # explicit version for this tool: rows stamped 2026-07 resolve to the
         # wording before this change.
-        "notice_version": "2026-09",
-        "last_updated": "2026-09-02",
+        # 2026-09-03-retention: the lifecycle converged on the fleet clock —
+        # completed runs anonymised 30 days after the session closes (was 90
+        # days after EACH run completed), 14/7-day warnings, 3 x 30-day
+        # postponements, unused sessions deleted at 90 days.
+        "notice_version": "2026-09-03-retention",
+        "last_updated": "2026-09-03",
         "art9": False,  # structural/organisational decisions
         "purpose": {
             "en": "OrgDesignSim is an organisational-design simulation: "
@@ -910,17 +929,21 @@ teaching.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>Abandoned runs</strong> — a participant who joined but never finished — are deleted automatically by an hourly job.</li>
-  <li><strong>Completed runs</strong> are anonymised automatically 90 days after completion — the personal identifiers are removed; the score is kept for educator statistics.</li>
+  <li><strong>Abandoned runs</strong> — a participant who joined but never finished — are deleted automatically by an hourly job, once their 24-hour pass has expired.</li>
+  <li><strong>Completed runs</strong> are anonymised automatically 30 days after the educator closes the session — or, if it is never closed, 30 days after the session's last completed run. The name and e-mail address are removed; the score and result are kept for educator statistics. Closing a session again never moves that date.</li>
+  <li><strong>Warnings and postponement:</strong> educators are warned 14 days before that date and may postpone it by 30 days, up to three times. Participants are warned 7 days before at the e-mail address they joined with.</li>
+  <li><strong>Unused sessions:</strong> a session nobody joins is deleted 90 days after it was created.</li>
   <li><strong>A participant's pass</strong> expires automatically after 24 hours.</li>
   <li><strong>The backoffice audit record</strong> (educator account, action and IP address) is deleted automatically after <strong>12 months</strong>, by the same hourly job.</li>
   <li><strong>Educators</strong> can delete or archive a session at any time.</li>
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Before anonymisation, write to us or to your educator naming
-the e-mail address you joined with; your run can be located and deleted. After
-anonymisation, results are no longer linked to a person.</p>""",
+            "en": """<p>Before the session's anonymisation date (30 days after it
+was closed, or after its last completed run — the date is shown to your
+educator), write to us or to your educator naming the e-mail address you joined
+with; your run can be located and deleted. After anonymisation, results are no
+longer linked to a person.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual

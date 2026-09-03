@@ -4,6 +4,20 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.28.3 — 2026-09-03
+
+- **Inequality Explorer and OrgDesignSim notices: the fleet retention clock.**
+  Both tools converged on the owner's contract (FL-056): one deadline per
+  session, 30 days after the first close or after the last response /
+  completed run; educator warned 14 days ahead, participants 7; three 30-day
+  postponements; a session nobody joins deleted at 90 days; reopening or
+  closing again never moves the anchor. Inequality was 30 days after EACH
+  response (a shortening for nobody, a per-session date for everyone);
+  OrgDesignSim was 90 days after EACH run's completion (a SHORTENING — see
+  the deploy note in `server-ops/DELETION-JOBS.md`). `notice_version`
+  `2026-09-03-retention` on both; erasure paragraphs name the same date.
+  Header table brought up to date for Inequality, PP and OrgDesignSim.
+
 ## 1.28.2 — 2026-09-03
 
 - `backoffice-core.css` declares the `--bo-*` palette, radii and font itself
