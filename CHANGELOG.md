@@ -4,6 +4,14 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.29.1 — 2026-09-03
+
+- `ParticipantCookie.mint()` — the signed cookie value without a response to
+  set it on. Every tool's tests need to hand a TestClient a valid participant
+  cookie; the alternative was eight copies of a reach into the private signer,
+  which is also eight tests that keep passing after the signing rule changes
+  under them. `set()` now goes through it, so the two cannot diverge.
+
 ## 1.29.0 — 2026-09-03
 
 - **`participant.py` — the fleet participant mechanism** (owner's decision,

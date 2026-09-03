@@ -66,6 +66,16 @@ def test_the_cookie_is_signed_httponly_lax_timed_and_secure_in_production():
     assert resp.deleted == ["tool_p"]
 
 
+def test_mint_is_the_value_set_puts_on_the_response():
+    """The tests of eight tools mint cookies; they must mint the real thing."""
+    c = p.ParticipantCookie("s" * 64, "tool_p", secure=False)
+    resp = _Resp()
+    c.set(resp, "pid-9")
+    assert c.read(SimpleNamespace(cookies={"tool_p": c.mint("pid-9")})) == "pid-9"
+    # Same signer, so a minted value is accepted exactly like a set one.
+    assert c.read(SimpleNamespace(cookies={"tool_p": resp.cookies["tool_p"][0]})) == "pid-9"
+
+
 def test_a_cookie_signed_by_another_tool_is_refused():
     a = p.ParticipantCookie("a" * 64, "p", secure=False)
     b = p.ParticipantCookie("b" * 64, "p", secure=False)

@@ -112,9 +112,20 @@ class ParticipantCookie:
         self.max_age = int(max_age)
         self._signer = CookieSigner(secret_key, salt=salt, max_age=self.max_age)
 
+    def mint(self, participant_id: str) -> str:
+        """The signed cookie VALUE, without a response to put it on.
+
+        `set` is what routes use. This exists because every tool's tests need
+        to hand a TestClient a valid participant cookie, and the alternative
+        was eight copies of a reach into the private signer — which is also
+        eight tests that keep passing after the signing rule changes under
+        them.
+        """
+        return self._signer.dumps(participant_id)
+
     def set(self, response, participant_id: str) -> None:
         response.set_cookie(
-            self.name, self._signer.dumps(participant_id),
+            self.name, self.mint(participant_id),
             max_age=self.max_age, httponly=True, samesite="lax",
             secure=self.secure, path="/",
         )
