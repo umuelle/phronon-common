@@ -7,6 +7,7 @@ the same markup (copy it from this module). Only the tool name / sender differ.
 
 Harmonization O1 — branded HTML + plain-text multipart, June 14, 2026.
 """
+import html as _html
 import logging
 import os
 import smtplib
@@ -401,3 +402,71 @@ def send_two_factor_reset_notice(tool_name: str, default_from: str, to_email: st
     _smtp_send(sender, to_email, _multipart(
         f"{subject_prefix}{tool_name} — two-factor login was reset",
         sender, to_email, text, html))
+
+
+# ── Participant resume and withdrawal links (3 September 2026) ──────────────
+# The two participant-facing mails the fleet identity mechanism needs, worded
+# once. Tools with their own locales (Polarity Profiler, Whiteout, Layoff)
+# may keep bilingual bodies of their own; the English wording below is the
+# reference they translate. Both mails are sent in response to a request
+# that answers uniformly whether or not the address exists, so a failure
+# here is logged and never surfaced to the requester.
+
+def participant_resume_bodies(tool_name: str, resume_url: str, minutes: int = 30):
+    safe_url = _html.escape(resume_url)
+    text = (f"Someone — probably you — asked to continue your {tool_name} session on a "
+            f"new device. This link works once and expires in {minutes} minutes:\n\n"
+            f"{resume_url}\n\nIf you did not ask for this, ignore this message; "
+            f"nothing changes.")
+    html = (f"<h2>Continue on this device</h2>"
+            f"<p>Someone — probably you — asked to continue your {tool_name} session on a "
+            f"new device. This link works <strong>once</strong> and expires in "
+            f"<strong>{minutes} minutes</strong>.</p>"
+            f"<p><a href=\"{safe_url}\">Continue your session</a></p>"
+            f"<p>If you did not ask for this, ignore this message; nothing changes.</p>")
+    return text, html
+
+
+def send_participant_resume(tool_name: str, default_from: str, to_email: str,
+                            resume_url: str, minutes: int = 30,
+                            subject_prefix: str = "") -> None:
+    if not os.getenv("SMTP_PASSWORD"):
+        _unsendable("participant resume link", to_email, resume_url)
+        return
+    sender = _sender_address(default_from)
+    text, html = participant_resume_bodies(tool_name, resume_url, minutes)
+    msg = _multipart(f"{subject_prefix}{tool_name} — continue your session", sender, to_email,
+                     text, branded_html(tool_name, html))
+    _smtp_send(sender, to_email, msg)
+
+
+def withdrawal_link_bodies(tool_name: str, withdraw_url: str, deadline: str = ""):
+    safe_url = _html.escape(withdraw_url)
+    until = (f" You can use it until {deadline}, when your identifying data is removed anyway;"
+             f" any pseudonymous research record you agreed to keep stays deletable with the "
+             f"same link for as long as it exists." if deadline else
+             " It keeps working for as long as we hold data that this link can delete.")
+    text = (f"Here is your personal deletion link for {tool_name}. Opening it lets you delete "
+            f"your submission; nothing happens until you confirm on the page.{until}\n\n"
+            f"{withdraw_url}\n\nThis link replaces any earlier deletion link we sent you. "
+            f"If you did not ask for it, ignore this message.")
+    html = (f"<h2>Your deletion link</h2>"
+            f"<p>Here is your personal deletion link for {tool_name}. Opening it lets you delete "
+            f"your submission; nothing happens until you confirm on the page.{_html.escape(until)}</p>"
+            f"<p><a href=\"{safe_url}\">Delete my submission</a></p>"
+            f"<p>This link replaces any earlier deletion link we sent you. If you did not ask "
+            f"for it, ignore this message.</p>")
+    return text, html
+
+
+def send_withdrawal_link(tool_name: str, default_from: str, to_email: str,
+                         withdraw_url: str, deadline: str = "",
+                         subject_prefix: str = "") -> None:
+    if not os.getenv("SMTP_PASSWORD"):
+        _unsendable("withdrawal link", to_email, withdraw_url)
+        return
+    sender = _sender_address(default_from)
+    text, html = withdrawal_link_bodies(tool_name, withdraw_url, deadline)
+    msg = _multipart(f"{subject_prefix}{tool_name} — your deletion link", sender, to_email,
+                     text, branded_html(tool_name, html))
+    _smtp_send(sender, to_email, msg)

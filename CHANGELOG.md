@@ -4,6 +4,18 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.29.0 — 2026-09-03
+
+- **`participant.py` — the fleet participant mechanism** (owner's decision,
+  3 September 2026): random participant id, the signed 8-hour resume cookie
+  (`ParticipantCookie`), hashed withdrawal tokens with the rotation rule,
+  one-time 30-minute resume links (`issue/peek/spend_resume_token` over the
+  tool's own DB callables, shared DDL), the typed confirmation word in every
+  accepted locale, the 10-per-5-minutes withdrawal rate limit. Additive —
+  nothing changes for a tool until it adopts it.
+- `emails.py`: `send_participant_resume` and `send_withdrawal_link`, the two
+  participant mails the mechanism needs, worded once.
+
 ## 1.28.3 — 2026-09-03
 
 - **Inequality Explorer and OrgDesignSim notices: the fleet retention clock.**
