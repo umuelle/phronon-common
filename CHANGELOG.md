@@ -4,6 +4,16 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.29.2 — 2026-09-03
+
+- **`RESUME_TOKENS_DDL` no longer pins a charset.** `DEFAULT CHARSET=utf8mb4`
+  means utf8mb4_0900_ai_ci on MySQL 8 and overrides a database that is
+  utf8mb4_unicode_ci — so the table disagreed with the one it references and
+  comparing the two columns raised 1267 inside a sweep that swallows its own
+  exceptions. The table now inherits its database's collation, and the comment
+  states the rule: a tool that JOINs must name the collation to match the
+  referenced TABLE, not the database.
+
 ## 1.29.1 — 2026-09-03
 
 - `ParticipantCookie.mint()` — the signed cookie value without a response to

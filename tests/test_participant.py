@@ -151,6 +151,21 @@ def test_the_table_ddl_has_the_hash_unique_and_never_a_raw_token():
     assert "participant_ref" in ddl and "email" not in ddl.lower()
 
 
+def test_the_table_ddl_names_no_charset():
+    """It must inherit its DATABASE's collation, not MySQL 8's default.
+
+    `DEFAULT CHARSET=utf8mb4` alone resolves to utf8mb4_0900_ai_ci and
+    overrides a database that is utf8mb4_unicode_ci — and the fleet has both.
+    The mismatch surfaces as "Illegal mix of collations" the first time this
+    table's participant_ref is compared with the id column it points at, which
+    happens inside a worker that swallows its own exceptions.
+    """
+    ddl = p.RESUME_TOKENS_DDL.upper()
+    assert "CHARSET" not in ddl and "COLLATE" not in ddl, (
+        "the resume-token DDL pins a charset again — it must inherit the "
+        "database's, or it will disagree with the table it references")
+
+
 def test_the_shared_mails_render_the_link_and_the_rotation_sentence():
     from phronon_common import emails
     text, html = emails.withdrawal_link_bodies("Tool", "https://t.example/withdraw?token=abc", "2026-10-03")

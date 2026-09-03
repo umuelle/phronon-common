@@ -142,6 +142,28 @@ class ParticipantCookie:
 # One table per tool, same shape everywhere. `participant_ref` is the tool's
 # participant id (the random one), so the table never learns a real name.
 RESUME_TOKENS_TABLE = "participant_resume_tokens"
+# NO `DEFAULT CHARSET` CLAUSE, AND THAT IS THE POINT (3 September 2026).
+# The first version of this DDL ended `DEFAULT CHARSET=utf8mb4`, which on
+# MySQL 8 silently means `utf8mb4_0900_ai_ci` — while the fleet's older
+# databases are `utf8mb4_unicode_ci`. Naming the charset without its collation
+# therefore OVERRIDES the database default and makes this table disagree with
+# the very table it points at. Comparing the two columns then raises
+# "Illegal mix of collations" (error 1267) — inside an hourly retention worker
+# that catches its own exceptions, so anonymisation would simply stop, visible
+# only as a stale heartbeat. Two tools' test suites caught it independently.
+# Omitting the clause makes the table inherit its database's own collation,
+# which is how every sibling table got theirs, in every tool, whatever the
+# server default happens to be. Do not "tidy" a charset back in here.
+#
+# AND IF YOUR TOOL JOINS THIS TABLE TO ITS PARTICIPANT TABLE, name the
+# collation in your own migration to match THAT TABLE — not the database.
+# Inheriting is right only while the two agree, and in this fleet they do not
+# always: an older table can carry a collation its database no longer
+# defaults to. OrgDesignSim and Polarity Profiler both join (their sweeps
+# delete a class's resume links through the participant row) and both name
+# `COLLATE=utf8mb4_unicode_ci` for that reason. Tools that only ever compare
+# participant_ref with a bound parameter — the helpers below all do — are safe
+# either way, because a parameter takes the column's collation.
 RESUME_TOKENS_DDL = f"""CREATE TABLE IF NOT EXISTS `{RESUME_TOKENS_TABLE}` (
   `id` int NOT NULL AUTO_INCREMENT,
   `participant_ref` varchar(64) NOT NULL,
@@ -152,7 +174,7 @@ RESUME_TOKENS_DDL = f"""CREATE TABLE IF NOT EXISTS `{RESUME_TOKENS_TABLE}` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_resume_token_hash` (`token_hash`),
   KEY `idx_resume_participant` (`participant_ref`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"""
+) ENGINE=InnoDB"""
 
 
 def issue_resume_token(execute: Callable, query_one: Callable, participant_ref: str) -> Optional[str]:
