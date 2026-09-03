@@ -4,6 +4,26 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.30.0 — 2026-09-03
+
+- **The eight participant notices, for the fleet identity mechanism.**
+  `notice_version` `2026-09-03-identity` on all eight (the hub, which has no
+  participants, is untouched). Every participant cookie table now publishes
+  ONE cookie at **8 hours** carrying a random identifier and nothing else;
+  the rows for cookies that carried answers, a submission reference or a raw
+  withdrawal token are gone, because those moved to the server. Drawbridge
+  gains a `drawbridge_csrf` row, separate from the pass so the deletion form
+  still works when there is no pass left. German tables moved with the
+  English ones (Layoff, Polarity Profiler; Whiteout already published 8 h).
+- **Erasure rewritten for the five tools whose deletion route is new or
+  changed** (Inequality, Layoff, OrgDesignSim, Moral Mirror, Polarity
+  Profiler): a link the participant holds, replaceable at
+  `/withdrawal-link` where an address exists, that keeps working for as long
+  as any record of theirs exists. Polarity Profiler's says plainly that the
+  report link is only a report link — it no longer deletes anything.
+  Moral Mirror's states its two declared exceptions: no replacement is
+  possible, and nothing per person survives the deadline.
+
 ## 1.29.2 — 2026-09-03
 
 - **`RESUME_TOKENS_DDL` no longer pins a charset.** `DEFAULT CHARSET=utf8mb4`

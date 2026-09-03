@@ -137,8 +137,14 @@ TOOLS = {
         # participants join now reads "session"; "survey" survives only for
         # the activity itself. First explicit version for this tool (CG-011):
         # rows stamped 2026-07 resolve to the wording before this change.
-        "notice_version": "2026-09",
-        "last_updated": "2026-09-02",
+        # 2026-09-03-identity: ONE participant identity, resume and
+        # withdrawal mechanism fleet-wide (owner's decision, README §11).
+        # What changed for a participant: the browser holds a random
+        # identifier and nothing else, for 8 hours; a deletion link they can
+        # actually use, replaceable if lost; and, where an address exists, a
+        # one-time link for continuing on another device.
+        "notice_version": "2026-09-03-identity",
+        "last_updated": "2026-09-03",
         "art9": True,  # statement bank can probe political/moral positions
         "purpose": {
             "en": "The Controversy Generator collects short survey responses to "
@@ -224,10 +230,9 @@ the responsibility of the educator who writes them.</p>""",
         # it ever becomes a default or a silent setting, that reasoning collapses
         # and the no-banner conclusion must be revisited.
         "cookies": [
-            ("student_session", "Keeps your survey progress and marks your submission (signed, HTTP-only).", "2 hours", "participants"),
-            ("quiz_code / answers / user", "Carry the session code and your in-progress answers between pages.", "browser session / 2 hours", "participants"),
+            ("student_session", "Signed, HTTP-only. Holds a random identifier and nothing else — no name, no address, no answers. It links your browser to the pass you are taking, and lets you reopen your results page afterwards.", "8 hours", "participants"),
+            ("quiz_code", "Carries the session code between pages. Your answers and the name you typed are held on our server against the identifier above, not in your browser.", "browser session", "participants"),
             ("norms_&lt;code&gt; / privacy_&lt;code&gt;", "Record that the session's ground-rules and privacy note were shown.", "1 hour", "participants"),
-            ("withdrawal_token", "Lets you withdraw your submission right after submitting.", "5–10 minutes", "participants"),
             ("backoffice_user", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("cg_pending_totp / cg_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
             ("dismiss_anonymize_until", "Remembers that an educator dismissed the \"these sessions need anonymising\" reminder, so it is not shown again for a week. Set only when the educator clicks dismiss.", "7 days", "backoffice"),
@@ -260,8 +265,14 @@ the responsibility of the educator who writes them.</p>""",
         # §9); every "class" that named it now reads "session", and the
         # duplicate-check bullet no longer says "browser session" for a cookie,
         # because the word now has one meaning on the page.
-        "notice_version": "2026-09",
-        "last_updated": "2026-09-02",
+        # 2026-09-03-identity: ONE participant identity, resume and
+        # withdrawal mechanism fleet-wide (owner's decision, README §11).
+        # What changed for a participant: the browser holds a random
+        # identifier and nothing else, for 8 hours; a deletion link they can
+        # actually use, replaceable if lost; and, where an address exists, a
+        # one-time link for continuing on another device.
+        "notice_version": "2026-09-03-identity",
+        "last_updated": "2026-09-03",
         "art9": True,  # moral-judgment attributions
         "purpose": {
             "en": "The Drawbridge Drama presents a short illustrated narrative and "
@@ -342,8 +353,8 @@ parable; the illustrated narrative, story-flow design, and site are original
 works.</p>""",
         },
         "cookies": [
-            ("drawbridge_session", "Signed, HTTP-only participant cookie: holds your anonymous pass through the story and the CSRF value, so the pass stays consistent.", "4 hours", "participants"),
-            ("drawbridge_progress", "Remembers how far you have read through the story, so returning to the page does not restart it (signed, HTTP-only). Cleared when you finish.", "4 hours", "participants"),
+            ("drawbridge_session", "Signed, HTTP-only participant cookie holding a random identifier and nothing else. Which version of the story you were given, how far you had read and whether you had submitted are held on our server against that identifier.", "8 hours", "participants"),
+            ("drawbridge_csrf", "Protects the participant forms against cross-site request forgery (signed, HTTP-only). Separate from the cookie above so the deletion form still works later, when there is no pass left to carry it.", "8 hours", "participants"),
             ("drawbridge_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("bo_csrf", "Protects backoffice forms against cross-site request forgery (signed, HTTP-only).", "1 hour", "backoffice"),
             ("bo_flash", "Carries a one-off status message between two backoffice pages.", "10 seconds", "backoffice"),
@@ -364,7 +375,13 @@ works.</p>""",
         # one deadline per session (30 days after close or last response),
         # 14/7-day warnings, 3 x 30-day postponements, unused sessions
         # deleted at 90 days. Previously 30 days after EACH response.
-        "notice_version": "2026-09-03-retention",
+        # 2026-09-03-identity: ONE participant identity, resume and
+        # withdrawal mechanism fleet-wide (owner's decision, README §11).
+        # What changed for a participant: the browser holds a random
+        # identifier and nothing else, for 8 hours; a deletion link they can
+        # actually use, replaceable if lost; and, where an address exists, a
+        # one-time link for continuing on another device.
+        "notice_version": "2026-09-03-identity",
         "last_updated": "2026-09-03",
         "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
                        # items (pol_redistribution, pol_regulation), stored as enums.
@@ -424,13 +441,19 @@ works.</p>""",
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Until the session's anonymisation deadline (30 days after it
-was closed, or after its last response — the date is shown to your educator),
-write to us or to your educator naming the name you joined with; your response
-can be located and deleted. After that deadline the record has been anonymised
-and cannot be found again. You can also withdraw any consent you gave at any
-time by writing to us; that stops any further use, though it cannot reach a
-record we can no longer locate.</p>""",
+            "en": """
+<p><strong>You can delete your own response.</strong> Every response gets a personal
+deletion link, shown once when you finish. Opening it shows what would be removed and
+asks you to type a word to confirm; nothing happens until you do.</p>
+<p><strong>If you no longer have your deletion link</strong>, ask for a new one at <a href="/withdrawal-link">/withdrawal-link</a> with the session code and the e-mail address you took part with. We send it to that address and nowhere else, and we answer the same way whether or not we hold it, so the page cannot be used to find out who took part. The new link replaces any earlier one, which stops working at that moment. We keep only a one-way fingerprint of these links, never the link itself, so a copy of our database gives nobody the power to delete your data — which is also why we cannot re-send the one you had.</p>
+<p>The link keeps working <strong>after</strong> the session's anonymisation deadline,
+for as long as any record of yours exists — either the pseudonymous research record,
+if you agreed to that, or the anonymised record still counted in your session's figures.
+What we cannot do after the deadline is find your record for you, because nothing then
+connects it to your name or address. You can still write to us or to your educator
+before that date.</p>
+<p><strong>If you gave no e-mail address</strong>, the link shown when you finished is
+the only one you will get, and we cannot send you another.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
@@ -445,7 +468,7 @@ results, the session debrief, or anything else.</p>""",
 from published public sources; the survey design and site are original works.</p>""",
         },
         "cookies": [
-            ("survey_state", "Keeps your in-progress estimates as you move through the survey (signed, HTTP-only).", "2 hours", "participants"),
+            ("survey_state", "Signed, HTTP-only. Holds a random identifier and nothing else. Which session you joined, which step you are on and your in-progress estimates are held on our server against it, so a reload does not lose them and you can reopen your results page.", "8 hours", "participants"),
             ("backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("wee_pending_totp / pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
@@ -467,8 +490,14 @@ from published public sources; the survey design and site are original works.</p
         # §9) — "class"/"Klasse"/"Kurs" become session/Session in both
         # languages, and the German educator is "Lehrperson" throughout.
         # 2026-09-02-retention: converged the lifecycle to the fleet clock.
-        "notice_version": "2026-09-02-retention",
-        "last_updated": "2026-09-02",
+        # 2026-09-03-identity: ONE participant identity, resume and
+        # withdrawal mechanism fleet-wide (owner's decision, README §11).
+        # What changed for a participant: the browser holds a random
+        # identifier and nothing else, for 8 hours; a deletion link they can
+        # actually use, replaceable if lost; and, where an address exists, a
+        # one-time link for continuing on another device.
+        "notice_version": "2026-09-03-identity",
+        "last_updated": "2026-09-03",
         "art9": False,  # ranking/structural decisions
         "purpose": {
             "en": "The Layoff Exercise asks participants to rank candidates in a "
@@ -558,11 +587,17 @@ from published public sources; the survey design and site are original works.</p
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Before pseudonymisation, write to us or to your educator naming
-the e-mail address you used; the submission can be located and deleted. After
-pseudonymisation the address is gone, so we can normally no longer identify
-which stable per-session row was yours; the retained rows remain pseudonymous,
-not anonymous.</p>""",
+            "en": """
+<p><strong>You can delete your own submission.</strong> The closing page shows a
+personal deletion link once. Opening it shows what would be removed and asks you to
+type a word to confirm; nothing happens until you do. It removes your rankings and
+your optional demographic answers.</p>
+<p><strong>If you no longer have your deletion link</strong>, ask for a new one at <a href="/withdrawal-link">/withdrawal-link</a> with the session code and the e-mail address you took part with. We send it to that address and nowhere else, and we answer the same way whether or not we hold it, so the page cannot be used to find out who took part. The new link replaces any earlier one, which stops working at that moment. We keep only a one-way fingerprint of these links, never the link itself, so a copy of our database gives nobody the power to delete your data — which is also why we cannot re-send the one you had.</p>
+<p>The link keeps working <strong>after</strong> pseudonymisation, when your address
+has been replaced by a stable per-session label: the record is then pseudonymous rather
+than anonymous, and the link still deletes it. What we cannot do at that point is find
+it for you, because the address that pointed at it is gone. You can also write to us or
+to your educator at any time.</p>""",
             "de": """<p>Vor der Pseudonymisierung schreiben Sie uns oder Ihrer Lehrperson
 unter Angabe der verwendeten E-Mail-Adresse; die Abgabe kann gefunden und
 gelöscht werden. Nach der Pseudonymisierung ist die Adresse gelöscht; daher
@@ -585,7 +620,7 @@ Abgabe gespeichert werden. Demografische Felder sind freiwillig.</p>""",
 original works created for teaching.</p>""",
         },
         "cookies": [
-            ("layoff_participant", "Carries your e-mail and session code between the exercise steps (signed, HTTP-only).", "30 minutes", "participants"),
+            ("layoff_participant", "Signed, HTTP-only. Carries a random participant identifier and nothing else — not your address, not the session code. It is how the site knows this browser is the one that joined, so your briefing, rankings, demographics and closing page belong to the same person.", "8 hours", "participants"),
             ("layoff_flash", "Carries a one-off status message between two pages.", "5 minutes", "all"),
             ("layoff_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("lo_pending_totp / layoff_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
@@ -597,8 +632,8 @@ original works created for teaching.</p>""",
         # cookies, or if a lifetime cell disagrees between the languages.
         # `closing_audit.py` reads both and understands Stunde/Minute/Tag.
         "cookies_de": [
-            ('layoff_participant', 'Überträgt Ihre E-Mail-Adresse und den Session-Code zwischen den Schritten der Übung (signiert, HTTP-only).',
-             '30 Minuten', 'Teilnehmende'),
+            ('layoff_participant', 'Signiert, HTTP-only. Enthält ausschließlich eine zufällige Teilnahme-Kennung — nicht Ihre Adresse, nicht den Session-Code. Damit erkennt die Seite, dass dieser Browser derjenige ist, der teilgenommen hat, sodass Briefing, Reihungen, demografische Angaben und Abschlussseite zur selben Person gehören.',
+             '8 Stunden', 'Teilnehmende'),
             ('layoff_flash', 'Überträgt eine einmalige Statusmeldung von einer Seite zur nächsten.',
              '5 Minuten', 'alle'),
             ('layoff_admin', 'Hält Lehrpersonen und Administratoren angemeldet (signiert, HTTP-only).',
@@ -629,8 +664,14 @@ original works created for teaching.</p>""",
         # §9) — "class"/"Klasse"/"Kurs" become session/Session in both
         # languages, and the German educator is "Lehrperson" throughout.
         # 2026-09-03-retention: the lifecycle converged on the fleet clock.
-        "notice_version": "2026-09-03-retention",
-        "last_updated": "2026-09-02",
+        # 2026-09-03-identity: ONE participant identity, resume and
+        # withdrawal mechanism fleet-wide (owner's decision, README §11).
+        # What changed for a participant: the browser holds a random
+        # identifier and nothing else, for 8 hours; a deletion link they can
+        # actually use, replaceable if lost; and, where an address exists, a
+        # one-time link for continuing on another device.
+        "notice_version": "2026-09-03-identity",
+        "last_updated": "2026-09-03",
         "art9": False,  # leadership-style point allocations
         "purpose": {
             "en": "The Polarity Profiler collects scenario-based point allocations and "
@@ -719,10 +760,16 @@ original works created for teaching.</p>""",
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Use the withdrawal link in your confirmation e-mail or on
-your report page — it works without a login, any time before the anonymisation
-deadline, and deletes your response including demographics. After the deadline
-no identifier linking a response to you remains.</p>""",
+            "en": """
+<p><strong>You can delete your own response.</strong> Your confirmation e-mail carries a
+personal deletion link. Opening it shows what would be removed and asks you to type a
+word to confirm; nothing happens until you do. Your report link is <em>only</em> a
+report link — it cannot delete anything, so forwarding it is safe.</p>
+<p><strong>If you no longer have your deletion link</strong>, ask for a new one at <a href="/withdrawal-link">/withdrawal-link</a> with the session code and the e-mail address you took part with. We send it to that address and nowhere else, and we answer the same way whether or not we hold it, so the page cannot be used to find out who took part. The new link replaces any earlier one, which stops working at that moment. We keep only a one-way fingerprint of these links, never the link itself, so a copy of our database gives nobody the power to delete your data — which is also why we cannot re-send the one you had.</p>
+<p>The link keeps working <strong>after</strong> the anonymisation deadline if you
+agreed to research use, because the pseudonymous record kept for research carries the
+same fingerprint; it deletes that record too. If you did not agree, your response is
+deleted outright at the deadline and there is nothing left to withdraw.</p>""",
             "de": """<p>Nutzen Sie den Widerrufslink in Ihrer Bestätigungs-E-Mail
 oder auf Ihrer Berichtsseite — er funktioniert ohne Anmeldung, jederzeit vor dem
 Anonymisierungs­stichtag, und löscht Ihre Antwort einschließlich der
@@ -744,9 +791,7 @@ gespeichert werden. Die demografischen Fragen sind tatsächlich freiwillig.</p>"
 design are original works created for executive teaching.</p>""",
         },
         "cookies": [
-            ("participant_session", "Keeps your progress through the questionnaire (signed, HTTP-only).", "2 hours", "participants"),
-            ("repertoire_answers / scenario_answers / context_answers / demographics_data", "Carry your in-progress answers from page to page so you do not lose them mid-questionnaire (HTTP-only; held in your browser, not signed).", "2 hours", "participants"),
-            ("response_id / withdrawal_raw", "Your submission reference and your withdrawal link, so the results page can offer withdrawal (signed, HTTP-only).", "2 hours", "participants"),
+            ("participant_session", "Signed, HTTP-only. Holds a random identifier and nothing else. Your progress through the questionnaire is held on our server against it, and afterwards it lets you reopen your results page.", "8 hours", "participants"),
             ("backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("lsr_pending_totp / lsr_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
@@ -757,12 +802,8 @@ design are original works created for executive teaching.</p>""",
         # cookies, or if a lifetime cell disagrees between the languages.
         # `closing_audit.py` reads both and understands Stunde/Minute/Tag.
         "cookies_de": [
-            ('participant_session', 'Bewahrt Ihren Fortschritt im Fragebogen (signiert, HTTP-only).',
-             '2 Stunden', 'Teilnehmende'),
-            ('repertoire_answers / scenario_answers / context_answers / demographics_data', 'Übertragen Ihre begonnenen Antworten von Seite zu Seite, damit sie mitten im Fragebogen nicht verloren gehen (HTTP-only; in Ihrem Browser gespeichert, nicht signiert).',
-             '2 Stunden', 'Teilnehmende'),
-            ('response_id / withdrawal_raw', 'Ihre Einreichungs-Referenz und Ihr Widerrufslink, damit die Ergebnisseite den Widerruf anbieten kann (signiert, HTTP-only).',
-             '2 Stunden', 'Teilnehmende'),
+            ('participant_session', 'Signiert, HTTP-only. Enthält ausschließlich eine zufällige Kennung. Ihr Fortschritt im Fragebogen wird auf unserem Server dazu gespeichert; danach können Sie damit Ihre Ergebnisseite erneut öffnen.',
+             '8 Stunden', 'Teilnehmende'),
             ('backoffice', 'Hält Lehrpersonen und Administratoren angemeldet (signiert, HTTP-only).',
              '6 Stunden (Lehrpersonen) / 3 Stunden (Administratoren)', 'Backoffice'),
             ('lsr_pending_totp / lsr_pending2fa', 'Überträgt den Zwischenschritt der Zwei-Faktor-Anmeldung: die Markierung der offenen Anmeldung (5 Minuten) und, während der Einrichtung, das noch nicht bestätigte TOTP-Geheimnis (15 Minuten).',
@@ -791,8 +832,14 @@ design are original works created for executive teaching.</p>""",
         # §9). "Class code" and "class-level" become session; the participant
         # cookie is "a pseudonymous token", no longer a "session token", so the
         # word means one thing on the page.
-        "notice_version": "2026-09",
-        "last_updated": "2026-09-02",
+        # 2026-09-03-identity: ONE participant identity, resume and
+        # withdrawal mechanism fleet-wide (owner's decision, README §11).
+        # What changed for a participant: the browser holds a random
+        # identifier and nothing else, for 8 hours; a deletion link they can
+        # actually use, replaceable if lost; and, where an address exists, a
+        # one-time link for continuing on another device.
+        "notice_version": "2026-09-03-identity",
+        "last_updated": "2026-09-03",
         "art9": True,  # moral judgments
         "purpose": {
             "en": "Moral Mirror lets the participants in a session observe patterns in "
@@ -847,11 +894,20 @@ one.</p>""",
 </ul>""",
         },
         "erasure": {
-            "en": """<p>We store no name or e-mail address, so we usually cannot
-locate a specific response after the fact. Within the lifetime of the
-participant cookie your submission can still be identified via its token — contact
-us promptly from the same browser and we will delete it. Educators can
-delete whole sessions at any time.</p>""",
+            "en": """
+<p><strong>The deletion code on your reflection card is how you erase your answers.</strong>
+It is shown once, on the card, and it is the only way: we collect no name and no e-mail
+address, so we cannot send you a replacement and cannot look your answers up any other
+way. That is the same design that stops anyone else finding them. Enter the code at
+<a href="/withdraw">/withdraw</a>; the page shows what would go and asks you to type a
+word to confirm.</p>
+<p><strong>If you did not save the code</strong>, everything from the session is deleted
+at its retention deadline in any case, and your educator can delete the whole session at
+any time.</p>
+<p><strong>After the deadline there is nothing to withdraw.</strong> The session is
+deleted outright — every participant, answer and assignment. What remains is a count
+of how often each question set has been used, which holds no participant records and
+cannot be traced to anyone.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
@@ -864,7 +920,7 @@ original works; individual questions draw on widely discussed cases in ethics
 teaching.</p>""",
         },
         "cookies": [
-            ("moralmirror_pax", "Pseudonymous participant token: keeps your answers within one session together (signed, HTTP-only).", "24 hours", "participants"),
+            ("moralmirror_pax", "Pseudonymous participant token: keeps your answers within one session together and lets you return to your reflection card (signed, HTTP-only). Holds no name or address. You can clear it yourself with “I am done — forget this browser” on the card.", "8 hours", "participants"),
             ("moralmirror_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("mm_pending_totp / moralmirror_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
@@ -885,7 +941,13 @@ teaching.</p>""",
         # completed runs anonymised 30 days after the session closes (was 90
         # days after EACH run completed), 14/7-day warnings, 3 x 30-day
         # postponements, unused sessions deleted at 90 days.
-        "notice_version": "2026-09-03-retention",
+        # 2026-09-03-identity: ONE participant identity, resume and
+        # withdrawal mechanism fleet-wide (owner's decision, README §11).
+        # What changed for a participant: the browser holds a random
+        # identifier and nothing else, for 8 hours; a deletion link they can
+        # actually use, replaceable if lost; and, where an address exists, a
+        # one-time link for continuing on another device.
+        "notice_version": "2026-09-03-identity",
         "last_updated": "2026-09-03",
         "art9": False,  # structural/organisational decisions
         "purpose": {
@@ -939,11 +1001,17 @@ teaching.</p>""",
 </ul>""",
         },
         "erasure": {
-            "en": """<p>Before the session's anonymisation date (30 days after it
-was closed, or after its last completed run — the date is shown to your
-educator), write to us or to your educator naming the e-mail address you joined
-with; your run can be located and deleted. After anonymisation, results are no
-longer linked to a person.</p>""",
+            "en": """
+<p><strong>You can delete your own run.</strong> The page you reach when you finish
+shows a personal deletion link once. Opening it shows what would be removed and asks
+you to type a word to confirm; nothing happens until you do. It removes your saved
+run, your result and the name and address you joined with.</p>
+<p><strong>If you no longer have your deletion link</strong>, ask for a new one at <a href="/withdrawal-link">/withdrawal-link</a> with the session code and the e-mail address you took part with. We send it to that address and nowhere else, and we answer the same way whether or not we hold it, so the page cannot be used to find out who took part. The new link replaces any earlier one, which stops working at that moment. We keep only a one-way fingerprint of these links, never the link itself, so a copy of our database gives nobody the power to delete your data — which is also why we cannot re-send the one you had.</p>
+<p>The link keeps working <strong>after</strong> the session's anonymisation date, when
+your name and address have been removed and the run is kept for the educator's
+statistics: the link still deletes that run. What we cannot do at that point is find it
+for you, because the address you joined with is gone. You can also write to us or to
+your educator before that date.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
@@ -955,7 +1023,7 @@ without it you cannot take part. The display name is optional.</p>""",
 original works created for teaching organisational design.</p>""",
         },
         "cookies": [
-            ("orgdesignsim_participant", "Keeps your saved game while you play (signed, HTTP-only).", "24 hours", "participants"),
+            ("orgdesignsim_participant", "Signed, HTTP-only. Holds a random identifier for your run, so your saved game and result stay yours and you can reopen them.", "8 hours", "participants"),
             ("orgdesignsim_backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("os_pending_totp / orgdesignsim_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
@@ -1077,8 +1145,14 @@ linked from this site are original works.</p>""",
         # Klasse for "Session" and "moderierende Person" for "Lehrperson"; the
         # participant cookie is a "participant token", no longer a "session
         # token". Whiteout's checkbox wording moves with it (wo-ack-2026-09-02).
-        "notice_version": "2026-09",
-        "last_updated": "2026-09-02",
+        # 2026-09-03-identity: ONE participant identity, resume and
+        # withdrawal mechanism fleet-wide (owner's decision, README §11).
+        # What changed for a participant: the browser holds a random
+        # identifier and nothing else, for 8 hours; a deletion link they can
+        # actually use, replaceable if lost; and, where an address exists, a
+        # one-time link for continuing on another device.
+        "notice_version": "2026-09-03-identity",
+        "last_updated": "2026-09-03",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
