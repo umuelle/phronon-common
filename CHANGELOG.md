@@ -4,6 +4,35 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.41.0 — 2026-09-04
+
+- **`machine_facing.py` and a populated `ToolPresentation`** (external plan,
+  item 3). Every tool assembled its own JSON-LD graphs, `/llms.txt` and About
+  context from a private `_TOOL` dict — roughly 560 identical lines across the
+  eight, plus nine robots handlers written out by hand. Two of that dict's
+  seven keys, `name` and `url`, were never presentation: they are identity, and
+  they are gone from the tools entirely.
+- **Verified against production, not against a reading of the source.** The 32
+  live artefacts — `/llms.txt`, `robots.txt` and the JSON-LD from `/` and
+  `/about` for every tool — were captured before the change and the builders
+  reproduce all of them byte for byte.
+- **The robots builder takes ORDERED rules**, not two lists. The fleet's files
+  genuinely differ: six tools and the hub put `Allow: /` first, Drawbridge and
+  Layoff put their exclusions first, and the original standard is
+  first-match-wins. Reshuffling nine live files to make one function tidier
+  would be changing what they say in order to share how they are built. Every
+  file comes out unchanged — except one.
+- **Layoff Exercise was inviting crawlers into its educator sign-in.** It
+  excluded `/admin/` and not `/backoffice/`, and it has both, so it was the one
+  property in the fleet whose backoffice was welcome in the index. Nothing
+  leaked — the page is behind a login either way — but it behaved unlike the
+  other eight and nobody could see it, because robots.txt is read by crawlers
+  and not by people. `missing_private_prefixes()` is what found it and what
+  keeps it found.
+- Each tool carries `tests/test_machine_facing_is_shared.py`: its presentation
+  is in the registry, its robots rules cover its own private prefixes, and it
+  has not started rebuilding the graph builders.
+
 ## 1.40.0 — 2026-09-04
 
 - **`registry.py` — one place that says what a tool IS** (external plan, item

@@ -78,13 +78,25 @@ class ToolIdentity:
 
 @dataclass(frozen=True)
 class ToolPresentation:
-    """What the hub says about a tool. Copy, not configuration."""
+    """What a tool says about itself. Copy, not configuration.
+
+    Deliberately separate from ToolIdentity: this is prose that changes on its
+    own schedule, and nothing operational should read it. It reached the world
+    from a `_TOOL` dict written out in each of the eight applications, feeding
+    /about, /llms.txt and the schema.org graph — with the hub keeping a tenth
+    copy of four of the fields for its cards. Two keys in that dict, `name` and
+    `url`, were never presentation at all; they are identity, and they are not
+    repeated here.
+
+    The hub calls the tagline a "lede". Same sentence, one field.
+    """
 
     key: str
-    lede: str
+    tagline: str
     blurb: str
     audience: str
     duration: str
+    how: tuple[str, ...]        #: the numbered steps of a session
 
 
 #: Every tool, keyed by fleet key. The hub is in here too: it is deployed,
@@ -217,3 +229,204 @@ def display_names() -> tuple[str, ...]:
     canonical tuple and now derives it from here.
     """
     return tuple(TOOLS[k].display_name for k in TEACHING_TOOLS)
+
+
+#: What each teaching tool says about itself, keyed by fleet key. Moved out of
+#: the applications on 4 September 2026, string for string — the builders in
+#: `phronon_common.machine_facing` reproduce every tool's live /llms.txt,
+#: robots.txt and JSON-LD byte for byte from these.
+#:
+#: The hub is not here: its own About page and card deck describe the suite
+#: rather than one exercise, and pretending otherwise would need a shape this
+#: one does not have.
+PRESENTATIONS: dict[str, ToolPresentation] = {
+    p.key: p for p in (
+        ToolPresentation(
+            key='controversy',
+            tagline='Productive disagreement, by design.',
+            blurb=(
+                "From a short opinion survey it forms discussion groups so that "
+                "each group holds genuinely opposing views — engineering the "
+                "conditions for real debate instead of polite consensus."
+            ),
+            audience='Students & seminars',
+            duration='A short survey plus a session',
+            how=(
+                (
+                    "An educator creates a session and shares the join code with the "
+                    "participants."
+                ),
+                (
+                    "Participants answer a short set of opinion questions in the "
+                    "browser."
+                ),
+                'The tool forms discussion groups with deliberately opposing views.',
+                (
+                    "Groups debate — structured for real disagreement, not polite "
+                    "consensus."
+                ),
+            ),
+        ),
+        ToolPresentation(
+            key='drawbridge',
+            tagline='Moral judgment under pressure.',
+            blurb=(
+                "A five-minute, participant-facing scenario that forces a moral "
+                "call, then surfaces how participants reason about responsibility "
+                "and blame — a fast, vivid opener for any ethics discussion."
+            ),
+            audience='Participants',
+            duration='~5 minutes',
+            how=(
+                'An educator creates a session and shares a session code or link.',
+                (
+                    "Participants open the scenario in the browser — no account, no "
+                    "install."
+                ),
+                (
+                    "Each makes a moral call under pressure, then rates responsibility "
+                    "and blame."
+                ),
+                (
+                    "Participants then discuss in class how they reasoned, using the "
+                    "aggregated results."
+                ),
+            ),
+        ),
+        ToolPresentation(
+            key='inequality',
+            tagline='Seeing the distribution.',
+            blurb=(
+                "An interactive simulation of wealth and income inequality that "
+                "turns abstract distributions into something tangible, manipulable, "
+                "and genuinely debatable."
+            ),
+            audience='Participants',
+            duration='Flexible',
+            how=(
+                (
+                    "An educator opens or shares the explorer with the session's "
+                    "participants."
+                ),
+                (
+                    "Participants manipulate wealth and income distributions in the "
+                    "browser."
+                ),
+                'Abstract inequality becomes tangible, visual, and adjustable.',
+                (
+                    "Participants debate what the distributions mean and what would "
+                    "change them."
+                ),
+            ),
+        ),
+        ToolPresentation(
+            key='layoff',
+            tagline='Deciding who goes.',
+            blurb=(
+                "An ethical decision-making simulation: participants choose whom to "
+                "let go from a fictional company, then confront the criteria they "
+                "actually used — efficiency, fairness, loyalty, need."
+            ),
+            audience='Students & managers',
+            duration='~20 minutes',
+            how=(
+                'An educator creates a session and shares the join link or code.',
+                (
+                    "Participants review a fictional company and its employees in the "
+                    "browser."
+                ),
+                (
+                    "Each decides whom to lay off, then revises under new information "
+                    "in a second round."
+                ),
+                (
+                    "The debrief surfaces the criteria they actually used: efficiency, "
+                    "fairness, loyalty, need."
+                ),
+            ),
+        ),
+        ToolPresentation(
+            key='lsr',
+            tagline='Your leadership repertoire, across four polarities.',
+            blurb=(
+                "A self-assessment that maps the range of leadership styles a "
+                "person can actually draw on — opening reflection on defaults, "
+                "blind spots, and untried registers."
+            ),
+            audience='Professionals & students',
+            duration='~15 minutes',
+            how=(
+                'An educator creates a session and shares the join link or code.',
+                (
+                    "Participants complete a ~15-minute leadership questionnaire in the "
+                    "browser."
+                ),
+                (
+                    "Each receives a reflective profile of their leadership-style "
+                    "repertoire."
+                ),
+                'Participants discuss defaults, blind spots, and untried registers.',
+            ),
+        ),
+        ToolPresentation(
+            key='moralmirror',
+            tagline='See your own ethics from the outside.',
+            blurb=(
+                "A modular ethics experiment for the classroom: participants answer "
+                "framed moral dilemmas under randomized conditions, then the "
+                "session sees — live — how the framing shifted its own judgments."
+            ),
+            audience='University students & seminars',
+            duration='Modular, 10–45 minutes',
+            how=(
+                'An educator creates a session and shares a join code or link.',
+                (
+                    "Participants join in the browser — no account, no install, no "
+                    "tracking."
+                ),
+                'Each answers framed moral dilemmas under randomized conditions.',
+                'The session sees, live, how the framing shifted its own judgments.',
+            ),
+        ),
+        ToolPresentation(
+            key='orgsim',
+            tagline='Redesign the organization.',
+            blurb=(
+                "Restructure a fictional company across 52 simulated weeks, "
+                "balancing performance, fairness, and finances — sustained "
+                "practical judgment about organizations under real constraints."
+            ),
+            audience='Advanced students & executives',
+            duration='Multi-week',
+            how=(
+                'An educator creates a game and shares the join code or link.',
+                'Participants take charge of a fictional company in the browser.',
+                'Across 52 simulated weeks they restructure it, week by week.',
+                (
+                    "They balance performance, fairness, and finances under real "
+                    "constraints."
+                ),
+            ),
+        ),
+        ToolPresentation(
+            key='whiteout',
+            tagline='Survive together — or not at all.',
+            blurb=(
+                "A team survival exercise. Groups must reach consensus on how to "
+                "act in a life-or-death scenario, exposing how groups really decide "
+                "under uncertainty and time pressure."
+            ),
+            audience='Teams & groups',
+            duration='35–90 minutes depending on the plan (compact / full / with Group Ranking 2)',
+            how=(
+                'An educator creates a session and shares the join link or code.',
+                'Participants individually rank 16 survival items in the browser.',
+                'Groups must reach consensus on a shared ranking.',
+                (
+                    "The debrief compares individual vs. group decisions against a "
+                    "reference ranking."
+                ),
+            ),
+        ),
+    )
+}
