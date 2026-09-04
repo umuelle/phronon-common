@@ -4,6 +4,38 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.37.0 — 2026-09-04
+
+- **`testing/mail_harness.py` — the sample-mail harness.** Around each tool's
+  own `_send_*` functions, `scripts/send_test_emails.py` carried 130 identical
+  lines in all eight: the .env parser, the recipient allowlist, the "are we on
+  the server" test, the send/skip/error decision, `send_all` and the CLI. Six of
+  the eight were byte-identical; the other two differed only in comment wording.
+  The scripts go from 3,320 lines to 2,010.
+- Each script keeps a zero-argument wrapper of the same name for
+  `load_project_env`, `running_on_server` and `live_sending_status`, because
+  conftest and the e-mail contract reach for them on that module, by name. The
+  skip reasons are unchanged to the byte: `_ALLOWED_SKIPS` recognises "Local
+  working copy" and "SEND_TEST_EMAILS=0", and rewording either fails every
+  tool's server run.
+- **`FLEET_TOOL_NAMES` now lives with the harness**, which is what puts a brand
+  name into a real message; `email_delivery` re-exports it. The scripts import
+  it instead of keeping a copy, so the contract's assertion asks for identity
+  rather than equality: a tool that goes back to its own copy fails even if the
+  copy is correct that day.
+- **Two front-end masters move in: `bulk-select.js` and `users-password.js`,**
+  now in `server-ops/sync_shared_assets.py`. `bulk-select.js` had drifted into
+  FIVE versions, each holding one real feature the other four never received —
+  the base engine, Whiteout's `data-bulk-bar` auto-init, Moral Mirror's
+  GET/field-name support, and Layoff's `data-bulk-confirm` with its `{n}`
+  substitution. The master is the union: every addition defaults to what the
+  base engine already did, and the auto-init finds nothing in the five tools
+  that bootstrap from a template `<script>`. `users-password.js` had eight
+  copies differing by one trailing comment.
+- Verified: identical full-suite outcome in all nine; widening the recipient
+  allowlist still fails every tool's suite; a drifted JS copy is still reported
+  by the sync gate.
+
 ## 1.36.0 — 2026-09-04
 
 - **`testing/run_reporting.py` — how a test RUN reports itself.** The last

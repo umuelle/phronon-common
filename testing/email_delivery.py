@@ -36,19 +36,10 @@ import importlib.util
 import logging
 from pathlib import Path
 
-#: Every brand name in the fleet. The leak check asks whether a message for one
-#: tool names any of the others; `services/email.py` is copy-pasted between
-#: projects, so it is the July 2026 branding bug that this guards against.
-FLEET_TOOL_NAMES = (
-    "Controversy Generator",
-    "Drawbridge Drama",
-    "Inequality Explorer",
-    "Layoff Exercise",
-    "Moral Mirror",
-    "Orgdesignsim",
-    "Polarity Profiler",
-    "Whiteout Exercise",
-)
+# The canonical brand list lives with the sample-mail harness, which is what
+# puts a brand name into a real message; re-exported here because this contract
+# is where the leak check reads it.
+from phronon_common.testing.mail_harness import FLEET_TOOL_NAMES  # noqa: F401
 
 
 def other_fleet_names(tool_name: str) -> list[str]:
@@ -255,13 +246,16 @@ class SmtpConfiguration(_EmailContract):
     def test_the_fleet_name_list_is_the_shared_one(self):
         """Five of the eight copies of this list had dropped "Whiteout
         Exercise" and repeated the tool's own name instead, so their leak check
-        silently stopped looking for one of the eight brands."""
-        # Set comparison: the order in the script is arbitrary and carries no
-        # meaning, so ordering it would be a false failure.
-        assert set(self.sender_module.FLEET_TOOL_NAMES) == set(FLEET_TOOL_NAMES), (
-            "scripts/send_test_emails.py carries its own fleet name list and it "
-            "no longer matches phronon_common.testing.email_delivery — that is "
-            "how five tools stopped checking for a Whiteout brand leak"
+        silently stopped looking for one of the eight brands.
+
+        Since v1.37.0 the script IMPORTS the list, so this asks for identity,
+        not equality: a tool that goes back to keeping its own copy fails here
+        even if the copy happens to be correct today.
+        """
+        assert self.sender_module.FLEET_TOOL_NAMES is FLEET_TOOL_NAMES, (
+            "scripts/send_test_emails.py no longer takes the fleet name list "
+            "from phronon_common.testing — a private copy is how five tools "
+            "stopped checking for a Whiteout brand leak"
         )
 
     def test_send_all_refuses_an_outside_address(self, monkeypatch):
