@@ -4,6 +4,26 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.34.0 — 2026-09-04
+
+- **`testing/email_delivery.py` — the e-mail contract.** 244 of each tool's
+  ~330 lines were identical once the tool's own name and domain are
+  substituted: the SMTP capture, the password-reset assertions, the sampler
+  configuration and the live send. What stays local is the tool's name, its
+  sender address, and the mail TYPES only it has.
+- **It fixes a live defect, not only duplication.** `FLEET_TOOL_NAMES` existed
+  in eight copies and **five had drifted**: they omitted "Whiteout Exercise"
+  and repeated the tool's own name instead. The leak check is
+  `[n for n in FLEET_TOOL_NAMES if n != TOOL_NAME]`, so those five had silently
+  stopped checking for a Whiteout brand leak — the exact class of bug the check
+  exists to catch. The canonical list lives here now; the five scripts are
+  repaired, and a new assertion compares each script's list with this one, by
+  NAME rather than order, so it cannot drift again.
+- The seven parametrized "outside address" cases became one test that names
+  every address that got through, rather than stopping at the first. That is
+  why each tool collects five fewer tests: minus six from the collapse, plus
+  the new fleet-list assertion. No assertion was lost.
+
 ## 1.33.0 — 2026-09-04
 
 - **`testing/manage_account.py` — the Manage account contract.** 309 lines
