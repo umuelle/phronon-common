@@ -4,6 +4,28 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.36.0 — 2026-09-04
+
+- **`testing/run_reporting.py` — how a test RUN reports itself.** The last
+  114 lines of every conftest.py were byte-identical in eight tools (the ninth,
+  the hub, had 43 of them): the allowed-skip list, the hook that collects an
+  unrecognised skip, the rule that a skip only fails the run where green is a
+  GATE, and the test-summary e-mail. `tests/conftest.py` went from 2,310 lines
+  across the fleet to 1,405.
+- **The three hooks stay in each conftest**, because pytest finds them by NAME
+  in the project's own conftest — and because a tool's own allowed skips belong
+  in that project. Several are half of a matched pair with a reason string in a
+  test file (Whiteout's `DISPOSABLE_DB_REASON`), and those comments moved with
+  them, unchanged.
+- Eight of the allowed skips are true in every tool and are `BASE_ALLOWED_SKIPS`
+  here; a tool adds its own with `kit.BASE_ALLOWED_SKIPS + (...)`. Two tools —
+  Moral Mirror and the hub — add none.
+- The hub still sends no test-summary e-mail: it never had that hook, and this
+  change does not add behaviour. Worth a decision separately.
+- Verified: identical full-suite outcome before and after in all nine, the
+  summary mail builds the same subject, body and URGENT headers per tool, and a
+  skip with an unrecognised reason still fails the run where green is a gate.
+
 ## 1.35.0 — 2026-09-04
 
 - **`testing/fleet_baseline.py` — the floor every tool stands on.** The four
