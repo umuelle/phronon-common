@@ -4,6 +4,25 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.45.0 — 2026-09-05
+
+- **Polarity Profiler's cheap identifiers finish their rename (PP-004).** The
+  fleet key becomes `polarity` and the entitlement key `polarity_profiler`;
+  `github_repo` becomes `polarity-profiler`. Because the registry is the one
+  place that says what a tool is, changing `entitlement_key` here also changed
+  the hub's card key, `fleet_client`'s row and the environment variable the
+  provisioning guard looks for — `PROVISION_SECRET_POLARITY_PROFILER` — without
+  another file being edited.
+- **What deliberately keeps `lsr`, recorded in TO DO PP-004:** the systemd unit,
+  the server path, the service user, the database and its user — invisible to
+  every participant and educator, and a rename costs a maintenance window and,
+  for the database, a dump and restore of live participant rows. Also
+  `lsr-profiler.org` and its redirect, which printed classroom QR codes point
+  at, and the stored `lsr-research-…` / `lsr-notice-ack-…` version strings,
+  which are written into participant rows and resolve to archived wording.
+- The rollout put the provisioning secret under BOTH names at once so the hub
+  and the tool kept talking through the deploy.
+
 ## 1.44.0 — 2026-09-04
 
 - **Inequality Explorer's retention promise, corrected (IE-002).** The notice

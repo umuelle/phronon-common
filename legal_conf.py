@@ -659,7 +659,7 @@ original works created for teaching.</p>""",
     },
 
     # ────────────────────────────────────────────────────────────────────
-    "lsr": {
+    "polarity": {
         "domain": "polarity-profiler.org",
         "tool_name": "Polarity Profiler",
         "languages": ["en", "de"],

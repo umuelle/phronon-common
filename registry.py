@@ -4,11 +4,11 @@ WHY THIS EXISTS
 A tool is identified by at least six different strings, and code kept picking
 whichever was nearest to hand:
 
-  fleet key            `lsr`                    server-ops/fleet.conf, legal_conf
+  fleet key            `polarity`               server-ops/fleet.conf, legal_conf
   workspace directory  `polarity-profiler`      the Mac, server-ops gates
-  GitHub repository    `lsr-profiler`           CI checks out under THIS name
+  GitHub repository    `polarity-profiler`      CI checks out under THIS name
   systemd unit / path  `lsr-profiler`           /var/www/lsr-profiler
-  entitlement key      `lsr_profiler`           the hub, PROVISION_SECRET_<KEY>
+  entitlement key      `polarity_profiler`      the hub, PROVISION_SECRET_<KEY>
   display name         `Polarity Profiler`      notices, e-mail, page titles
 
 On 4 September 2026 a fleet test derived a tool's identity from its checkout
@@ -135,10 +135,10 @@ TOOLS: dict[str, ToolIdentity] = {
             canonical_domain="layoff-exercise.org", locales=("en", "de"),
         ),
         ToolIdentity(
-            key="lsr", repo_dir="polarity-profiler",
-            github_repo="lsr-profiler", service="lsr-profiler",
+            key="polarity", repo_dir="polarity-profiler",
+            github_repo="polarity-profiler", service="lsr-profiler",
             server_path="/var/www/lsr-profiler", port=8003,
-            entitlement_key="lsr_profiler", display_name="Polarity Profiler",
+            entitlement_key="polarity_profiler", display_name="Polarity Profiler",
             canonical_domain="polarity-profiler.org",
             # The old brand. nginx serves it only to 301 everything to the
             # canonical domain — classroom posters with QR codes do not get
@@ -346,7 +346,7 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
             ),
         ),
         ToolPresentation(
-            key='lsr',
+            key='polarity',
             tagline='Your leadership repertoire, across four polarities.',
             blurb=(
                 "A self-assessment that maps the range of leadership styles a "
