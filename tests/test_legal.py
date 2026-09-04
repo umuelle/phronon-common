@@ -74,7 +74,10 @@ def test_privacy_art13_essentials(key):
         assert needle in html, f"{key}: privacy notice lacks {needle!r}"
 
 
-@pytest.mark.parametrize("key", ["lsr", "whiteout", "layoff"])
+# "lsr" until the Polarity Profiler rename (PP-004) retired that key from
+# TOOLS and left this parametrization pointing at nothing — a KeyError, so the
+# whole shared suite was red and therefore gating nothing.
+@pytest.mark.parametrize("key", ["polarity", "whiteout", "layoff"])
 def test_german_ui_tools_have_german_notice(key):
     # Part 1.2a: a tool that addresses users in German owes them the notice
     # in German. Adding "de" to a tool's languages without German prose must

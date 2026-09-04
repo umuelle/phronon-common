@@ -1200,8 +1200,18 @@ linked from this site are original works.</p>""",
         # participant who lost the 7-day warning mail has a route that is
         # not 'write to us'; and the provision section says what the
         # required address is for.
-        "notice_version": "2026-09-04-identity",
-        "last_updated": "2026-09-04",
+        # 2026-09-05-prework: the pre-work progression mode (migration 044,
+        # owner 5 September 2026) NARROWS the promise this notice made about
+        # the one-time link. In a pre-work session, while the group round is
+        # open in the room, an unsigned device is taken back in on the address
+        # alone and NO mail is sent — because on the day of such a session
+        # every participant arrives with an expired 8-hour cookie, and putting
+        # a classroom on hold for its inboxes is what would stop the exercise.
+        # A weaker promise than the one earlier participants were shown, so it
+        # gets its own version rather than editing theirs. WHITEOUT ONLY: no
+        # other tool has the mode, and none of their wording moved.
+        "notice_version": "2026-09-05-prework",
+        "last_updated": "2026-09-05",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
@@ -1215,7 +1225,7 @@ linked from this site are original works.</p>""",
             "en": """
 <h3>From participants</h3>
 <ul>
-  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your educator in the session's participant list. <strong>We send mail to it in exactly two cases:</strong> if someone tries to rejoin your session with your address from a device that is not already signed in, we send a one-time link so that only you can continue; and seven days before the session is erased we send you one notice with your personal withdrawal link. There is no newsletter and no other use.</li>
+  <li><strong>E-mail address</strong> — <strong>required</strong> to join a session. It is stored with your ranking and is visible to your educator in the session's participant list. <strong>We send mail to it in exactly two cases:</strong> if someone tries to rejoin your session with your address from a device that is not already signed in, we send a one-time link so that only you can continue; and seven days before the session is erased we send you one notice with your personal withdrawal link. There is no newsletter and no other use. <strong>One exception to the first case:</strong> if your educator has set the individual ranking as preparation to be done before the session, then during the session itself — while the group round is open, in the room — your address alone takes you back in and no mail is sent. Outside that window, and in every other session, the one-time link is still how a new device gets back in.</li>
   <li><strong>Your acknowledgment and consents, as a record</strong> — that you ticked the required box confirming you read this notice (taking part itself rests on our legitimate interest above, not on consent), whether you ticked the genuinely optional research and demographics boxes, when, and which version of this notice and of the wording you were shown. For the optional boxes we keep it because we must be able to show that consent was actually given (Art. 7(1)); for the required box it records that you were informed.</li>
   <li><strong>A pseudonymous participant token</strong> in a cookie, linking your responses within one session.</li>
   <li><strong>Session code</strong> — attributes your response to the correct session.</li>
@@ -1236,7 +1246,7 @@ linked from this site are original works.</p>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
 <ul>
-  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong>, um an einer Session teilzunehmen. Sie wird zusammen mit Ihrer Reihung gespeichert und ist für die Lehrperson in der Teilnehmendenliste sichtbar. <strong>In genau zwei Fällen senden wir eine Nachricht an diese Adresse:</strong> Versucht jemand, mit Ihrer Adresse von einem nicht angemeldeten Gerät aus wieder einzusteigen, schicken wir einen einmalig gültigen Link, damit nur Sie fortfahren können; und sieben Tage vor der Löschung der Session senden wir Ihnen eine Nachricht mit Ihrem persönlichen Widerrufslink. Es gibt keinen Newsletter und keine weitere Verwendung.</li>
+  <li><strong>E-Mail-Adresse</strong> — <strong>erforderlich</strong>, um an einer Session teilzunehmen. Sie wird zusammen mit Ihrer Reihung gespeichert und ist für die Lehrperson in der Teilnehmendenliste sichtbar. <strong>In genau zwei Fällen senden wir eine Nachricht an diese Adresse:</strong> Versucht jemand, mit Ihrer Adresse von einem nicht angemeldeten Gerät aus wieder einzusteigen, schicken wir einen einmalig gültigen Link, damit nur Sie fortfahren können; und sieben Tage vor der Löschung der Session senden wir Ihnen eine Nachricht mit Ihrem persönlichen Widerrufslink. Es gibt keinen Newsletter und keine weitere Verwendung. <strong>Eine Ausnahme zum ersten Fall:</strong> Hat Ihre Lehrperson die individuelle Reihung als Vorbereitung vor der Session festgelegt, genügt während der Session selbst — solange die Gruppenrunde im Raum geöffnet ist — Ihre Adresse allein, um wieder hineinzukommen; eine Nachricht wird dann nicht verschickt. Außerhalb dieses Zeitfensters und in allen anderen Sessions führt weiterhin der einmalig gültige Link ein neues Gerät zurück.</li>
   <li><strong>Ihre Kenntnisnahme und Einwilligungen als Nachweis</strong> — dass Sie das Pflichtkästchen angekreuzt haben, das bestätigt, dass Sie diese Erklärung gelesen haben (die Teilnahme selbst stützt sich auf unser oben genanntes berechtigtes Interesse, nicht auf eine Einwilligung), ob Sie die wirklich freiwilligen Forschungs- und Demografie-Kästchen angekreuzt haben, wann, und welche Fassung dieser Erklärung und des Wortlauts Ihnen angezeigt wurde. Für die freiwilligen Kästchen speichern wir das, weil wir nachweisen können müssen, dass eine Einwilligung tatsächlich erteilt wurde (Art. 7 Abs. 1); für das Pflichtkästchen dokumentiert es, dass Sie informiert wurden.</li>
   <li><strong>Ein pseudonymes Teilnahme-Token</strong> in einem Cookie, das Ihre Antworten innerhalb einer Session verknüpft.</li>
   <li><strong>Session-Code</strong> — ordnet Ihre Antwort der richtigen Session zu.</li>

@@ -13,7 +13,7 @@ name = "phronon_common"
 # SET IT TO THE TAG YOU ARE ABOUT TO CREATE, not the one that exists: writing
 # the current tag here and then tagging the commit that contains it recreates
 # the drift immediately, one version smaller.
-version = "1.45.0"
+version = "1.46.0"
 description = "Shared framework-agnostic helpers for the Phronon teaching tools"
 requires-python = ">=3.10"
 dependencies = [
