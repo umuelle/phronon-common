@@ -872,7 +872,11 @@
    * 'worse'|'ink'|'muted'|'good'|'warn'|'range'), r (radius, default 7),
    * glyph (short text INSIDE the mark — the mark grows hollow with a toned
    * ring so the glyph is legible; identity, said twice with the name),
-   * title}. opts.quadrants {x, y, labels: [TL, TR, BL, BR]} draws dashed
+   * title}. A point's `sub` is drawn under its mark, clear of the ring;
+   * opts.subAvoid moves it to the first free side (above, right, left)
+   * where below would put the words on another mark or on a description
+   * already placed.
+   * opts.quadrants {x, y, labels: [TL, TR, BL, BR]} draws dashed
    * dividers through (x, y) and italic corner labels — for panel charts
    * whose四 corners mean something. opts: xMin/xMax/xStep, yMin/yMax/yStep, xLabel (under the axis),
    * yLabel (rotated), zeroY {label} dashed line at y=0, xMarker {at, label}
@@ -1044,18 +1048,87 @@
                                     'font-size': 12 }, it.label));
     });
 
-    pts.forEach(function (p) {
+    // A description sits below its mark, clear of the ring rather than a
+    // fixed 24px from the centre: a mark drawn at r = 15 to hold a letter
+    // left only nine pixels between the ring and the words (owner,
+    // 4 September 2026). Floored at the old 24 so no existing chart moves.
+    function subGap(r) { return Math.max(24, r + 17); }
+
+    // opts.subAvoid — description placement. A description belongs under
+    // its own mark, and where that lands on ANOTHER mark, or on a
+    // description already placed, the next free side is taken instead:
+    // above, then right, then left. Layoff's panel chart has two employees
+    // a quarter of a point apart on a 6.5-unit axis, so one description ran
+    // straight through the other's ring; lifting it above then put it
+    // through a third employee's words, which is why this is a search and
+    // not a flip (owner, 4 September 2026).
+    //
+    // Only the WORDS move. A mark stays where its value puts it — the whole
+    // claim of a scatter is that position means something — so a chart whose
+    // marks genuinely coincide still draws them coincident, and says so.
+    // Opt-in: it places a label on a side the caller did not choose.
+    function boxHit(a, b) {
+      return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+    }
+    var subAt = [];
+    if (opts.subAvoid) {
+      var marks = pts.map(function (q) {
+        var qr = q.r || 7, qx = x(q.x), qy = y(q.y);
+        return { x0: qx - qr, x1: qx + qr, y0: qy - qr, y1: qy + qr };
+      });
+      var placed = [];
+      pts.forEach(function (p, i) {
+        if (!p.sub) return;
+        var cx0 = x(p.x), cy0 = y(p.y), pr = p.r || 7;
+        // 11.5px text: ~6px to the character, one line high.
+        var w = p.sub.length * 6, h = 12;
+        var sides = [
+          { dx: 0,        dy: subGap(pr), anchor: 'middle' },
+          { dx: 0,        dy: -pr - 11,   anchor: 'middle' },
+          { dx: pr + 8,   dy: 4,          anchor: 'start' },
+          { dx: -pr - 8,  dy: 4,          anchor: 'end' },
+        ];
+        subAt[i] = sides[0];
+        for (var c = 0; c < sides.length; c++) {
+          var bx = cx0 + sides[c].dx, by = cy0 + sides[c].dy;
+          var x0 = sides[c].anchor === 'middle' ? bx - w / 2
+                 : sides[c].anchor === 'start' ? bx : bx - w;
+          var box = { x0: x0, x1: x0 + w, y0: by - h + 3, y1: by + 3 };
+          // Inside the plot, clear of every other mark, clear of every
+          // description already committed.
+          if (box.x0 < PAD_L || box.x1 > PAD_L + plotW) continue;
+          if (box.y0 < PAD_T || box.y1 > PAD_T + plotH) continue;
+          if (marks.some(function (m, j) { return j !== i && boxHit(box, m); })) continue;
+          if (placed.some(function (b) { return boxHit(box, b); })) continue;
+          subAt[i] = sides[c];
+          placed.push(box);
+          break;
+        }
+      });
+    }
+
+    // Two layers, marks then words. Marks can legitimately overlap — two
+    // points a quarter of a unit apart on a six-unit axis ARE nearly the
+    // same reading, and a scatter has to be allowed to say so — but when
+    // they do, the later mark's opaque fill used to swallow the earlier
+    // one's letter, and a mark you cannot name is a mark you cannot use.
+    // Every glyph and every description is now drawn above every mark, so
+    // overlapping rings still read as two points with two names
+    // (owner, 4 September 2026).
+    var markLayer = tag('g', {}), textLayer = tag('g', {});
+    pts.forEach(function (p, i) {
       var g = tag('g', {});
       var cx = x(p.x), cy = y(p.y);
       var fill = TONE[p.tone] || C.ink;
       var pr = p.r || 7;
+      var t = tag('g', {});
       if (p.glyph) {
         // Hollow ring, toned; the glyph names the point inside it.
         g.appendChild(tag('circle', {
           cx: cx, cy: cy, r: pr, fill: C.surface,
           stroke: fill, 'stroke-width': 2.5,
         }));
-        g.appendChild(tag('text', {
+        t.appendChild(tag('text', {
           x: cx, y: cy + 4.5, fill: C.ink, 'font-size': 13,
           'font-weight': 700, 'text-anchor': 'middle',
         }, p.glyph));
@@ -1072,21 +1145,26 @@
         }));
       }
       if (p.name) {
-        g.appendChild(tag('text', {
-          x: cx, y: cy - (p.r || 7) - 7, fill: TONE[p.nameTone] || C.ink,
+        t.appendChild(tag('text', {
+          x: cx, y: cy - pr - 7, fill: TONE[p.nameTone] || C.ink,
           'font-size': p.nameSize || 12.5,
           'font-weight': 600, 'text-anchor': 'middle',
         }, p.name));
       }
       if (p.sub) {
-        g.appendChild(tag('text', {
-          x: cx, y: cy + 24, fill: C.muted, 'font-size': 11.5,
-          'text-anchor': 'middle', 'font-variant-numeric': 'tabular-nums',
+        var at = subAt[i] || { dx: 0, dy: subGap(pr), anchor: 'middle' };
+        t.appendChild(tag('text', {
+          x: cx + at.dx, y: cy + at.dy, fill: C.muted, 'font-size': 11.5,
+          'text-anchor': at.anchor, 'font-variant-numeric': 'tabular-nums',
         }, p.sub));
       }
+      // The title rides with the MARK: it is the shape the pointer is over.
       if (p.title) g.appendChild(tag('title', {}, p.title));
-      svg.appendChild(g);
+      markLayer.appendChild(g);
+      textLayer.appendChild(t);
     });
+    svg.appendChild(markLayer);
+    svg.appendChild(textLayer);
     host.appendChild(svg);
   }
 
