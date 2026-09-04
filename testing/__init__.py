@@ -25,6 +25,14 @@ Two reasons for that split, both load-bearing:
      was already built this way, over `undefined_names.py`, and that file is
      the precedent this kit generalises.
 
+WHAT IS IN HERE
+`passwords` and `csrf_fetch` are plain assertion functions, re-exported below.
+`manage_account`, `email_delivery` and `fleet_baseline` are larger contracts,
+so each tool imports the MODULE and subclasses its mixins — same split, same
+reasons. `fleet_baseline` is the only one that applies to all NINE repos: the
+hub has no participant flow and no password forms, but it is a FastAPI app with
+a login and protected pages like the rest.
+
 The discovery helpers return plain lists so the caller can parametrize over
 them and get one test per file, with the file's name in the test id, rather
 than a single opaque assertion over the whole tree.

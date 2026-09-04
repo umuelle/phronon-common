@@ -4,6 +4,31 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.35.0 — 2026-09-04
+
+- **`testing/fleet_baseline.py` — the floor every tool stands on.** The four
+  baseline checks (every parameterless GET route answers, the login form
+  round-trips like a person uses it, anonymous visitors are kept out of
+  protected pages, the security headers are on the page) were the same 173-line
+  file in all NINE repos — the eight tools and the hub — differing in exactly
+  three constants: the login path, the login POST path, and the protected
+  prefixes. Those stay in each wrapper, which is now 72 lines.
+- **This one covers the hub too.** Phronon has no participant flow and no
+  password forms, so the five participant-facing kit tests do not apply there,
+  but it is a FastAPI app with a login and protected pages like the rest.
+  `fleet_testkit_check.py` now checks the baseline file in all nine and the
+  other five in the eight tools.
+- The checks RETURN a skip reason instead of skipping, because the kit must not
+  import pytest; the wrapper owns the pytest verbs, and owns them visibly, so a
+  skip is still reported at the line where it happens. `strict_here(__file__)`
+  keeps the old rule intact: DB-backed failures are environmental on a laptop
+  and behavioural on the server, where the deploy gate is the real run.
+- Verified per tool: identical pass/skip outcome before and after, in all nine.
+  Two revert checks against Whiteout proved the shared assertions still bite —
+  removing `script-src` from the CSP argument, and adding an unguarded GET route
+  under `/backoffice/` — and two more proved the gate catches a deleted wrapper
+  and a forked one.
+
 ## 1.34.0 — 2026-09-04
 
 - **`testing/email_delivery.py` — the e-mail contract.** 244 of each tool's
