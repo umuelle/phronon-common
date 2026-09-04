@@ -4,6 +4,46 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.39.0 — 2026-09-04
+
+Guardrail and packaging debt, closed before more is shared (external plan,
+item 1).
+
+- **`shared_assets.py` — the front-end manifest moves into the package.** Which
+  master exists, where its copy belongs in each tool, and which tools carry it,
+  was known only to `server-ops/sync_shared_assets.py`, **which was wired into
+  nothing** — not the deploy gate, not any CI workflow. Thirteen masters were
+  kept in step by hand. The manifest is here now, and the checking runs in two
+  places: `deploy.sh` runs the sync script READ-ONLY (never `--write`: a deploy
+  that silently rewrote a tool's static/ would ship an unreviewed asset and
+  dirty the other tools' working copies), and every tool's own suite carries
+  `tests/test_shared_assets_match.py`, so drift fails on the push that caused
+  it rather than at the next deploy.
+- **The CSS and JS masters now ship in the wheel.** A tool cannot import a
+  stylesheet, so the only way its CI — where the package comes from the pinned
+  tag — can compare its copy against the real master is for the master to be
+  packaged. `package-data` gained `*.css` and `*.js`.
+- **`package_build_check.py` — the clean-wheel gate.** It builds from a COPY of
+  the source tree (a leftover `build/` or `*.egg-info` makes setuptools ship
+  files pyproject no longer declares — the first version of this gate passed
+  while `phronon_common.testing` was deleted from `packages`), asserts every
+  module, legal partial and master is inside the wheel, then imports all 34
+  modules from an interpreter whose only path to the package is the unpacked
+  wheel, run from outside the workspace so the sibling checkout cannot answer
+  for it. Proven against both faults.
+- **FastAPI, Starlette and Jinja2 are declared** as a `web` extra: `csrf`,
+  `legal`, `rate_limit` and `security_headers` import them, and the package
+  claimed only `itsdangerous`. The ten pins now install `phronon_common[web]`.
+- **`__version__` is derived, not typed.** It read "1.15.1" while the fleet ran
+  v1.38.0 — twenty-three tags behind — and the comment sitting next to it
+  explained that no gate looks there, which is exactly why it drifted. One
+  source now: `pyproject.toml`, which the pin gate already checks against the
+  tag.
+- **README rewritten** against the actual 34 modules, grouped, with the rules
+  and the tag-and-pin ritual. It had said "Moral Mirror is the first consumer,
+  migrate the others opportunistically" and pointed at a OneDrive path from
+  before the workspace moved.
+
 ## 1.38.0 — 2026-09-04
 
 - **The tool is called OrgDesignSim** (owner, 4 September 2026) — the spelling

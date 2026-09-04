@@ -13,11 +13,31 @@ name = "phronon_common"
 # SET IT TO THE TAG YOU ARE ABOUT TO CREATE, not the one that exists: writing
 # the current tag here and then tagging the commit that contains it recreates
 # the drift immediately, one version smaller.
-version = "1.38.0"
+version = "1.39.0"
 description = "Shared framework-agnostic helpers for the Phronon teaching tools"
 requires-python = ">=3.10"
 dependencies = [
     "itsdangerous>=2.2.0",
+]
+
+# `csrf`, `legal`, `rate_limit` and `security_headers` import FastAPI, Starlette
+# and Jinja2 — the package claimed only itsdangerous until 4 September 2026, so
+# `pip install phronon_common` in a bare environment produced a package that
+# could not import four of its modules and said nothing. They are an EXTRA
+# rather than a core dependency because the other thirty modules are genuinely
+# framework-agnostic, and the test kit is imported by scripts that have no web
+# stack at all. Every consumer installs `phronon_common[web]`.
+[project.optional-dependencies]
+web = [
+    "fastapi>=0.110",
+    "starlette>=0.36",
+    "jinja2>=3.1",
+]
+# `twofactor.qr_svg()` draws the enrolment QR if qrcode is installed and returns
+# "" if it is not — the setup key can always be typed by hand, which is the
+# documented fallback. Declared so the option is visible rather than folklore.
+qr = [
+    "qrcode>=7.4",
 ]
 
 [tool.setuptools]
@@ -33,4 +53,10 @@ package-dir = { "phronon_common" = ".", "phronon_common.testing" = "testing" }
 # The shared legal pages render from these Jinja partials; a pip install
 # without them (CI) would make every tool's legal tests fail on a missing
 # template rather than a real defect.
-phronon_common = ["legal_templates/*.html"]
+#
+# The CSS and JS masters ship too. A tool cannot IMPORT a stylesheet — it keeps
+# a copy under its own static/ — so the only way its suite can check that copy
+# against the real master, in its own CI where the package comes from the
+# pinned tag, is for the master to be in the wheel. See shared_assets.py, and
+# server-ops/package_build_check.py, which fails if any of this is missing.
+phronon_common = ["legal_templates/*.html", "*.css", "*.js"]
