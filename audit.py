@@ -175,3 +175,47 @@ def prune(get_conn: Callable[[], Any], days: int = RETENTION_DAYS) -> int:
 # A second copy in this module is how the fleet ends up with two answers — the
 # same way it ended up with four copies of one e-mail design.
 from phronon_common.rate_limit import client_ip  # noqa: E402,F401 — re-export
+
+
+class AuditRecorder:
+    """`record()` bound to one project's database — the binding, done once.
+
+    Every tool wrapped record() in a private `_audit(...)` that supplied its own
+    connection factory and, in one case, its proxy configuration: nine copies of
+    the same four lines, differing only in the name of the callable they closed
+    over (`get_db`, `db.get_db`, `database.get_db`, `_audit_conn`). The wrapper
+    itself was never the interesting part — but nine of them meant nine places
+    to forget `ip=` or to pass `subject` under another name, and Layoff had in
+    fact kept the file-era positional signature until FL-021.
+
+    An instance is CALLABLE, so a tool binds it once and every existing call
+    site reads the same:
+
+        _audit = AuditRecorder(get_db, TRUSTED_PROXIES)
+        _audit("session.delete", request=request, subject=code)
+
+    Keyword-only after the action, deliberately: the per-tool wrappers did not
+    agree on what the second positional argument meant — Controversy
+    Generator's was `admin`, everyone else's was `request` — so a shared
+    positional signature would have rebound arguments silently. No call site in
+    the fleet passes one positionally, which is what made this safe to unify.
+    """
+
+    __slots__ = ("_get_conn", "_trusted_proxies")
+
+    def __init__(self, get_conn, trusted_proxies=None):
+        self._get_conn = get_conn
+        self._trusted_proxies = trusted_proxies
+
+    def __call__(self, action: str, *, admin=None, request=None, subject=None,
+                 details=None, admin_id=None, admin_email=None) -> None:
+        """Write one row. Never raises — `record()` guarantees that."""
+        if admin is not None:
+            # get_current_admin() and friends return a mapping with id/email.
+            admin_id = admin_id or admin.get("id")
+            admin_email = admin_email or admin.get("email")
+        record(self._get_conn, action,
+               admin_id=admin_id, admin_email=admin_email,
+               subject=subject, details=details,
+               ip=client_ip(request, self._trusted_proxies)
+               if request is not None else None)

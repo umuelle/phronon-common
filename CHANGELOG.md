@@ -4,6 +4,27 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.43.0 — 2026-09-04
+
+- **`audit.AuditRecorder` — the audit trail, bound once per project.** Every
+  tool wrapped `record()` in a private `_audit(...)` supplying its own
+  connection factory and, in one case, its proxy configuration: nine copies of
+  the same four lines, differing only in the name of the callable they closed
+  over. 128 lines of wrapper become 69 lines of binding, and the four distinct
+  connection callables and three proxy configurations stay declared rather than
+  flattened.
+- Keyword-only after the action, deliberately: the wrappers did NOT agree on
+  what the second positional argument meant — Controversy Generator's was
+  `admin`, everyone else's was `request` — so a shared positional signature
+  would have rebound arguments silently. No call site in the fleet passes one
+  positionally, which is what made this safe.
+- **`provisioning.require_internal_secret()` and `secret_env_var()`.** Seven
+  tools guard `/api/internal/schedule` with the same eight lines and spell out
+  their own environment variable name (`PROVISION_SECRET_DRAWBRIDGE_DRAMA` and
+  so on). The name is derivable from the registry's entitlement key — verified
+  against all seven, zero mismatches — which is the same key the hub already
+  uses to look the secret up.
+
 ## 1.42.0 — 2026-09-04
 
 - **One duration per tool, and the hub reads it** (owner, 4 September 2026).

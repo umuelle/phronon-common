@@ -35,6 +35,7 @@ hub→tool calls are same-host.
 from __future__ import annotations
 
 import hmac
+import os
 from dataclasses import dataclass
 
 PROVISION_HEADER = "X-Provision-Secret"
@@ -76,3 +77,40 @@ def parse_request(payload: dict) -> ProvisionRequest:
         external_id=str(payload.get("external_id") or "").strip(),
         send_invite=bool(payload.get("send_invite", True)),
     )
+
+
+def secret_env_var(tool) -> str:
+    """The environment variable holding THIS tool's provisioning secret.
+
+    Derived from the registry's entitlement key, which is what the hub already
+    uses to look the secret up (`Phronon/fleet_client.py`). Seven tools spelled
+    the name out by hand — `PROVISION_SECRET_DRAWBRIDGE_DRAMA` and so on — and a
+    name typed twice is a name that can be typed differently once.
+    """
+    return f"PROVISION_SECRET_{tool.entitlement_key.upper()}"
+
+
+def require_internal_secret(request, tool):
+    """`None` if the caller presented this tool's secret; a 401 response if not.
+
+        denied = require_internal_secret(request, TOOL)
+        if denied:
+            return denied
+
+    THIS tool's own secret, and only its own (G4 / FL-028, completed 20 August
+    2026). The shared PROVISION_SECRET fallback is gone: while it existed, one
+    credential opened all nine over the server's internal network, and a
+    fallback that works is a fallback nobody removes. An empty value fails
+    closed — every request 401s until the .env has it.
+
+    The response import is lazy so this module keeps working without the `web`
+    extra; the seven copies of this guard imported it inside the route for the
+    same reason.
+    """
+    from fastapi.responses import JSONResponse
+
+    expected = os.getenv(secret_env_var(tool), "")
+    provided = request.headers.get(PROVISION_HEADER, "")
+    if expected and verify_secret(provided, expected):
+        return None
+    return JSONResponse({"status": "error", "detail": "unauthorized"}, status_code=401)
