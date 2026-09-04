@@ -4,6 +4,23 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.33.0 — 2026-09-04
+
+- **`testing/manage_account.py` — the Manage account contract.** 309 lines
+  copied into eight tools in four versions; the four differed in exactly three
+  things. Two are real and stay overridable: which template holds the backoffice
+  nav (`base.html`, or `components/navbar.html` in Controversy Generator and
+  Inequality), and which route resets another account's two-factor (Layoff
+  administers accounts under `/admin/educators`, not `/backoffice/users`).
+  - The third difference was **`NAME_FIELD`, which no copy has ever read** —
+    Polarity Profiler was maintaining a different value for a knob nobody used.
+    Dropped rather than carried forward.
+  - Shipped as mixin classes so each tool subclasses them and keeps the ten
+    original test groupings, and their incident docstrings, in its own suite.
+    29 tests before, 29 after, in every tool.
+- `server-ops/fleet_testkit_check.py` covers this file too: a tool that deletes
+  it, or forks the route/SQL helpers back into itself, fails the deploy.
+
 ## 1.32.0 — 2026-09-04
 
 - **`phronon_common.testing` — the fleet test kit.** The cross-cutting tests
