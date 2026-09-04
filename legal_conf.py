@@ -143,8 +143,11 @@ TOOLS = {
         # identifier and nothing else, for 8 hours; a deletion link they can
         # actually use, replaceable if lost; and, where an address exists, a
         # one-time link for continuing on another device.
-        "notice_version": "2026-09-03-identity",
-        "last_updated": "2026-09-03",
+        # 2026-09-04-identity: the deletion code is no longer held in the database between
+        # submitting and the page that shows it — it is created by that
+        # page, so no copy of it exists anywhere else, ever.
+        "notice_version": "2026-09-04-identity",
+        "last_updated": "2026-09-04",
         "art9": True,  # statement bank can probe political/moral positions
         "purpose": {
             "en": "The Controversy Generator collects short survey responses to "
@@ -271,8 +274,11 @@ the responsibility of the educator who writes them.</p>""",
         # identifier and nothing else, for 8 hours; a deletion link they can
         # actually use, replaceable if lost; and, where an address exists, a
         # one-time link for continuing on another device.
-        "notice_version": "2026-09-03-identity",
-        "last_updated": "2026-09-03",
+        # 2026-09-04-identity: the deletion code is no longer held in the database between
+        # submitting and the page that shows it — it is created by that
+        # page, so no copy of it exists anywhere else, ever.
+        "notice_version": "2026-09-04-identity",
+        "last_updated": "2026-09-04",
         "art9": True,  # moral-judgment attributions
         "purpose": {
             "en": "The Drawbridge Drama presents a short illustrated narrative and "
@@ -381,8 +387,13 @@ works.</p>""",
         # identifier and nothing else, for 8 hours; a deletion link they can
         # actually use, replaceable if lost; and, where an address exists, a
         # one-time link for continuing on another device.
-        "notice_version": "2026-09-03-identity",
-        "last_updated": "2026-09-03",
+        # 2026-09-04-identity: the cookie table now lists the 5-minute `withdraw_once`
+        # cookie that carries the deletion link to the results page, and
+        # the retention section no longer says a withdrawal must reach us
+        # before the deadline — the participant's own link works after it,
+        # as the erasure section always said.
+        "notice_version": "2026-09-04-identity",
+        "last_updated": "2026-09-04",
         "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
                        # items (pol_redistribution, pol_regulation), stored as enums.
                        # Political opinions are Art. 9(1) data — the earlier False was wrong.
@@ -436,7 +447,7 @@ works.</p>""",
   <li><strong>What happens at that deadline depends on your consent.</strong> In every case your name and e-mail address are removed, and the <strong>free-text reflection box is emptied for everyone</strong>. If you did <em>not</em> consent to research use, your demographic and reflection answers are <strong>deleted outright</strong> at the same moment. If you did consent, they are kept — but the record is <strong>cut loose from your session</strong>: the link to it is removed and the timestamp is reduced to the month, so the answers sit in a large cross-session pool instead of a group of twenty where a combination of age, gender and income could point at one person.</li>
   <li><strong>Warnings and postponement:</strong> educators are warned 14 days before the deadline and may postpone it by 30 days, up to three times. Participants who left an e-mail address are warned 7 days before.</li>
   <li><strong>Unused sessions:</strong> a session nobody joins is deleted 90 days after it was created.</li>
-  <li><strong>What that means for you:</strong> once the deadline has passed we can no longer find your individual response, so a withdrawal request has to reach us before then. Until then, write to us and we will delete it.</li>
+  <li><strong>What that means for you:</strong> once the deadline has passed <em>we</em> can no longer find your individual response — nothing then connects it to your name or address — so if you want us to find it for you, write before then. Your own deletion link is not affected: it keeps working afterwards, because the record it points at carries the same one-way fingerprint. See &ldquo;Deleting your response&rdquo; below.</li>
   <li><strong>Manual anonymisation:</strong> educators can anonymise or archive a session at any time before the deadline. Doing so applies exactly the steps described above, immediately — it is the same routine, not a lighter version of it.</li>
 </ul>""",
         },
@@ -469,6 +480,7 @@ from published public sources; the survey design and site are original works.</p
         },
         "cookies": [
             ("survey_state", "Signed, HTTP-only. Holds a random identifier and nothing else. Which session you joined, which step you are on and your in-progress estimates are held on our server against it, so a reload does not lose them and you can reopen your results page.", "8 hours", "participants"),
+            ("withdraw_once", "Signed, HTTP-only. Carries your personal deletion link from the moment you finish to the results page that shows it, once. It is deleted as that page is drawn, and it is the only cookie that ever holds anything more than a random identifier.", "5 minutes", "participants"),
             ("backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("wee_pending_totp / pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
         ],
@@ -496,8 +508,11 @@ from published public sources; the survey design and site are original works.</p
         # identifier and nothing else, for 8 hours; a deletion link they can
         # actually use, replaceable if lost; and, where an address exists, a
         # one-time link for continuing on another device.
-        "notice_version": "2026-09-03-identity",
-        "last_updated": "2026-09-03",
+        # 2026-09-04-identity: the provision section now says what the required e-mail
+        # address is actually for, and that it is used for nothing else
+        # (owner's re-ratification, 4 September 2026).
+        "notice_version": "2026-09-04-identity",
+        "last_updated": "2026-09-04",
         "art9": False,  # ranking/structural decisions
         "purpose": {
             "en": "The Layoff Exercise asks participants to rank candidates in a "
@@ -607,13 +622,13 @@ pseudonym und sind nicht anonym.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
-requirement, but an e-mail address is technically required to take part (it
-prevents duplicate submissions); without it a submission cannot be recorded.
+requirement, but an e-mail address is <strong>technically required</strong> to
+take part; without it a submission cannot be recorded. It does three things and nothing else: it stops the same person submitting twice, it lets you pick up where you left off on a different device, and it is where we send the warning before your answers are deleted and the link that deletes them yourself. We do not use it to contact you for anything else.
 Demographic fields are optional.</p>""",
             "de": """<p>Die Bereitstellung von Daten ist weder gesetzlich noch
-vertraglich vorgeschrieben; eine E-Mail-Adresse ist jedoch technisch für die
-Teilnahme erforderlich (sie verhindert Doppel­abgaben) — ohne sie kann keine
-Abgabe gespeichert werden. Demografische Felder sind freiwillig.</p>""",
+vertraglich vorgeschrieben; eine E-Mail-Adresse ist jedoch <strong>technisch
+erforderlich</strong>, um teilzunehmen — ohne sie kann keine Abgabe gespeichert
+werden. Sie erfüllt drei Zwecke und sonst keinen: Sie verhindert doppelte Abgaben, sie erlaubt Ihnen, auf einem anderen Gerät dort weiterzumachen, wo Sie aufgehört haben, und an sie gehen die Warnung vor der Löschung Ihrer Antworten sowie der Link, mit dem Sie sie selbst löschen. Für nichts anderes verwenden wir sie. Demografische Felder sind freiwillig.</p>""",
         },
         "provenance": {
             "en": """<p>The Layoff Exercise scenario, materials and site are
@@ -670,8 +685,13 @@ original works created for teaching.</p>""",
         # identifier and nothing else, for 8 hours; a deletion link they can
         # actually use, replaceable if lost; and, where an address exists, a
         # one-time link for continuing on another device.
-        "notice_version": "2026-09-03-identity",
-        "last_updated": "2026-09-03",
+        # 2026-09-04-identity: the GERMAN erasure section was three versions behind the
+        # English: it still offered the report page as a deletion route
+        # (removed in migration 023), never mentioned /withdrawal-link,
+        # and said no identifier survives the deadline — untrue for anyone
+        # who consented to research use. It now mirrors the English.
+        "notice_version": "2026-09-04-identity",
+        "last_updated": "2026-09-04",
         "art9": False,  # leadership-style point allocations
         "purpose": {
             "en": "The Polarity Profiler collects scenario-based point allocations and "
@@ -770,11 +790,27 @@ report link — it cannot delete anything, so forwarding it is safe.</p>
 agreed to research use, because the pseudonymous record kept for research carries the
 same fingerprint; it deletes that record too. If you did not agree, your response is
 deleted outright at the deadline and there is nothing left to withdraw.</p>""",
-            "de": """<p>Nutzen Sie den Widerrufslink in Ihrer Bestätigungs-E-Mail
-oder auf Ihrer Berichtsseite — er funktioniert ohne Anmeldung, jederzeit vor dem
-Anonymisierungs­stichtag, und löscht Ihre Antwort einschließlich der
-demografischen Angaben. Nach dem Stichtag verbleibt kein Kennzeichen, das eine
-Antwort mit Ihnen verknüpft.</p>""",
+            "de": """
+<p><strong>Sie können Ihre eigene Antwort löschen.</strong> Ihre
+Bestätigungs-E-Mail enthält einen persönlichen Löschlink. Beim Öffnen sehen Sie
+zunächst, was gelöscht würde, und müssen ein Wort eintippen, um zu bestätigen;
+vorher geschieht nichts. Ihr Berichtslink ist <em>nur</em> ein Berichtslink — er
+kann nichts löschen, Weiterleiten ist also unbedenklich.</p>
+<p><strong>Wenn Sie Ihren Löschlink nicht mehr haben</strong>, fordern Sie unter
+<a href="/withdrawal-link">/withdrawal-link</a> einen neuen an, mit dem
+Session-Code und der E-Mail-Adresse, mit der Sie teilgenommen haben. Wir senden
+ihn ausschließlich an diese Adresse und antworten gleich, ob wir sie kennen oder
+nicht — die Seite lässt sich also nicht nutzen, um herauszufinden, wer
+teilgenommen hat. Der neue Link ersetzt jeden früheren, der in diesem Moment
+ungültig wird. Wir speichern nur einen Einweg-Fingerabdruck dieser Links,
+niemals den Link selbst; eine Kopie unserer Datenbank gibt daher niemandem die
+Möglichkeit, Ihre Daten zu löschen — und aus demselben Grund können wir Ihnen
+Ihren alten Link nicht erneut zusenden.</p>
+<p>Der Link funktioniert <strong>auch nach</strong> dem Anonymisierungsstichtag,
+wenn Sie der Forschungsnutzung zugestimmt haben: Der für die Forschung
+aufbewahrte pseudonyme Datensatz trägt denselben Fingerabdruck, und der Link
+löscht auch ihn. Haben Sie nicht zugestimmt, wird Ihre Antwort zum Stichtag
+vollständig gelöscht, und es bleibt nichts zu widerrufen.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
@@ -838,8 +874,12 @@ design are original works created for executive teaching.</p>""",
         # identifier and nothing else, for 8 hours; a deletion link they can
         # actually use, replaceable if lost; and, where an address exists, a
         # one-time link for continuing on another device.
-        "notice_version": "2026-09-03-identity",
-        "last_updated": "2026-09-03",
+        # 2026-09-04-identity: unfinished answers are now deleted when the 8-hour pass
+        # expires rather than at the session's own deadline, which is why
+        # an abandoned attempt never needs a deletion code (owner's
+        # decision, 4 September 2026).
+        "notice_version": "2026-09-04-identity",
+        "last_updated": "2026-09-04",
         "art9": True,  # moral judgments
         "purpose": {
             "en": "Moral Mirror lets the participants in a session observe patterns in "
@@ -890,6 +930,7 @@ one.</p>""",
 <ul>
   <li><strong>Session responses</strong> — deleted automatically <strong>30 days</strong> after the session is closed, or 30 days after the last answer if it is never closed. A session nobody ever joined is removed 90 days after it was created. Deletion removes the whole session: every answer, the optional demographics and the condition each participant was assigned. Educators are warned 14 days beforehand and can postpone up to three times by 30 days. The latest possible date is <strong>120 days after</strong> the session closed or the last answer — 90 days beyond the original deletion date.</li>
   <li><strong>Session-level figures</strong> — when an educator closes a session, its answers are added to cross-session benchmarks as <strong>counts only</strong>. Those counts contain no participant records and are not affected by the deletion above; they cannot be traced to a session or a person.</li>
+  <li><strong>Unfinished answers</strong> — if you start the activity and leave without reaching your reflection card, what you answered so far is deleted automatically once your 8-hour pass expires. That pass is the only thing that could bring you back to it, so nothing you could still return to is removed. It is also why an unfinished attempt never needs a deletion code: it is gone before the session's own deadline.</li>
   <li><strong>Educator accounts</strong> — retained until deleted.</li>
 </ul>""",
         },
@@ -934,7 +975,7 @@ teaching.</p>""",
         # 2026-09 (2 September): the container is a SESSION fleet-wide (README
         # §9). The retention list had three consecutive "sessions" meaning
         # three different tables; the participant's own run is now a "run"
-        # and their 24-hour pass a "pass", so "session" means one thing. First
+        # and their pass a "pass", so "session" means one thing. First
         # explicit version for this tool: rows stamped 2026-07 resolve to the
         # wording before this change.
         # 2026-09-03-retention: the lifecycle converged on the fleet clock —
@@ -947,8 +988,11 @@ teaching.</p>""",
         # identifier and nothing else, for 8 hours; a deletion link they can
         # actually use, replaceable if lost; and, where an address exists, a
         # one-time link for continuing on another device.
-        "notice_version": "2026-09-03-identity",
-        "last_updated": "2026-09-03",
+        # 2026-09-04-identity: the participant pass is 8 hours, not 24 — the implementation
+        # moved with the fleet cookie on 3 September and the notice said
+        # 24 in two places. Also says what the required address is for.
+        "notice_version": "2026-09-04-identity",
+        "last_updated": "2026-09-04",
         "art9": False,  # structural/organisational decisions
         "purpose": {
             "en": "OrgDesignSim is an organisational-design simulation: "
@@ -991,11 +1035,11 @@ teaching.</p>""",
         "retention": {
             "en": """
 <ul>
-  <li><strong>Abandoned runs</strong> — a participant who joined but never finished — are deleted automatically by an hourly job, once their 24-hour pass has expired.</li>
+  <li><strong>Abandoned runs</strong> — a participant who joined but never finished — are deleted automatically by an hourly job, once their 8-hour pass has expired.</li>
   <li><strong>Completed runs</strong> are anonymised automatically 30 days after the educator closes the session — or, if it is never closed, 30 days after the session's last completed run. The name and e-mail address are removed; the score and result are kept for educator statistics. Closing a session again never moves that date.</li>
   <li><strong>Warnings and postponement:</strong> educators are warned 14 days before that date and may postpone it by 30 days, up to three times. Participants are warned 7 days before at the e-mail address they joined with.</li>
   <li><strong>Unused sessions:</strong> a session nobody joins is deleted 90 days after it was created.</li>
-  <li><strong>A participant's pass</strong> expires automatically after 24 hours.</li>
+  <li><strong>A participant's pass</strong> expires automatically after 8 hours.</li>
   <li><strong>The backoffice audit record</strong> (educator account, action and IP address) is deleted automatically after <strong>12 months</strong>, by the same hourly job.</li>
   <li><strong>Educators</strong> can delete or archive a session at any time.</li>
 </ul>""",
@@ -1015,8 +1059,9 @@ your educator before that date.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
-requirement, but an e-mail address is technically required to join a session;
-without it you cannot take part. The display name is optional.</p>""",
+requirement, but an e-mail address is <strong>technically required</strong> to
+join a session; without it you cannot take part. It does three things and nothing else: it stops the same person submitting twice, it lets you pick up where you left off on a different device, and it is where we send the warning before your answers are deleted and the link that deletes them yourself. We do not use it to contact you for anything else.
+The display name is optional.</p>""",
         },
         "provenance": {
             "en": """<p>The OrgDesignSim scenario, simulation model and site are
@@ -1151,8 +1196,12 @@ linked from this site are original works.</p>""",
         # identifier and nothing else, for 8 hours; a deletion link they can
         # actually use, replaceable if lost; and, where an address exists, a
         # one-time link for continuing on another device.
-        "notice_version": "2026-09-03-identity",
-        "last_updated": "2026-09-03",
+        # 2026-09-04-identity: the erasure section now names /withdrawal-link, so a
+        # participant who lost the 7-day warning mail has a route that is
+        # not 'write to us'; and the provision section says what the
+        # required address is for.
+        "notice_version": "2026-09-04-identity",
+        "last_updated": "2026-09-04",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
@@ -1266,10 +1315,18 @@ unaffected.</p>
 find unless you gave the separate research consent. That row we cannot find
 either — by design, it carries no address and nothing linking it to you — so it
 can only be reached with the personal link in the e-mail we send you seven days
-before the session is erased. <strong>Keep that e-mail.</strong> Opening the link
-shows you what would be removed and removes nothing until you confirm; use it
-before the deadline and it deletes your session answers as well. There is no time
-limit on it.</p>""",
+before the session is erased. Opening the link shows you what would be removed
+and removes nothing until you confirm; use it before the deadline and it deletes
+your session answers as well. There is no time limit on it.</p>
+<p><strong>If you no longer have that link</strong> — or would rather not wait
+for the e-mail — ask for one at <a href="/withdrawal-link">/withdrawal-link</a>
+with the session code and the address you joined with. We send it to that address
+and nowhere else, and we answer the same way whether or not we hold it, so the
+page cannot be used to find out who took part. The new link replaces any earlier
+one, which stops working at that moment. We keep only a one-way fingerprint of
+these links, never the link itself, so a copy of our database gives nobody the
+power to delete your data — which is also why we cannot re-send the one you
+had.</p>""",
             "de": """<p><strong>Solange die Session besteht</strong>, identifiziert
 Ihre E-Mail-Adresse Ihre Abgabe, wir können sie also jederzeit finden und
 löschen: Schreiben Sie uns oder Ihrer Lehrperson unter Angabe des
@@ -1283,19 +1340,30 @@ vorhanden — es sei denn, Sie haben die gesonderte Forschungseinwilligung
 erteilt. Diesen Datensatz können auch wir nicht finden: Er enthält
 absichtsvoll keine Adresse und nichts, was ihn mit Ihnen verbindet. Erreichbar
 ist er ausschließlich über den persönlichen Link in der E-Mail, die wir Ihnen
-sieben Tage vor der Löschung der Session senden. <strong>Bewahren Sie diese
-E-Mail auf.</strong> Der Link zeigt Ihnen zunächst, was gelöscht würde, und
-löscht nichts, bevor Sie bestätigen; vor dem Stichtag verwendet, löscht er auch
-Ihre Session-Antworten. Eine Frist gibt es dafür nicht.</p>""",
+sieben Tage vor der Löschung der Session senden. Der Link zeigt Ihnen zunächst,
+was gelöscht würde, und löscht nichts, bevor Sie bestätigen; vor dem Stichtag
+verwendet, löscht er auch Ihre Session-Antworten. Eine Frist gibt es dafür
+nicht.</p>
+<p><strong>Wenn Sie diesen Link nicht mehr haben</strong> — oder nicht auf die
+E-Mail warten möchten — fordern Sie unter
+<a href="/withdrawal-link">/withdrawal-link</a> einen neuen an, mit dem
+Session-Code und der Adresse, mit der Sie teilgenommen haben. Wir senden ihn
+ausschließlich an diese Adresse und antworten gleich, ob wir sie kennen oder
+nicht — die Seite lässt sich also nicht nutzen, um herauszufinden, wer
+teilgenommen hat. Der neue Link ersetzt jeden früheren, der in diesem Moment
+ungültig wird. Wir speichern nur einen Einweg-Fingerabdruck dieser Links,
+niemals den Link selbst; eine Kopie unserer Datenbank gibt daher niemandem die
+Möglichkeit, Ihre Daten zu löschen — und aus demselben Grund können wir Ihnen
+Ihren alten Link nicht erneut zusenden.</p>""",
         },
         "provision": {
             "en": """<p>Providing data is neither a statutory nor a contractual
 requirement, but an e-mail address is <strong>technically required</strong> to
-join a session — without it a submission cannot be recorded.</p>""",
+join a session — without it a submission cannot be recorded. It does three things and nothing else: it stops the same person submitting twice, it lets you pick up where you left off on a different device, and it is where we send the warning before your answers are deleted and the link that deletes them yourself. We do not use it to contact you for anything else.</p>""",
             "de": """<p>Die Bereitstellung von Daten ist weder gesetzlich noch
 vertraglich vorgeschrieben; eine E-Mail-Adresse ist jedoch <strong>technisch
 erforderlich</strong>, um an einer Session teilzunehmen — ohne sie kann keine
-Abgabe gespeichert werden.</p>""",
+Abgabe gespeichert werden. Sie erfüllt drei Zwecke und sonst keinen: Sie verhindert doppelte Abgaben, sie erlaubt Ihnen, auf einem anderen Gerät dort weiterzumachen, wo Sie aufgehört haben, und an sie gehen die Warnung vor der Löschung Ihrer Antworten sowie der Link, mit dem Sie sie selbst löschen. Für nichts anderes verwenden wir sie.</p>""",
         },
         "provenance": {
             "en": """<p>The Whiteout scenario, benchmark ranking, trap-item design,

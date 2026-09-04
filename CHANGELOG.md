@@ -4,6 +4,33 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.31.0 — 2026-09-04
+
+- **The eight participant notices, corrected against what the code does.**
+  `notice_version` `2026-09-04-identity` on all eight. An external review of
+  the identity and retention waves found four notices describing something
+  other than the running system, and this is the wording half of the fix
+  (`server-ops/CONSENT-WORDING-ARCHIVE.md` carries the full per-tool record):
+  - **Polarity Profiler (German)** — the erasure section still offered the
+    report page as a deletion route, removed by migration 023; never named
+    `/withdrawal-link`; and claimed no identifier survives the anonymisation
+    deadline, which is untrue for a participant who consented to research use.
+    It is now a translation of the English rather than an older text beside it.
+  - **Inequality Explorer** — the retention section said a withdrawal "has to
+    reach us before" the deadline while the erasure section on the same page
+    said the participant's own link keeps working afterwards. Both are now
+    true and distinguishable. The cookie table also gained `withdraw_once`
+    (5 minutes), which was live and unpublished.
+  - **OrgDesignSim** — the pass is 8 hours, not 24, in both places the notice
+    said 24. The implementation moved with the fleet cookie in 1.30.0.
+  - **Whiteout** — the erasure section named no recovery route, so a
+    participant who lost the 7-day warning mail had none. It now points at
+    `/withdrawal-link` in both languages.
+  - **Moral Mirror** — new retention bullet: answers from an abandoned
+    activity are deleted when the 8-hour pass expires (owner's decision).
+  - **Layoff, OrgDesignSim, Whiteout** — the provision sections now say what
+    the required address is for, and that it is used for nothing else.
+
 ## 1.30.0 — 2026-09-03
 
 - **The eight participant notices, for the fleet identity mechanism.**
