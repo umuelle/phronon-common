@@ -4,6 +4,39 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.40.0 — 2026-09-04
+
+- **`registry.py` — one place that says what a tool IS** (external plan, item
+  2). A tool is identified by six strings — fleet key `lsr`, workspace
+  directory `polarity-profiler`, GitHub repository `lsr-profiler`, systemd unit
+  `lsr-profiler`, entitlement key `lsr_profiler`, brand "Polarity Profiler" —
+  and nothing held them together, so code took whichever was nearest. That is
+  how a fleet test derived a tool's identity from its checkout directory and
+  turned CI red on all nine repositories: GitHub checks `ControversyGenerator`
+  out as `controversy-generator`.
+- **`ToolIdentity` holds the operational facts; `ToolPresentation` is separate**
+  and holds none of them. Deployment mechanics stay in `fleet.conf`;
+  `server-ops/tool_registry_check.py` compares the two so they cannot disagree
+  in silence.
+- **It found two live disagreements on its first run, both the same shape:** a
+  RETIRED domain used where the current one belongs. `Phronon/app.py` linked
+  Polarity Profiler at `lsr-profiler.org` while `fleet_client.py`, in the same
+  repository, used `polarity-profiler.org` — the hub disagreeing with itself
+  about one tool. And that tool's sample-mail script built reset links on the
+  retired domain. Both corrected. The registry models the distinction rather
+  than flattening it: `canonical_domain` is the only address anything may build
+  a URL on, `legacy_domains` is what nginx redirects from.
+- Names work the same way: `display_name` ("Whiteout Exercise" — notice,
+  e-mail, page titles) and `short_name` ("Whiteout" — the hub's card) are both
+  accepted where a name is DISPLAYED and neither anywhere else. That asymmetry
+  already existed; it is written down now instead of argued about.
+- **`FLEET_TOOL_NAMES` is derived from the registry**, not listed a second time.
+  A hand-kept copy is how five tools came to be missing a name from the e-mail
+  leak check.
+- Each tool also carries `tests/test_identity_matches_the_registry.py`, so its
+  own CI — where server-ops is not checked out — fails on the push that makes
+  its brand or its domain disagree.
+
 ## 1.39.0 — 2026-09-04
 
 Guardrail and packaging debt, closed before more is shared (external plan,

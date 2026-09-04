@@ -25,24 +25,18 @@ import os
 import traceback
 from pathlib import Path
 
+from phronon_common.registry import display_names
+
 #: Dedicated test mailbox — test e-mail never reaches a real inbox.
 TEST_RECIPIENT = "test@phronon.org"
 
-#: Every brand name in the fleet. The leak check asks whether a message for one
-#: tool names any of the others; `services/email.py` is copy-pasted between
-#: projects, so it is the July 2026 branding bug that this guards against. It
-#: lives here, with the harness, because the sample script is what puts a brand
-#: name into a real message.
-FLEET_TOOL_NAMES = (
-    "Controversy Generator",
-    "Drawbridge Drama",
-    "Inequality Explorer",
-    "Layoff Exercise",
-    "Moral Mirror",
-    "OrgDesignSim",
-    "Polarity Profiler",
-    "Whiteout Exercise",
-)
+#: Every brand name in the fleet, DERIVED from the registry rather than listed
+#: again here. The leak check asks whether a message for one tool names any of
+#: the others; `services/email.py` is copy-pasted between projects, so it is the
+#: July 2026 branding bug that this guards against — and a hand-kept list is
+#: exactly how five tools came to be missing a name from it. One place now says
+#: what a tool is called: phronon_common.registry.
+FLEET_TOOL_NAMES = display_names()
 
 #: An obviously-fake token: if one of these ever turns up in a real inbox or a
 #: log, it is from the sample script and grants nothing.
