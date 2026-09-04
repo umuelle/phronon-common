@@ -4,6 +4,32 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.32.0 — 2026-09-04
+
+- **`phronon_common.testing` — the fleet test kit.** The cross-cutting tests
+  were copied, not shared: three were byte-identical in all eight tools, so a
+  fix to one missed seven and a ninth tool would start with none of them. The
+  password policy checks (server and template halves) and the fetch/CSRF
+  scanner now live here as plain functions that raise AssertionError; each
+  tool keeps a thin wrapper that points them at its own root.
+  - **Nothing here imports pytest**, at module level or inside a function, so
+    the kit costs every production venv nothing. The pytest wiring —
+    parametrize, ids — stays local, which is also what keeps each tool's own
+    CI running the check. `test_no_dead_or_undefined_code.py` over
+    `undefined_names.py` was already built this way; this generalises it.
+  - Genuinely per-tool declarations stay per-tool: `TOKEN_READ_FROM`,
+    `ACCEPT_JSON_REQUIRED`, `CSRF_SCOPE_PREFIXES`, and whether the CSRF drift
+    check reads the tool's own `app.py` or, for the three tools on the shared
+    middleware, `phronon_common.csrf` resolved BY IMPORT.
+  - Gate: `server-ops/fleet_testkit_check.py`, which fails a deploy if a tool
+    deletes one of these tests or forks the scanner back into itself.
+- **Packaging: the subpackage needed its own `package-dir` entry.** With only
+  the root mapping, `pip wheel` produced a wheel containing no
+  `phronon_common/testing` at all and said nothing — the tools would have
+  imported the kit from the sibling checkout locally and failed in CI, which
+  installs from the tag. Verified by unzipping the wheel and importing it from
+  a clean venv, not by reading the config.
+
 ## 1.31.0 — 2026-09-04
 
 - **The eight participant notices, corrected against what the code does.**
