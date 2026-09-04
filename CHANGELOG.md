@@ -4,6 +4,24 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.44.0 — 2026-09-04
+
+- **Inequality Explorer's retention promise, corrected (IE-002).** The notice
+  said that without research consent "your demographic and reflection answers
+  are deleted outright" — true, and incomplete. The RESPONSE itself stayed: the
+  session link, the exact timestamp and all ten quintile answers, indefinitely,
+  in a cohort of twenty with a named educator. Someone who DECLINED research use
+  was left more identifiable than someone who agreed, which is the opposite of
+  what a consent question is for.
+- It now says: without consent, **the whole response is deleted** — name,
+  address, answers, demographics, reflection. With consent, the record is kept
+  but cut loose from the session and coarsened to the month, and the
+  participant's deletion link keeps working on it.
+- `notice_version` for this tool becomes `2026-09-04-ie002`; the other seven
+  participant tools stay on `2026-09-04-identity`. Both wordings are in
+  `server-ops/CONSENT-WORDING-ARCHIVE.md`, so a stored version still resolves to
+  the sentence that was shown.
+
 ## 1.43.0 — 2026-09-04
 
 - **`audit.AuditRecorder` — the audit trail, bound once per project.** Every

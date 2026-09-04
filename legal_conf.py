@@ -392,7 +392,7 @@ works.</p>""",
         # the retention section no longer says a withdrawal must reach us
         # before the deadline — the participant's own link works after it,
         # as the erasure section always said.
-        "notice_version": "2026-09-04-identity",
+        "notice_version": "2026-09-04-ie002",
         "last_updated": "2026-09-04",
         "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
                        # items (pol_redistribution, pol_regulation), stored as enums.
@@ -444,7 +444,7 @@ works.</p>""",
             "en": """
 <ul>
   <li><strong>One deadline per session.</strong> Names and e-mail addresses are anonymised automatically 30 days after your educator closes the session — or, if it is never closed, 30 days after its last response. Reopening a session does not restart that clock. The routine runs hourly.</li>
-  <li><strong>What happens at that deadline depends on your consent.</strong> In every case your name and e-mail address are removed, and the <strong>free-text reflection box is emptied for everyone</strong>. If you did <em>not</em> consent to research use, your demographic and reflection answers are <strong>deleted outright</strong> at the same moment. If you did consent, they are kept — but the record is <strong>cut loose from your session</strong>: the link to it is removed and the timestamp is reduced to the month, so the answers sit in a large cross-session pool instead of a group of twenty where a combination of age, gender and income could point at one person.</li>
+  <li><strong>What happens at that deadline depends on your consent.</strong> If you did <em>not</em> consent to research use, <strong>your whole response is deleted</strong> — your name and address, your answers, your demographics and your reflection, all of it. Nothing is kept. If you <em>did</em> consent, your name, e-mail address and free-text reflection are removed and the rest is kept, but the record is <strong>cut loose from your session</strong>: the link to it is removed and the timestamp is reduced to the month, so the answers sit in a large cross-session pool instead of a group of twenty where a combination of age, gender and income could point at one person. Your deletion link keeps working on that record for as long as it exists.</li>
   <li><strong>Warnings and postponement:</strong> educators are warned 14 days before the deadline and may postpone it by 30 days, up to three times. Participants who left an e-mail address are warned 7 days before.</li>
   <li><strong>Unused sessions:</strong> a session nobody joins is deleted 90 days after it was created.</li>
   <li><strong>What that means for you:</strong> once the deadline has passed <em>we</em> can no longer find your individual response — nothing then connects it to your name or address — so if you want us to find it for you, write before then. Your own deletion link is not affected: it keeps working afterwards, because the record it points at carries the same one-way fingerprint. See &ldquo;Deleting your response&rdquo; below.</li>
