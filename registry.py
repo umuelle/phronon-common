@@ -95,7 +95,7 @@ class ToolPresentation:
     tagline: str
     blurb: str
     audience: str
-    duration: str
+    duration: str               #: one value per tool: the hub's chip AND /about
     how: tuple[str, ...]        #: the numbered steps of a session
 
 
@@ -250,7 +250,7 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
                 "conditions for real debate instead of polite consensus."
             ),
             audience='Students & seminars',
-            duration='A short survey plus a session',
+            duration='5–10 min + pair discussion',
             how=(
                 (
                     "An educator creates a session and shares the join code with the "
@@ -275,8 +275,8 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
                 "call, then surfaces how participants reason about responsibility "
                 "and blame — a fast, vivid opener for any ethics discussion."
             ),
-            audience='Participants',
-            duration='~5 minutes',
+            audience='Students',
+            duration='~5 min',
             how=(
                 'An educator creates a session and shares a session code or link.',
                 (
@@ -301,8 +301,8 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
                 "turns abstract distributions into something tangible, manipulable, "
                 "and genuinely debatable."
             ),
-            audience='Participants',
-            duration='Flexible',
+            audience='Students',
+            duration='10-20 min',
             how=(
                 (
                     "An educator opens or shares the explorer with the session's "
@@ -328,7 +328,7 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
                 "actually used — efficiency, fairness, loyalty, need."
             ),
             audience='Students & managers',
-            duration='~20 minutes',
+            duration='90–120 min',
             how=(
                 'An educator creates a session and shares the join link or code.',
                 (
@@ -354,7 +354,7 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
                 "blind spots, and untried registers."
             ),
             audience='Professionals & students',
-            duration='~15 minutes',
+            duration='~20 min',
             how=(
                 'An educator creates a session and shares the join link or code.',
                 (
@@ -377,7 +377,7 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
                 "session sees — live — how the framing shifted its own judgments."
             ),
             audience='University students & seminars',
-            duration='Modular, 10–45 minutes',
+            duration='Modular, 10–45 min',
             how=(
                 'An educator creates a session and shares a join code or link.',
                 (
@@ -397,7 +397,7 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
                 "practical judgment about organizations under real constraints."
             ),
             audience='Advanced students & executives',
-            duration='Multi-week',
+            duration='~60 min',
             how=(
                 'An educator creates a game and shares the join code or link.',
                 'Participants take charge of a fictional company in the browser.',
@@ -417,7 +417,7 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
                 "under uncertainty and time pressure."
             ),
             audience='Teams & groups',
-            duration='35–90 minutes depending on the plan (compact / full / with Group Ranking 2)',
+            duration='35–90 min',
             how=(
                 'An educator creates a session and shares the join link or code.',
                 'Participants individually rank 16 survival items in the browser.',

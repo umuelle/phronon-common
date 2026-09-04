@@ -4,6 +4,33 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.42.0 — 2026-09-04
+
+- **One duration per tool, and the hub reads it** (owner, 4 September 2026).
+  The hub's cards and each tool's own /about disagreed about every one of the
+  eight, and two of those were contradictions rather than formatting: Layoff
+  said 90–120 min on the hub and "~20 minutes" on its own page, and
+  OrgDesignSim said ">30 min" against "Multi-week". The owner settled the
+  values; `duration` is now a single field the hub chip and /about both read.
+  OrgDesignSim's "Multi-week" had been describing the SIMULATED 52 weeks under
+  a heading that means real time. Whiteout's "35–90 minutes depending on the
+  plan (compact / full / with Group Ranking 2)" loses its plan clause, because
+  the hub renders this in a chip.
+- **"Students" stays in the audience labels; "participants" is for
+  participant-facing text and the backoffice** (owner). The labels say who a
+  tool is FOR, which is a different question from what the people in a session
+  are called. Two tools had drifted the other way and are corrected; the hub's
+  Drawbridge blurb ("student-facing") and Moral Mirror blurb ("students answer
+  framed dilemmas") were the only two places the word described the people, and
+  those now read as the tools themselves already did.
+- **The hub's last two per-tool tables are gone.** `Phronon/app.py`'s card list
+  and `Phronon/fleet_client.py`'s FLEET both build from the registry now. They
+  were the reason the hub could link Polarity Profiler at its retired domain in
+  one file while using the current one in the other, and why its cards
+  described five tools in wording those tools had moved on from. The only
+  per-tool fact `fleet_client` still owns is which tools have participant
+  sessions to report.
+
 ## 1.41.0 — 2026-09-04
 
 - **`machine_facing.py` and a populated `ToolPresentation`** (external plan,
