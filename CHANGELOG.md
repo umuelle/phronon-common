@@ -4,6 +4,21 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.38.0 — 2026-09-04
+
+- **The tool is called OrgDesignSim** (owner, 4 September 2026) — the spelling
+  on its own logo. `FLEET_TOOL_NAMES` carried "Orgdesignsim", and so did the
+  tool's `services/email.py`, its mail subjects, its page titles and the hub's
+  fleet listing. All 138 occurrences of the brand across the fleet now read
+  OrgDesignSim.
+- **What deliberately did NOT change: the identifiers.** The local repository
+  directory, the systemd unit, the server path, the database and the fleet key
+  stay `Orgdesignsim` / `orgdesignsim` / `orgsim`, exactly as Polarity
+  Profiler's service, directory and database stayed `lsr` when it was renamed.
+  A dozen gates key their per-tool tables on the directory name; renaming that
+  is its own change, with its own migration, not a side effect of a brand fix.
+- The signed DPIA determination of 20 August keeps the name it was signed with.
+
 ## 1.37.0 — 2026-09-04
 
 - **`testing/mail_harness.py` — the sample-mail harness.** Around each tool's

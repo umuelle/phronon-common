@@ -33,7 +33,7 @@ def csv_safe_row(row: dict) -> dict:
 # check ownership, write the audit row, and tell caches not to keep it. Layoff's
 # download route was missing two of them until 16 August — any signed-in
 # educator could pull another class's participants, e-mail addresses included,
-# and nothing was written down when they did. Orgdesignsim's results export
+# and nothing was written down when they did. OrgDesignSim's results export
 # wrote no audit row until today.
 #
 # A helper cannot authenticate for the caller; the route knows who is signed in

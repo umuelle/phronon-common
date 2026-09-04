@@ -39,7 +39,7 @@ FLEET_TOOL_NAMES = (
     "Inequality Explorer",
     "Layoff Exercise",
     "Moral Mirror",
-    "Orgdesignsim",
+    "OrgDesignSim",
     "Polarity Profiler",
     "Whiteout Exercise",
 )
