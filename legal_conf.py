@@ -392,8 +392,14 @@ works.</p>""",
         # the retention section no longer says a withdrawal must reach us
         # before the deadline — the participant's own link works after it,
         # as the erasure section always said.
-        "notice_version": "2026-09-04-ie002",
-        "last_updated": "2026-09-04",
+        # 2026-09-04-ie002: a participant who declines research use has the
+        # WHOLE response deleted at the deadline (retention section).
+        # 2026-09-13-ie-erasure: the erasure section had kept describing a
+        # third outcome — "the anonymised record still counted in your
+        # session's figures" — that the 4 September code no longer produces.
+        # Two outcomes now, the same two the retention section names.
+        "notice_version": "2026-09-13-ie-erasure",
+        "last_updated": "2026-09-13",
         "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
                        # items (pol_redistribution, pol_regulation), stored as enums.
                        # Political opinions are Art. 9(1) data — the earlier False was wrong.
@@ -457,12 +463,13 @@ works.</p>""",
 deletion link, shown once when you finish. Opening it shows what would be removed and
 asks you to type a word to confirm; nothing happens until you do.</p>
 <p><strong>If you no longer have your deletion link</strong>, ask for a new one at <a href="/withdrawal-link">/withdrawal-link</a> with the session code and the e-mail address you took part with. We send it to that address and nowhere else, and we answer the same way whether or not we hold it, so the page cannot be used to find out who took part. The new link replaces any earlier one, which stops working at that moment. We keep only a one-way fingerprint of these links, never the link itself, so a copy of our database gives nobody the power to delete your data — which is also why we cannot re-send the one you had.</p>
-<p>The link keeps working <strong>after</strong> the session's anonymisation deadline,
-for as long as any record of yours exists — either the pseudonymous research record,
-if you agreed to that, or the anonymised record still counted in your session's figures.
-What we cannot do after the deadline is find your record for you, because nothing then
-connects it to your name or address. You can still write to us or to your educator
-before that date.</p>
+<p>What happens at the session's deadline depends on one answer you gave. <strong>If you
+did not agree to research use, your whole response is deleted</strong> at the deadline — there
+is nothing left to withdraw and nothing left to count. <strong>If you agreed</strong>, the
+pseudonymous research record remains, cut loose from your session, and the link keeps
+working on it for as long as it exists. What we cannot do after the deadline is find that
+record for you, because nothing then connects it to your name or address. You can still
+write to us or to your educator before that date.</p>
 <p><strong>If you gave no e-mail address</strong>, the link shown when you finished is
 the only one you will get, and we cannot send you another.</p>""",
         },
@@ -878,8 +885,14 @@ design are original works created for executive teaching.</p>""",
         # expires rather than at the session's own deadline, which is why
         # an abandoned attempt never needs a deletion code (owner's
         # decision, 4 September 2026).
-        "notice_version": "2026-09-04-identity",
-        "last_updated": "2026-09-04",
+        # 2026-09-13-freetext: the Thief's Mirror set gained an open question
+        # on 11 September whose answers are shown AS WRITTEN to the educator
+        # and the room (from three answers; the educator can hide one). The
+        # notice had promised aggregates only. Also: a closed session takes
+        # no new participants or answers, and withdrawn answers leave the
+        # benchmark counts (MM-004, 13 September).
+        "notice_version": "2026-09-13-freetext",
+        "last_updated": "2026-09-13",
         "art9": True,  # moral judgments
         "purpose": {
             "en": "Moral Mirror lets the participants in a session observe patterns in "
@@ -893,7 +906,7 @@ design are original works created for executive teaching.</p>""",
 <p>We do not ask for your name, e-mail address or any account. We store, per
 submission:</p>
 <ul>
-  <li><strong>Your answers</strong> to the activity's questions. Your answers can reveal your moral views.</li>
+  <li><strong>Your answers</strong> to the activity's questions — including, for the one open question in the Thief's Mirror set, the text you type. Your answers can reveal your moral views.</li>
   <li><strong>Optional demographics</strong> — only the fields you choose to answer.</li>
   <li><strong>A session code</strong> — attaches responses to the correct session, not to you.</li>
   <li><strong>A pseudonymous token</strong> in a cookie, so your answers within one session hang together. Because such a token exists, the data is pseudonymous rather than anonymous.</li>
@@ -919,6 +932,7 @@ submission:</p>
 <ul>
   <li><strong>Everyone in the session</strong> sees group aggregates. Demographic breakdowns are shown only when at least 5 participants stand behind a group, so no individual can be singled out.</li>
   <li><strong>Educators</strong> see the same aggregates for their own sessions.</li>
+  <li><strong>The one open question</strong> (in the Thief's Mirror set, only if you said you had once stolen something) is the exception: what you write there is shown <strong>as written</strong> — with no name and no token — to the educator and on the reveal screen in the session, once at least three people have answered it. The educator can hide any such answer from the reveal. Free-text answers never enter the cross-session benchmarks or your reflection card. Please write nothing there you would not want the room to read.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>
 <p>Pseudonymised, aggregated answers may contribute to cross-session
@@ -929,7 +943,7 @@ one.</p>""",
             "en": """
 <ul>
   <li><strong>Session responses</strong> — deleted automatically <strong>30 days</strong> after the session is closed, or 30 days after the last answer if it is never closed. A session nobody ever joined is removed 90 days after it was created. Deletion removes the whole session: every answer, the optional demographics and the condition each participant was assigned. Educators are warned 14 days beforehand and can postpone up to three times by 30 days. The latest possible date is <strong>120 days after</strong> the session closed or the last answer — 90 days beyond the original deletion date.</li>
-  <li><strong>Session-level figures</strong> — when an educator closes a session, its answers are added to cross-session benchmarks as <strong>counts only</strong>. Those counts contain no participant records and are not affected by the deletion above; they cannot be traced to a session or a person.</li>
+  <li><strong>Session-level figures</strong> — when an educator closes a session, its answers are added to cross-session benchmarks as <strong>counts only</strong>. Those counts contain no participant records and are not affected by the deletion above; they cannot be traced to a session or a person. Once a session is closed it takes no new participants and no new answers, and an answer you withdraw after the close is taken back out of those counts.</li>
   <li><strong>Unfinished answers</strong> — if you start the activity and leave without reaching your reflection card, what you answered so far is deleted automatically once your 8-hour pass expires. That pass is the only thing that could bring you back to it, so nothing you could still return to is removed. It is also why an unfinished attempt never needs a deletion code: it is gone before the session's own deadline.</li>
   <li><strong>Educator accounts</strong> — retained until deleted.</li>
 </ul>""",
