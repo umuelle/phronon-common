@@ -408,7 +408,10 @@ works.</p>""",
         # (5 on any session figure, 10 on a demographic group) and promised
         # none of them; and the min–max whiskers are individual estimates the
         # notice had not disclosed (FL-045, same day).
-        "notice_version": "2026-09-13-ie-floor",
+        # 2026-09-13-ie-spread: the min–max band is gone (a min or max is one
+        # person's answer); the session page and projector show one standard
+        # deviation either side of the average instead (owner, FL-045).
+        "notice_version": "2026-09-13-ie-spread",
         "last_updated": "2026-09-13",
         "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
                        # items (pol_redistribution, pol_regulation), stored as enums.
@@ -452,7 +455,7 @@ works.</p>""",
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see who responded (names or pseudonyms) but not individual response values linked to a person; responses are shown in aggregate or anonymised form. Every session figure stands for <strong>at least five people</strong>, and a breakdown by a demographic answer for <strong>at least ten</strong>; a smaller group is not shown. The one figure that is not an average is the session's <strong>lowest and highest estimate</strong> per question, shown to the educator and on the projector without any name, once five people have answered. The session summary does quote <strong>reflection notes</strong> back to the educator, without a name attached — so please write nothing there you would not want the room to read. Educators can delete erroneous entries in their own sessions, and see a summary across their own sessions.</li>
+  <li><strong>Educators</strong> see who responded (names or pseudonyms) but not individual response values linked to a person; responses are shown in aggregate or anonymised form. Every session figure stands for <strong>at least five people</strong>, and a breakdown by a demographic answer for <strong>at least ten</strong>; a smaller group is not shown. Beside each session average, the educator and the projector see how widely the session answered — one standard deviation either side of the average — never any one person's estimate. The session summary does quote <strong>reflection notes</strong> back to the educator, without a name attached — so please write nothing there you would not want the room to read. Educators can delete erroneous entries in their own sessions, and see a summary across their own sessions.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
         },
