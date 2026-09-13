@@ -398,7 +398,11 @@ works.</p>""",
         # third outcome — "the anonymised record still counted in your
         # session's figures" — that the 4 September code no longer produces.
         # Two outcomes now, the same two the retention section names.
-        "notice_version": "2026-09-13-ie-erasure",
+        # 2026-09-13-ie-floor: the tool enforced the fleet's strictest floors
+        # (5 on any session figure, 10 on a demographic group) and promised
+        # none of them; and the min–max whiskers are individual estimates the
+        # notice had not disclosed (FL-045, same day).
+        "notice_version": "2026-09-13-ie-floor",
         "last_updated": "2026-09-13",
         "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
                        # items (pol_redistribution, pol_regulation), stored as enums.
@@ -442,7 +446,7 @@ works.</p>""",
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see who responded (names or pseudonyms) but not individual response values linked to a person; responses are shown in aggregate or anonymised form. The session summary does quote <strong>reflection notes</strong> back to the educator, without a name attached — so please write nothing there you would not want the room to read. Educators can delete erroneous entries in their own sessions, and see a summary across their own sessions.</li>
+  <li><strong>Educators</strong> see who responded (names or pseudonyms) but not individual response values linked to a person; responses are shown in aggregate or anonymised form. Every session figure stands for <strong>at least five people</strong>, and a breakdown by a demographic answer for <strong>at least ten</strong>; a smaller group is not shown. The one figure that is not an average is the session's <strong>lowest and highest estimate</strong> per question, shown to the educator and on the projector without any name, once five people have answered. The session summary does quote <strong>reflection notes</strong> back to the educator, without a name attached — so please write nothing there you would not want the room to read. Educators can delete erroneous entries in their own sessions, and see a summary across their own sessions.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
 </ul>""",
         },
@@ -697,8 +701,11 @@ original works created for teaching.</p>""",
         # (removed in migration 023), never mentioned /withdrawal-link,
         # and said no identifier survives the deadline — untrue for anyone
         # who consented to research use. It now mirrors the English.
-        "notice_version": "2026-09-04-identity",
-        "last_updated": "2026-09-04",
+        # 2026-09-13-pp-floor: the notice never said what floor the averages
+        # stand on; the code ran three (5, 2 and none) and now runs one. The
+        # access section states it (FL-045, 13 September 2026).
+        "notice_version": "2026-09-13-pp-floor",
+        "last_updated": "2026-09-13",
         "art9": False,  # leadership-style point allocations
         "purpose": {
             "en": "The Polarity Profiler collects scenario-based point allocations and "
@@ -761,13 +768,13 @@ original works created for teaching.</p>""",
         "access": {
             "en": """
 <ul>
-  <li><strong>Educators</strong> see a completion list for their session (e-mail address and submission time). They do not see individual scores.</li>
-  <li><strong>The administrator</strong> has technical access for maintenance and security only.</li>
+  <li><strong>Educators</strong> see a completion list for their session (e-mail address and submission time). They do not see individual scores. Session averages, and averages for a demographic group, are shown to them <strong>only over at least five people</strong>; a group with fewer is neither averaged nor counted.</li>
+  <li><strong>The administrator</strong> has technical access for maintenance and security only, and sees pooled averages across all sessions under the same five-person rule.</li>
 </ul>""",
             "de": """
 <ul>
-  <li><strong>Lehrpersonen</strong> sehen eine Abgabeliste ihrer Session (E-Mail-Adresse und Abgabezeitpunkt). Individuelle Ergebnisse sehen sie nicht.</li>
-  <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit.</li>
+  <li><strong>Lehrpersonen</strong> sehen eine Abgabeliste ihrer Session (E-Mail-Adresse und Abgabezeitpunkt). Individuelle Ergebnisse sehen sie nicht. Durchschnittswerte einer Session und Durchschnittswerte einer demografischen Gruppe werden ihnen <strong>nur über mindestens fünf Personen</strong> angezeigt; eine kleinere Gruppe wird weder gemittelt noch gezählt.</li>
+  <li><strong>Der Administrator</strong> hat ausschließlich technischen Zugriff für Wartung und Sicherheit und sieht zusammengefasste Durchschnittswerte über alle Sessions nach derselben Fünf-Personen-Regel.</li>
 </ul>""",
         },
         "retention": {
