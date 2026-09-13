@@ -146,8 +146,14 @@ TOOLS = {
         # 2026-09-04-identity: the deletion code is no longer held in the database between
         # submitting and the page that shows it — it is created by that
         # page, so no copy of it exists anywhere else, ever.
-        "notice_version": "2026-09-04-identity",
-        "last_updated": "2026-09-04",
+        # 2026-09-13-cg-badge: the statement library shows every educator a coarse
+        # polarisation level per shared statement, recomputed whenever a session
+        # is paired — from live answers of every session still inside its
+        # deadline and from the anonymous counters after it. The old sentence
+        # described only the counters and a two-session/five-response rule the
+        # label never had (FL-045; owner: keep the label, describe the state).
+        "notice_version": "2026-09-13-cg-badge",
+        "last_updated": "2026-09-13",
         "art9": True,  # statement bank can probe political/moral positions
         "purpose": {
             "en": "The Controversy Generator collects short survey responses to "
@@ -185,7 +191,7 @@ TOOLS = {
             "en": """
 <ul>
   <li><strong>Educators</strong> see participant names, e-mail addresses (where provided) and individual responses for their own sessions only.</li>
-  <li><strong>Anonymous statement statistics are shared between educators.</strong> Once a session is consolidated, what remains is a count of how many people chose each point on the scale for each statement, per half-year. Those totals are pooled across all sessions and are visible to every educator using the same statement from the shared library. They are shown only where at least two different sessions and at least five responses stand behind the figure, so no single session can be read out of them, and they contain nothing that identifies a person, a session or a date.</li>
+  <li><strong>A polarisation level for every shared statement is visible to other educators.</strong> For each statement in the shared library, educators see a coarse level — from very low to very high — of how divided the answers to it have been, together with the number of sessions that have used it. The level is recomputed whenever a session is paired, from every answer given to that statement in any session that has not yet reached its deletion deadline, and, for sessions past it, from anonymous per-statement counts that keep only the answers of participants who agreed to research use. Nothing else about another educator's session reaches the library: no responses, no names, no dates, and no sample size.</li>
   <li><strong>The administrator</strong> has technical access for maintenance and security purposes only.</li>
 </ul>""",
         },
