@@ -21,6 +21,7 @@ it must stay stdlib-only.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import os
 import traceback
 from pathlib import Path
@@ -194,8 +195,46 @@ def live_sending_status(project_root: Path) -> tuple:
     return "send", ""
 
 
-def send_all(samples, recipient: str = TEST_RECIPIENT) -> list:
-    """Send every sample. Returns [(key, label, error_or_None), ...].
+#: Where a tool records the day it last sent its full set. One file per tool,
+#: beside the code, so it travels with the checkout the deploy tests.
+FULL_SEND_STAMP = ".last-full-mail-send"
+
+
+def full_set_due(project_root: Path, today: str | None = None) -> bool:
+    """True when this tool should send EVERY sample today, else one canary.
+
+    The owner's rule, 18 September 2026: the first deploy of a tool each day
+    sends the full set; later deploys that day send a single message. Live mail
+    is never muted — receiving it is the proof that delivery works — but a tool
+    deployed several times in one day used to spend the provider's whole daily
+    budget on proving the same thing over and over, and then every further
+    deploy of that tool failed on `450 Mail send limit exceeded`. That happened
+    on 18 September, to Polarity Profiler, during this very change.
+    """
+    stamp = Path(project_root) / FULL_SEND_STAMP
+    day = today or _dt.date.today().isoformat()
+    try:
+        return stamp.read_text(encoding="utf-8").strip() != day
+    except OSError:
+        return True          # no stamp, or unreadable: send the full set
+
+
+def record_full_send(project_root: Path, today: str | None = None) -> None:
+    """Remember that the full set went today. Never fatal: a read-only
+    checkout should degrade to sending the full set, not to failing."""
+    day = today or _dt.date.today().isoformat()
+    try:
+        (Path(project_root) / FULL_SEND_STAMP).write_text(day + "\n", encoding="utf-8")
+    except OSError:
+        pass
+
+
+def send_all(samples, recipient: str = TEST_RECIPIENT, *, project_root=None) -> list:
+    """Send the samples. Returns [(key, label, error_or_None), ...].
+
+    Every sample on the first run of the day, ONE afterwards (see
+    `full_set_due`). `project_root=None` keeps the old behaviour — send
+    everything — so a hand-run of a tool's own script is unchanged.
 
     Nothing is caught at a level that would let a failure pass as success — an
     exception is recorded per sample and re-surfaced by the caller.
@@ -203,13 +242,26 @@ def send_all(samples, recipient: str = TEST_RECIPIENT) -> list:
     refusal = recipient_refusal(recipient)
     if refusal:
         raise ValueError(refusal)
+
+    chosen = list(samples)
+    full = True
+    if project_root is not None:
+        full = full_set_due(project_root)
+        if not full:
+            # The canary is the FIRST sample, which every tool orders as its
+            # most ordinary message. One real delivery still has to succeed.
+            chosen = chosen[:1]
+
     results = []
-    for key, label, sender in samples:
+    for key, label, sender in chosen:
         try:
             sender(recipient)
             results.append((key, label, None))
         except Exception as exc:  # noqa: BLE001 — reported, not swallowed
             results.append((key, label, exc))
+
+    if project_root is not None and full and not any(err for _k, _l, err in results):
+        record_full_send(project_root)
     return results
 
 

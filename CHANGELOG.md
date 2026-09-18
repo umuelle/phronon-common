@@ -4,6 +4,23 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.52.0 — 2026-09-18
+
+- **The full set of sample e-mails goes once a day per tool; later runs that
+  day send one canary** (owner's decision). Live sending is not muted and never
+  will be — receiving the mail is the proof that delivery works, and one real
+  delivery still has to succeed on every run. What this stops is a tool
+  deployed several times in one day spending the provider's entire daily budget
+  on proving the same thing twenty times over: on 18 September that happened to
+  Polarity Profiler, and every further deploy of it failed on
+  `450 … Mail send limit exceeded`.
+
+  `send_all(samples, recipient, project_root=...)` consults a `.last-full-mail-send`
+  stamp beside the tool's code (git-ignored). Without `project_root` nothing is
+  throttled, which is what each tool's `scripts/send_test_emails.py` passes when
+  it is run by hand. A full set that had a failure is NOT recorded as done, so
+  one bad day cannot leave a tool on canaries with nothing proved.
+
 ## 1.51.0 — 2026-09-18
 
 - **`testing.mail_harness.load_project_env` fills gaps instead of overwriting
