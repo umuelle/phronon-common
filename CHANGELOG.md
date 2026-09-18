@@ -4,6 +4,31 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.51.0 — 2026-09-18
+
+- **`testing.mail_harness.load_project_env` fills gaps instead of overwriting
+  the caller — it was repointing test runs at the LIVE database.** The function
+  gives a hand-run pytest on the server the SMTP credentials systemd would
+  otherwise inject, and it did that by writing every key of the tool's `.env`
+  into `os.environ`. `DB_NAME` is one of those keys, and
+  `server-ops/run_tests.py` deliberately sets `DB_NAME=<db>_test` before pytest
+  starts, precisely so the deploy gate's suite cannot touch production. So on
+  the server the first live-mail test in a run silently switched the whole
+  process to the production database, and everything after it saw that name.
+
+  Measured the day it was found: in Polarity Profiler, whose disposable-schema
+  guards are evaluated per fixture rather than at collection, seventeen
+  database-backed tests reported "skipped" on every deploy and had not executed
+  on the server for months — inside a green result, because that skip reason was
+  permitted until this morning. In the tools whose guards are module-level the
+  tests ran instead, and were spared writing to production only because their
+  connection pool had been built earlier in the run against the test schema.
+  That is luck, and not the sort worth keeping.
+
+  The fix is `os.environ.setdefault`: what the caller set survives, and the mail
+  settings the caller does not pass are exactly the ones still missing.
+  `tests/test_mail_env_never_repoints_the_database.py` holds it.
+
 ## 1.45.0 — 2026-09-05
 
 - **Polarity Profiler's cheap identifiers finish their rename (PP-004).** The

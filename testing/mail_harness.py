@@ -85,17 +85,36 @@ def parse_env_file(path: Path) -> dict:
 
 
 def load_project_env(project_root: Path) -> bool:
-    """Load the project's own .env into os.environ. Returns True if one existed.
+    """FILL IN the project's .env where the process has nothing. True if one existed.
 
     systemd injects these via EnvironmentFile for the running service, but that
     does nothing for a pytest run started by hand — without this, every server
     run would report "SMTP_PASSWORD not set" and prove nothing.
+
+    IT MUST NEVER OVERWRITE WHAT THE CALLER SET (18 September 2026). This wrote
+    every key in `.env` straight into os.environ, `DB_NAME` included — so on the
+    server, where a `.env` exists, the first live-mail test REPOINTED the whole
+    pytest process from `<db>_test` at the LIVE database, mid-run. Everything
+    after it in the run then saw the production name.
+
+    What that cost, measured the day it was found: in Polarity Profiler, whose
+    disposable-schema guards are evaluated per fixture (after this point in the
+    run rather than at collection), seventeen database-backed tests reported
+    "skipped" on every deploy and had not executed on the server for months.
+    In the tools whose guards are module-level the tests ran instead — and were
+    saved from writing to production only by their connection pool having been
+    built earlier in the run, while the name was still the test one. That is
+    luck, not a guarantee, and it is not one to keep relying on.
+
+    `setdefault` is the whole fix: `server-ops/run_tests.py` deliberately puts
+    `DB_*` in the environment before pytest starts and they must survive; the
+    mail settings it does not pass are exactly the ones still missing here.
     """
     env_path = Path(project_root) / ".env"
     if not env_path.is_file():
         return False
     for key, value in parse_env_file(env_path).items():
-        os.environ[key] = value
+        os.environ.setdefault(key, value)
     return True
 
 
