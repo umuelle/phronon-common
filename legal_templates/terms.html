@@ -44,8 +44,11 @@ within their programme.</p>
 <p>{{ L(cfg.purpose) }}</p>
 
 <div class="lp-box">
-<p><strong>Not an assessment instrument.</strong> {{ cfg.tool_name }} and the
-other Phronon tools are teaching and discussion aids. They are
+<p><strong>Not an assessment instrument.</strong> {% if cfg.get('name_suite', True) -%}
+{{ cfg.tool_name }} and the other Phronon tools are teaching and discussion aids. They are
+{%- else -%}
+{{ cfg.tool_name }} is a teaching and discussion aid. It is
+{%- endif %}
 <strong>not</strong> psychometric, diagnostic, clinical or employment-selection
 instruments, and they must not be used for hiring, selection, promotion or any
 other personnel decision-making. Results have no diagnostic value and must not
@@ -73,8 +76,13 @@ confidential; we may suspend or terminate accounts used in breach of these
 terms, and remove content that is unlawful or harmful.</p>
 
 <h2>Intellectual property</h2>
-<p>The Phronon name, wordmark and logo, and this tool's design and software
-are protected works. The web fonts used are licensed under the SIL Open Font
+<p>{% if cfg.get('name_suite', True) -%}
+The Phronon name, wordmark and logo, and this tool's design and software
+are protected works.
+{%- else -%}
+The {{ cfg.tool_name }} name, wordmark and logo, and this tool's design and
+software are protected works.
+{%- endif %} The web fonts used are licensed under the SIL Open Font
 License.</p>
 {{ L(cfg.provenance)|safe }}
 

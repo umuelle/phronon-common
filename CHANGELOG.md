@@ -4,6 +4,23 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.54.0 — 2026-09-21
+
+- **`suite_link` becomes `name_suite`, and now covers the Terms text too.**
+  Renamed because it never only governed a link: the Terms page names the
+  suite twice in its own prose — "<tool> and the other Phronon tools are
+  teaching and discussion aids", and "The Phronon name, wordmark and logo …
+  are protected works". A property that must not be traceable to its siblings
+  was still naming them in the body while the footer stayed quiet.
+
+  With `name_suite: False` those two sentences speak about the property alone.
+  Default unchanged; the other nine render exactly as before.
+
+  Found by a test asserting no page on Moral Mirror's Decision Room door
+  mentions Phronon — the footer had been fixed in 1.53.0, and the Terms page
+  failed anyway. Option B (legal pages indexable, the rest not) makes this
+  matter: an indexed page naming the suite is a searchable route back.
+
 ## 1.53.0 — 2026-09-21
 
 - **A legal footer can leave out the suite line.** Every property still ends
