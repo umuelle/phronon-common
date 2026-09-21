@@ -85,8 +85,19 @@
       Version {{ cfg.notice_version }} · last substantive change: {{ cfg.last_updated }}
       {%- endif -%}
     </p>
+    {#- The suite line. Every tool carries it; a property that must not be
+        traceable to its siblings sets `suite_link: False` and gets its own
+        name alone. Moral Mirror's Decision Room door is the first: it exists
+        so that naming the study does not shape the answers, and a link here
+        put the hub — which describes that study — two clicks from the privacy
+        notice. The controller is named in the Impressum either way, which is
+        what a reader is owed; the BRAND of the suite is not. -#}
+    {% if cfg.get('suite_link', True) %}
     <p>{{ cfg.tool_name }} — {% if lang == 'de' %}Teil von{% else %}part of{% endif %}
       <a href="https://phronon.org">Phronon</a></p>
+    {% else %}
+    <p>{{ cfg.tool_name }}</p>
+    {% endif %}
   </footer>
 </div>
 </body>

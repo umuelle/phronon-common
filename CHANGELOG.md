@@ -4,6 +4,24 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.53.0 — 2026-09-21
+
+- **A legal footer can leave out the suite line.** Every property still ends
+  its legal pages with "<tool> — part of Phronon"; one that sets
+  `suite_link: False` in its `legal_conf` entry gets its own name alone.
+
+  Moral Mirror's Decision Room door is the first to need it. That door exists
+  so that naming the study does not shape the answers, and the footer put a
+  live link to the hub on every legal page — where the hub describes Moral
+  Mirror as "a modular ethics experiment … participants answer framed moral
+  dilemmas under randomized conditions". Two clicks from a privacy notice to
+  the hypothesis.
+
+  What a reader is owed is the identity of the CONTROLLER, and the Impressum
+  names it either way. The brand of the suite is not part of that.
+
+  Default is unchanged, so the other nine properties render exactly as before.
+
 ## 1.52.0 — 2026-09-18
 
 - **The full set of sample e-mails goes once a day per tool; later runs that
