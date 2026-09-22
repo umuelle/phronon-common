@@ -4,6 +4,34 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.55.0 — 2026-09-22
+
+- **`.print-hide` goes back inside `@media print`.** Promoted into
+  `backoffice-core.css` on 26 August with the other 228 byte-identical rules,
+  it arrived WITHOUT its wrapper: `.print-hide { display: none !important }` at
+  the top level of a sheet that loads last, with `!important`. For twenty-seven
+  days it hid on screen what it was written to hide on paper.
+
+  Whiteout was the tool that paid: its session page carries the class on
+  seventeen wrappers, and the educator lost **Presentation mode**, **Download
+  PDF**, **Download charts & tables**, twelve per-chart **Download PNG**
+  buttons, and the small-group "best member" figures FL-045 shows the educator
+  while withholding them from the room. No other tool uses the class on a page
+  that loads this sheet — the join sheets carry it too, but with the correctly
+  scoped copy in `share-card.css`.
+
+  Nothing caught it in four weeks of green deploys. Every test asserted the
+  buttons were in the HTML, which they were; the dead-rule gate compares rule
+  bodies, and the bodies matched — it was the SCOPE that was dropped, and no
+  gate read scope. Two now do: `server-ops/fleet_print_scope_check.py` (deploy
+  step, refuses a hide-on-paper class that hides outside a print scope, and any
+  shared rule promoted out of a media block) and the real-browser journey, which
+  asks the browser whether the educator can SEE the three export controls.
+
+  The six tools that also declared the rule locally, correctly scoped, drop
+  their now-redundant copy; Inequality and Polarity Profiler load this sheet and
+  no `backoffice.css` of their own, which is why the rule stays here.
+
 ## 1.54.0 — 2026-09-21
 
 - **`suite_link` becomes `name_suite`, and now covers the Terms text too.**

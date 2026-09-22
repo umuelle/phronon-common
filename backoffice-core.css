@@ -275,7 +275,16 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
 .bulk-bar .btn-secondary:hover { background: rgba(255,255,255,.12); }
 .bulk-bar .btn-danger { background: #c0392b; color: #fff; }
 .bulk-bar .btn-danger:hover { background: #a93226; }
-.print-hide { display: none !important; }
+/* .print-hide means "not on paper" — it must stay inside @media print.
+   Promoted here on 26 August out of each tool's own @media print block, it
+   spent four weeks as a screen rule and hid every control that carries it:
+   Whiteout's session page lost Presentation mode, Download PDF and twelve
+   Download PNG buttons. It stays here rather than going back to the tools:
+   Inequality and Polarity Profiler load this sheet and no backoffice.css of
+   their own, so this is the only copy they would get. */
+@media print {
+  .print-hide { display: none !important; }
+}
 .bo-quickstart {
   border: 1px solid var(--bo-border, #d9dee5); border-left: 4px solid var(--bo-primary, #2b6cb0); border-radius: 8px; background: var(--bo-surface, #fff); margin-bottom: 1.25rem;
 }
