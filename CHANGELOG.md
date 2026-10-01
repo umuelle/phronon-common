@@ -4,6 +4,26 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.57.0 — 2026-10-01
+
+- **`once`: a background side effect happens at most once, however many
+  workers run the job.** Every tool runs its background jobs in each uvicorn
+  worker, and the workers start them together after every restart. On
+  1 October Drawbridge mailed an educator the same retention warning twice,
+  0.17 s apart: it sent first and stamped afterwards. Controversy Generator
+  and Moral Mirror had the same code, and Polarity Profiler sent all four of
+  its background mails that way. Whiteout had found and fixed the race on
+  25 August, and the fix stayed in Whiteout.
+
+  `once.once(get_db, table, column, keys, action, mark=…, restore=…)` claims
+  the row(s) with a conditional UPDATE, runs the action only if this caller
+  changed them, and puts the mark back if the action fails or raises. Marks:
+  a timestamp (`NOW`, `UTC_NOW`; "unmarked" = NULL), a value (a deadline, a
+  flag; "unmarked" = any other value), over one row or a batch. It reads
+  `cursor.rowcount` itself, because several tools' `execute` helpers return
+  `lastrowid`, which is 0 for every UPDATE. Every background mail in the
+  fleet now goes through it, including in the tools that run one worker.
+
 ## 1.55.0 — 2026-09-22
 
 - **`.print-hide` goes back inside `@media print`.** Promoted into
