@@ -205,6 +205,21 @@ class TwoFactorFromTheAccountPage(AccountPageContract):
     def test_the_disable_button_is_hidden_from_admins(self):
         assert "{% if not totp_required %}" in self.account_html
 
+    def test_recovery_codes_only_appear_behind_the_download_lock(self):
+        """Since 2 October 2026 fresh codes must be downloaded before the user
+        can continue (recovery-codes.js). The account page used to carry a
+        second, unlocked list that no route filled any more (FL-066, deleted);
+        a template that lists codes again must bring the lock with it."""
+        root = Path(self.PROJECT_ROOT) / "templates"
+        for page in root.rglob("*.html"):
+            html = _read(page)
+            if not re.search(r"{%\s*for \w+ in codes\s*%}", html):
+                continue
+            where = page.relative_to(root)
+            assert "data-recovery-codes" in html, f"{where}: codes listed without the download lock"
+            assert "data-recovery-done" in html, f"{where}: nothing for the lock to hold back"
+            assert "/static/js/recovery-codes.js" in html, f"{where}: the lock's script is not loaded"
+
 
 class TheAdminSideReset(AccountPageContract):
 
@@ -272,8 +287,12 @@ class EveryFormPostsToARouteThatExists(AccountPageContract):
         assert actions, "no POST form actions found — the page cannot be right"
         for action in actions:
             path = action.split("?")[0]
+            # A `{{ k.id }}` in the template is a `{pid}` in the route (the
+            # passkeys' Remove buttons, 2 October 2026).
+            pattern = r"\{\w+\}".join(re.escape(part)
+                                       for part in re.split(r"\{\{.*?\}\}", path))
             assert re.search(
-                r'@app\.(?:post|api_route)\(\s*[\'"]%s[\'"]' % re.escape(path),
+                r'@app\.(?:post|api_route)\(\s*[\'"]%s[\'"]' % pattern,
                 self.app_src), f"nothing answers POST {path}"
 
 

@@ -153,7 +153,7 @@ TOOLS = {
         # described only the counters and a two-session/five-response rule the
         # label never had (FL-045; owner: keep the label, describe the state).
         "notice_version": "2026-09-13-cg-badge",
-        "last_updated": "2026-09-13",
+        "last_updated": "2026-10-02",
         "art9": True,  # statement bank can probe political/moral positions
         "purpose": {
             "en": "The Controversy Generator collects short survey responses to "
@@ -176,6 +176,7 @@ TOOLS = {
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
   <li><strong>Session data</strong> — titles, items and settings of sessions you create.</li>
+  <li><strong>Passkeys</strong> — only if you add one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>
 </ul>""",
         },
         "basis": {
@@ -244,6 +245,7 @@ the responsibility of the educator who writes them.</p>""",
             ("norms_&lt;code&gt; / privacy_&lt;code&gt;", "Record that the session's ground-rules and privacy note were shown.", "1 hour", "participants"),
             ("backoffice_user", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("cg_pending_totp / cg_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+            ("passkey_challenge", "Set only while you add a passkey or sign in with one: a signed, HTTP-only one-time challenge for your device to sign. Deleted as soon as it has been used.", "5 minutes", "backoffice"),
             ("dismiss_anonymize_until", "Remembers that an educator dismissed the \"these sessions need anonymising\" reminder, so it is not shown again for a week. Set only when the educator clicks dismiss.", "7 days", "backoffice"),
         ],
     },
@@ -284,7 +286,7 @@ the responsibility of the educator who writes them.</p>""",
         # submitting and the page that shows it — it is created by that
         # page, so no copy of it exists anywhere else, ever.
         "notice_version": "2026-09-04-identity",
-        "last_updated": "2026-09-04",
+        "last_updated": "2026-10-02",
         "art9": True,  # moral-judgment attributions
         "purpose": {
             "en": "The Drawbridge Drama presents a short illustrated narrative and "
@@ -315,6 +317,7 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
   <li><strong>E-mail address, display name</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
   <li><strong>Session data</strong> — names, codes and configuration of sessions you create.</li>
+  <li><strong>Passkeys</strong> — only if you add one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>
 </ul>""",
         },
         "basis": {
@@ -371,6 +374,7 @@ works.</p>""",
             ("bo_csrf", "Protects backoffice forms against cross-site request forgery (signed, HTTP-only).", "1 hour", "backoffice"),
             ("bo_flash", "Carries a one-off status message between two backoffice pages.", "10 seconds", "backoffice"),
             ("db_pending_totp / drawbridge_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+            ("passkey_challenge", "Set only while you add a passkey or sign in with one: a signed, HTTP-only one-time challenge for your device to sign. Deleted as soon as it has been used.", "5 minutes", "backoffice"),
         ],
     },
 
@@ -412,7 +416,7 @@ works.</p>""",
         # person's answer); the session page and projector show one standard
         # deviation either side of the average instead (owner, FL-045).
         "notice_version": "2026-09-13-ie-spread",
-        "last_updated": "2026-09-13",
+        "last_updated": "2026-10-02",
         "art9": True,  # 2026-07-30: the demographics page asks two political-opinion
                        # items (pol_redistribution, pol_regulation), stored as enums.
                        # Political opinions are Art. 9(1) data — the earlier False was wrong.
@@ -440,6 +444,7 @@ works.</p>""",
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
   <li><strong>Session data</strong> — names, codes, configuration, responses.</li>
+  <li><strong>Passkeys</strong> — only if you add one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>
 </ul>""",
         },
         "basis": {
@@ -503,6 +508,7 @@ from published public sources; the survey design and site are original works.</p
             ("withdraw_once", "Signed, HTTP-only. Carries your personal deletion link from the moment you finish to the results page that shows it, once. It is deleted as that page is drawn, and it is the only cookie that ever holds anything more than a random identifier.", "5 minutes", "participants"),
             ("backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("wee_pending_totp / pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+            ("passkey_challenge", "Set only while you add a passkey or sign in with one: a signed, HTTP-only one-time challenge for your device to sign. Deleted as soon as it has been used.", "5 minutes", "backoffice"),
         ],
     },
 
@@ -532,7 +538,7 @@ from published public sources; the survey design and site are original works.</p
         # address is actually for, and that it is used for nothing else
         # (owner's re-ratification, 4 September 2026).
         "notice_version": "2026-09-04-identity",
-        "last_updated": "2026-09-04",
+        "last_updated": "2026-10-02",
         "art9": False,  # ranking/structural decisions
         "purpose": {
             "en": "The Layoff Exercise asks participants to rank candidates in a "
@@ -559,6 +565,7 @@ from published public sources; the survey design and site are original works.</p
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
   <li><strong>Session data</strong> — names, codes, configuration, responses.</li>
   <li><strong>An audit record of backoffice actions</strong> — the educator's e-mail address and the <strong>IP address</strong> an action came from, stored as database records. This is a security record: it is how an account compromise is reconstructed. Records are deleted after <strong>12 months</strong>.</li>
+  <li><strong>Passkeys</strong> — only if you add one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>
 </ul>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
@@ -575,6 +582,7 @@ from published public sources; the survey design and site are original works.</p
   <li><strong>Passwort</strong> — ausschließlich als bcrypt-Hash gespeichert.</li>
   <li><strong>Session-Daten</strong> — Namen, Codes, Konfiguration, Antworten.</li>
   <li><strong>Protokoll der Backoffice-Aktionen</strong> — die E-Mail-Adresse der Lehrperson und die <strong>IP-Adresse</strong>, von der eine Aktion ausging, als Datenbank­einträge gespeichert. Dies ist eine Sicherheitsaufzeichnung: Damit lässt sich eine Kontokompromittierung nachvollziehen. Die Einträge werden nach <strong>12 Monaten</strong> gelöscht.</li>
+  <li><strong>Passkeys</strong> — nur wenn Sie einen hinzufügen: der öffentliche Schlüssel und die Kennung, die Ihr Gerät erzeugt hat, der von Ihnen vergebene Name sowie wann er hinzugefügt und zuletzt verwendet wurde. Fingerabdruck, Gesicht oder Geräte-PIN verlassen Ihr Gerät nie; wir sehen sie nicht.</li>
 </ul>""",
         },
         "basis": {
@@ -659,6 +667,7 @@ original works created for teaching.</p>""",
             ("layoff_flash", "Carries a one-off status message between two pages.", "5 minutes", "all"),
             ("layoff_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("lo_pending_totp / layoff_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+            ("passkey_challenge", "Set only while you add a passkey or sign in with one: a signed, HTTP-only one-time challenge for your device to sign. Deleted as soon as it has been used.", "5 minutes", "backoffice"),
         ],
         # The German page renders THIS list, not the one above — same cookies,
         # same order, same numbers, German words. The pairing is enforced by
@@ -675,6 +684,8 @@ original works created for teaching.</p>""",
              '6 Stunden (Lehrpersonen) / 3 Stunden (Administratoren)', 'Backoffice'),
             ('lo_pending_totp / layoff_pending2fa', 'Überträgt den Zwischenschritt der Zwei-Faktor-Anmeldung: die Markierung der offenen Anmeldung (5 Minuten) und, während der Einrichtung, das noch nicht bestätigte TOTP-Geheimnis (15 Minuten).',
              '5–15 Minuten', 'Backoffice'),
+            ('passkey_challenge', 'Wird nur gesetzt, während Sie einen Passkey hinzufügen oder sich damit anmelden: eine signierte, HTTP-only Einmal-Aufgabe, die Ihr Gerät signiert. Wird gelöscht, sobald sie verwendet wurde.',
+             '5 Minuten', 'Backoffice'),
         ],
     },
 
@@ -720,7 +731,7 @@ original works created for teaching.</p>""",
         # this notice's own erasure section says. Retention now agrees with
         # erasure and with the code (TO DO PP-009). Wording only.
         "notice_version": "2026-09-29-pp-withdrawal",
-        "last_updated": "2026-09-29",
+        "last_updated": "2026-10-02",
         "art9": False,  # leadership-style point allocations
         "purpose": {
             "en": "The Polarity Profiler collects scenario-based point allocations and "
@@ -746,6 +757,7 @@ original works created for teaching.</p>""",
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
   <li><strong>Session data</strong> — names and codes of sessions you create.</li>
+  <li><strong>Passkeys</strong> — only if you add one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>
 </ul>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
@@ -762,6 +774,7 @@ original works created for teaching.</p>""",
   <li><strong>E-Mail-Adresse</strong> — für die Anmeldung im Backoffice.</li>
   <li><strong>Passwort</strong> — ausschließlich als bcrypt-Hash gespeichert.</li>
   <li><strong>Session-Daten</strong> — Namen und Codes der von Ihnen angelegten Sessions.</li>
+  <li><strong>Passkeys</strong> — nur wenn Sie einen hinzufügen: der öffentliche Schlüssel und die Kennung, die Ihr Gerät erzeugt hat, der von Ihnen vergebene Name sowie wann er hinzugefügt und zuletzt verwendet wurde. Fingerabdruck, Gesicht oder Geräte-PIN verlassen Ihr Gerät nie; wir sehen sie nicht.</li>
 </ul>""",
         },
         "basis": {
@@ -859,6 +872,7 @@ design are original works created for executive teaching.</p>""",
             ("participant_session", "Signed, HTTP-only. Holds a random identifier and nothing else. Your progress through the questionnaire is held on our server against it, and afterwards it lets you reopen your results page.", "8 hours", "participants"),
             ("backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("lsr_pending_totp / lsr_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+            ("passkey_challenge", "Set only while you add a passkey or sign in with one: a signed, HTTP-only one-time challenge for your device to sign. Deleted as soon as it has been used.", "5 minutes", "backoffice"),
         ],
         # The German page renders THIS list, not the one above — same cookies,
         # same order, same numbers, German words. The pairing is enforced by
@@ -873,6 +887,8 @@ design are original works created for executive teaching.</p>""",
              '6 Stunden (Lehrpersonen) / 3 Stunden (Administratoren)', 'Backoffice'),
             ('lsr_pending_totp / lsr_pending2fa', 'Überträgt den Zwischenschritt der Zwei-Faktor-Anmeldung: die Markierung der offenen Anmeldung (5 Minuten) und, während der Einrichtung, das noch nicht bestätigte TOTP-Geheimnis (15 Minuten).',
              '5–15 Minuten', 'Backoffice'),
+            ('passkey_challenge', 'Wird nur gesetzt, während Sie einen Passkey hinzufügen oder sich damit anmelden: eine signierte, HTTP-only Einmal-Aufgabe, die Ihr Gerät signiert. Wird gelöscht, sobald sie verwendet wurde.',
+             '5 Minuten', 'Backoffice'),
         ],
     },
 
@@ -914,7 +930,7 @@ design are original works created for executive teaching.</p>""",
         # no new participants or answers, and withdrawn answers leave the
         # benchmark counts (MM-004, 13 September).
         "notice_version": "2026-09-13-freetext",
-        "last_updated": "2026-09-13",
+        "last_updated": "2026-10-02",
         "art9": True,  # moral judgments
         "purpose": {
             "en": "Moral Mirror lets the participants in a session observe patterns in "
@@ -939,6 +955,7 @@ submission:</p>
 <ul>
   <li><strong>E-mail address</strong> — for backoffice sign-in.</li>
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
+  <li><strong>Passkeys</strong> — only if you add one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>
 </ul>""",
         },
         "basis": {
@@ -1000,6 +1017,7 @@ teaching.</p>""",
             ("moralmirror_pax", "Pseudonymous participant token: keeps your answers within one session together and lets you return to your reflection card (signed, HTTP-only). Holds no name or address. You can clear it yourself with “I am done — forget this browser” on the card.", "8 hours", "participants"),
             ("moralmirror_admin", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("mm_pending_totp / moralmirror_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+            ("passkey_challenge", "Set only while you add a passkey or sign in with one: a signed, HTTP-only one-time challenge for your device to sign. Deleted as soon as it has been used.", "5 minutes", "backoffice"),
         ],
     },
 
@@ -1028,7 +1046,7 @@ teaching.</p>""",
         # moved with the fleet cookie on 3 September and the notice said
         # 24 in two places. Also says what the required address is for.
         "notice_version": "2026-09-04-identity",
-        "last_updated": "2026-09-04",
+        "last_updated": "2026-10-02",
         "art9": False,  # structural/organisational decisions
         "purpose": {
             "en": "OrgDesignSim is an organisational-design simulation: "
@@ -1051,6 +1069,7 @@ teaching.</p>""",
   <li><strong>Password</strong> — stored only as a bcrypt hash.</li>
   <li><strong>Session data</strong> — names, codes, configuration, participant results.</li>
   <li><strong>An audit record of backoffice actions</strong> — which account did what (creating, editing, closing, archiving or deleting a session), when, and the <strong>IP address</strong> it came from. This is a security record: it is how an account compromise or an accidental deletion is reconstructed. It is kept for <strong>12 months</strong> and then deleted automatically.</li>
+  <li><strong>Passkeys</strong> — only if you add one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>
 </ul>""",
         },
         "basis": {
@@ -1107,6 +1126,7 @@ original works created for teaching organisational design.</p>""",
             ("orgdesignsim_participant", "Signed, HTTP-only. Holds a random identifier for your run, so your saved game and result stay yours and you can reopen them.", "8 hours", "participants"),
             ("orgdesignsim_backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("os_pending_totp / orgdesignsim_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+            ("passkey_challenge", "Set only while you add a passkey or sign in with one: a signed, HTTP-only one-time challenge for your device to sign. Deleted as soon as it has been used.", "5 minutes", "backoffice"),
         ],
     },
 
@@ -1120,7 +1140,7 @@ original works created for teaching organisational design.</p>""",
         # 2026-09 (2 September): the container is a SESSION fleet-wide (README
         # §9); the overview bullets no longer hedge "class/session".
         "notice_version": "2026-09",
-        "last_updated": "2026-09-02",
+        "last_updated": "2026-10-02",
         "purpose": {
             "en": "phronon.org is the umbrella site for the Phronon online "
                   "tools. Each tool runs on its own domain and "
@@ -1133,6 +1153,7 @@ original works created for teaching organisational design.</p>""",
   <li><strong>Server log files</strong> — see the server-log section below; nothing beyond it.</li>
   <li><strong>E-mail contact</strong> — if you write to us, the details you provide are stored to handle your enquiry and are not passed on.</li>
   <li><strong>Administrator credentials</strong> — for the private administration area; the password is stored only as a bcrypt hash.</li>
+  <li><strong>Passkeys</strong> — only if an administrator adds one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>
 </ul>
 <ul>
   <li><strong>Fleet overview (administration area only)</strong> — when a signed-in administrator opens the overview, this site queries each tool over the server's own loopback interface and displays that tool's session titles, session codes, the <strong>educator e-mail address</strong> that owns each one, its status, response count and last activity. This data is read live and shown on screen; the hub does not store it.</li>
@@ -1176,6 +1197,7 @@ linked from this site are original works.</p>""",
         },
         "cookies": [
             ("session", "Set only inside the private administration area to keep an administrator signed in (signed, HTTP-only). Not used on public pages.", "3 hours", "backoffice"),
+            ("passkey_challenge", "Set only while an administrator adds a passkey or signs in with one: a signed, HTTP-only one-time challenge for the device to sign. Deleted as soon as it has been used.", "5 minutes", "backoffice"),
         ],
     },
 
@@ -1247,7 +1269,7 @@ linked from this site are original works.</p>""",
         # gets its own version rather than editing theirs. WHITEOUT ONLY: no
         # other tool has the mode, and none of their wording moved.
         "notice_version": "2026-09-05-prework",
-        "last_updated": "2026-09-05",
+        "last_updated": "2026-10-02",
         "art9": False,  # survival-item rankings
         "purpose": {
             "en": "The Whiteout Exercise presents a survival scenario in which "
@@ -1278,6 +1300,7 @@ linked from this site are original works.</p>""",
 <ul>
   <li><strong>Login credentials</strong> — the password is stored only as a bcrypt hash.</li>
   <li><strong>Session data</strong> — names, codes and configuration of sessions you create.</li>
+  <li><strong>Passkeys</strong> — only if you add one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>
 </ul>""",
             "de": """
 <h3>Von Teilnehmenden</h3>
@@ -1299,6 +1322,7 @@ linked from this site are original works.</p>""",
 <ul>
   <li><strong>Anmeldedaten</strong> — das Passwort wird ausschließlich als bcrypt-Hash gespeichert.</li>
   <li><strong>Session-Daten</strong> — Namen, Codes und Konfiguration der von Ihnen angelegten Sessions.</li>
+  <li><strong>Passkeys</strong> — nur wenn Sie einen hinzufügen: der öffentliche Schlüssel und die Kennung, die Ihr Gerät erzeugt hat, der von Ihnen vergebene Name sowie wann er hinzugefügt und zuletzt verwendet wurde. Fingerabdruck, Gesicht oder Geräte-PIN verlassen Ihr Gerät nie; wir sehen sie nicht.</li>
 </ul>""",
         },
         "basis": {
@@ -1421,6 +1445,7 @@ draws on established facilitation methodology.</p>""",
             ("whiteout_csrf", "Protects forms against cross-site request forgery (signed, HTTP-only).", "8 hours", "all"),
             ("whiteout_session", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
             ("wo_pending_totp / whiteout_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+            ("passkey_challenge", "Set only while you add a passkey or sign in with one: a signed, HTTP-only one-time challenge for your device to sign. Deleted as soon as it has been used.", "5 minutes", "backoffice"),
         ],
         # The German page renders THIS list, not the one above — same cookies,
         # same order, same numbers, German words. The pairing is enforced by
@@ -1437,6 +1462,8 @@ draws on established facilitation methodology.</p>""",
              '6 Stunden (Lehrpersonen) / 3 Stunden (Administratoren)', 'Backoffice'),
             ('wo_pending_totp / whiteout_pending2fa', 'Überträgt den Zwischenschritt der Zwei-Faktor-Anmeldung: die Markierung der offenen Anmeldung (5 Minuten) und, während der Einrichtung, das noch nicht bestätigte TOTP-Geheimnis (15 Minuten).',
              '5–15 Minuten', 'Backoffice'),
+            ('passkey_challenge', 'Wird nur gesetzt, während Sie einen Passkey hinzufügen oder sich damit anmelden: eine signierte, HTTP-only Einmal-Aufgabe, die Ihr Gerät signiert. Wird gelöscht, sobald sie verwendet wurde.',
+             '5 Minuten', 'Backoffice'),
         ],
     },
 }

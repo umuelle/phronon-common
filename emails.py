@@ -406,7 +406,8 @@ def send_two_factor_reset_notice(tool_name: str, default_from: str, to_email: st
 
 # ── Two-factor confirmation (2 October 2026) ────────────────────────────────
 # Sent by the account holder's own action: switching two-factor on, moving it
-# to a new authenticator, or making a new set of recovery codes. Modelled on
+# to a new authenticator, making a new set of recovery codes, or adding or
+# removing a passkey. Modelled on
 # the mail GitHub sends after enrolment, with one difference: GitHub can show
 # the codes again, the fleet cannot (only hashes are stored), so the mail
 # points to making NEW codes instead. It doubles as the alarm for the case the
@@ -424,22 +425,47 @@ TWO_FACTOR_EVENTS = {
                  "You have just moved two-factor login to a new authenticator app"),
     "codes_regenerated": ("new recovery codes",
                           "You have just made a new set of recovery codes"),
+    # Passkeys (FL-065). A passkey signs in on its own, so one appearing on an
+    # account its owner did not add is the strongest takeover signal there is.
+    "passkey_added": ("a passkey was added",
+                      "A passkey was just added"),
+    "passkey_removed": ("a passkey was removed",
+                        "A passkey was just removed"),
 }
+
+#: Events about the recovery codes, which get the "check you saved them" part.
+_CODE_EVENTS = {"enabled", "replaced", "codes_regenerated"}
 
 
 def two_factor_confirmation_bodies(tool_name: str, account_url: str,
                                    event: str = "enabled"):
     _subject, happened = TWO_FACTOR_EVENTS[event]
-    old_codes = ("" if event == "enabled" else
-                 " Your previous recovery codes no longer work.")
+    old_codes = (" Your previous recovery codes no longer work."
+                 if event in ("replaced", "codes_regenerated") else "")
+    if event in _CODE_EVENTS:
+        middle_text = (
+            "Please check that you have saved your recovery codes somewhere safe, "
+            "such as your password manager. They are the only way back into your "
+            "account if you lose your phone or delete your authenticator app.\n\n"
+            "The codes were shown once and cannot be shown again. If you did not save "
+            "them, make a new set on your account page:\n\n")
+        middle_html = (
+            '<p style="margin:0 0 16px;">Please check that you have saved your recovery codes '
+            'somewhere safe, such as your password manager. They are the only way back into '
+            'your account if you lose your phone or delete your authenticator app.</p>'
+            '<p style="margin:0 0 16px;">The codes were shown once and cannot be shown again. '
+            'If you did not save them, make a new set on your account page.</p>')
+    else:
+        middle_text = ("A passkey signs in to your account on its own, without your "
+                       "password. You can see and remove your passkeys on your account "
+                       "page:\n\n")
+        middle_html = ('<p style="margin:0 0 16px;">A passkey signs in to your account on its '
+                       'own, without your password. You can see and remove your passkeys on '
+                       'your account page.</p>')
     text = (
         "Hello,\n\n"
         f"{happened} on your {tool_name} account.{old_codes}\n\n"
-        "Please check that you have saved your recovery codes somewhere safe, "
-        "such as your password manager. They are the only way back into your "
-        "account if you lose your phone or delete your authenticator app.\n\n"
-        "The codes were shown once and cannot be shown again. If you did not save "
-        "them, make a new set on your account page:\n\n"
+        f"{middle_text}"
         f"{account_url}\n\n"
         "If this was not you, tell your administrator now: somebody else may be "
         "signed in to your account.\n\n"
@@ -450,11 +476,7 @@ def two_factor_confirmation_bodies(tool_name: str, account_url: str,
         '<p style="margin:0 0 16px;">Hello,</p>'
         f'<p style="margin:0 0 16px;">{happened} on your '
         f'<strong>{tool_name}</strong> account.{old_codes}</p>'
-        '<p style="margin:0 0 16px;">Please check that you have saved your recovery codes '
-        'somewhere safe, such as your password manager. They are the only way back into '
-        'your account if you lose your phone or delete your authenticator app.</p>'
-        '<p style="margin:0 0 16px;">The codes were shown once and cannot be shown again. '
-        'If you did not save them, make a new set on your account page.</p>'
+        f'{middle_html}'
         '<p style="margin:0 0 24px;text-align:center;">'
         f'<a href="{account_url}" style="display:inline-block;background:#0F1B2D;color:#ffffff;'
         'text-decoration:none;font-weight:600;padding:12px 28px;border-radius:6px;">'

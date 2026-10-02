@@ -40,6 +40,7 @@ ASSETS = {
     "bulk-select.js":          "static/js/bulk-select.js",
     "users-password.js":       "static/js/users-password.js",
     "recovery-codes.js":       "static/js/recovery-codes.js",
+    "passkeys.js":             "static/js/passkeys.js",
 }
 
 # Only tools that actually use the asset get a copy. rank-a11y.js is for the
@@ -120,8 +121,8 @@ ONLY_FOR = {
     # Every teaching tool has backoffice tables; the hub's admin area does not
     # use this vocabulary.
     "dashboard-table.js": _TOOLS_WITH_PARTICIPANTS,
-    # recovery-codes.js (2 October 2026) has no entry on purpose: all nine,
-    # the hub included, show recovery codes after two-factor enrolment.
+    # recovery-codes.js and passkeys.js (2 October 2026) have no entry on
+    # purpose: all nine, the hub included, have two-factor and passkeys.
 }
 
 TOOLS = [

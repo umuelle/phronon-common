@@ -70,8 +70,13 @@ def test_each_event_sends_one_mail_naming_the_tool(smtp, event):
     for body in (p["text/plain"], p["text/html"]):
         assert "Whiteout Exercise" in body
         assert ACCOUNT_URL in body
-        assert "recovery codes" in body
         assert "If this was not you" in body
+        # The codes reminder belongs to the code events; a passkey mail says
+        # what a passkey can do instead.
+        if event.startswith("passkey"):
+            assert "recovery codes" not in body and "without your password" in body
+        else:
+            assert "recovery codes" in body
 
 
 def test_only_a_replacement_says_the_old_codes_are_dead(smtp):

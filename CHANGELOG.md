@@ -4,6 +4,32 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.59.0 — 2026-10-02
+
+- **Passkeys (FL-065).** New `passkeys.py`: the only caller of py_webauthn
+  (`webauthn==3.0.1`, now in the `web` extra). Owner's decisions: a passkey signs
+  in on its own (no password, no code) and counts as two-factor, so every
+  ceremony requires user verification; password + code stays the fallback;
+  administrators still enrol an authenticator app. Discoverable credentials,
+  attestation `none`, relying party = the tool's own host. The challenge lives
+  in a signed 5-minute cookie (`passkey_challenge`) bound to its purpose. New
+  shared script `passkeys.js` (all nine) wires the account-page and login-page
+  blocks by data attributes. `testing/soft_authenticator.py` is a software
+  authenticator with a real P-256 key, so each tool's route tests run the real
+  verification.
+- **Mail:** `send_two_factor_confirmation` gains `passkey_added` and
+  `passkey_removed`; their wording explains what a passkey can do instead of
+  reminding about recovery codes.
+- **Legal:** every notice lists passkey data under educators (EN; DE for Layoff,
+  Polarity Profiler and Whiteout) and the `passkey_challenge` cookie;
+  `last_updated` 2026-10-02 everywhere. `notice_version` unchanged: nothing about
+  participants changed.
+- **`backoffice-core.css`:** `.bo-passkeys` list and `.bo-inline-form`.
+- **Test kit:** `manage_account` now fails a template that lists recovery codes
+  without the download lock (FL-066 deleted the last unlocked list, on all
+  eight account pages), and resolves `{{ … }}` placeholders in form actions to
+  route parameters.
+
 ## 1.58.0 — 2026-10-02
 
 - **Recovery codes must be downloaded before the user can continue.** New shared

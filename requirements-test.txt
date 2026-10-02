@@ -45,3 +45,10 @@ bcrypt==5.0.0
 # environment. The tools all ship jinja2 via FastAPI templating; this
 # package has no requirements.txt, so the test environment names it.
 jinja2==3.1.6
+
+# passkeys.py and testing/soft_authenticator.py (FL-065, 2 October 2026) use
+# py_webauthn, which brings cryptography and cbor2. It is in the `web` extra,
+# but CI installs this package with `pip install -e .` (core only), so it is
+# named here; the version the nine tools deploy. tests/test_passkeys.py does
+# NOT importorskip it: a missing library must fail the run, not skip quietly.
+webauthn==3.0.1

@@ -804,3 +804,14 @@ a.code-chip:hover { background: #e2e2e2; }
   background: #f6f6f6; border-radius: var(--radius-sm, 6px);
   text-align: center; font-size: .9rem;
 }
+
+/* Passkeys on the account page (FL-065, 2 October 2026): one row per device,
+ * name and dates on the left, Remove on the right, wrapping on a phone. */
+.bo-passkeys { list-style: none; margin: 0 0 1rem; padding: 0; }
+.bo-passkeys li {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .75rem;
+  padding: .55rem 0; border-bottom: 1px solid var(--bo-border, #e3e6ea);
+}
+.bo-passkeys li:last-child { border-bottom: none; }
+.bo-passkeys .hint { flex: 1 1 12rem; }
+.bo-inline-form { display: inline; margin: 0; }
