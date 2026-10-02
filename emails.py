@@ -404,6 +404,94 @@ def send_two_factor_reset_notice(tool_name: str, default_from: str, to_email: st
         sender, to_email, text, html))
 
 
+# ── Two-factor confirmation (2 October 2026) ────────────────────────────────
+# Sent by the account holder's own action: switching two-factor on, moving it
+# to a new authenticator, or making a new set of recovery codes. Modelled on
+# the mail GitHub sends after enrolment, with one difference: GitHub can show
+# the codes again, the fleet cannot (only hashes are stored), so the mail
+# points to making NEW codes instead. It doubles as the alarm for the case the
+# audit rows record silently: a second factor appearing on an account its
+# owner did not enrol is an intruder locking the owner out.
+#
+# Never the codes or the secret: a mailbox is not where they belong, and the
+# mail goes out at the same moment the codes are on the owner's screen.
+
+#: event -> (subject tail, the sentence saying what happened)
+TWO_FACTOR_EVENTS = {
+    "enabled": ("two-factor login is on",
+                "You have just switched on two-factor login"),
+    "replaced": ("two-factor login moved to a new authenticator",
+                 "You have just moved two-factor login to a new authenticator app"),
+    "codes_regenerated": ("new recovery codes",
+                          "You have just made a new set of recovery codes"),
+}
+
+
+def two_factor_confirmation_bodies(tool_name: str, account_url: str,
+                                   event: str = "enabled"):
+    _subject, happened = TWO_FACTOR_EVENTS[event]
+    old_codes = ("" if event == "enabled" else
+                 " Your previous recovery codes no longer work.")
+    text = (
+        "Hello,\n\n"
+        f"{happened} on your {tool_name} account.{old_codes}\n\n"
+        "Please check that you have saved your recovery codes somewhere safe, "
+        "such as your password manager. They are the only way back into your "
+        "account if you lose your phone or delete your authenticator app.\n\n"
+        "The codes were shown once and cannot be shown again. If you did not save "
+        "them, make a new set on your account page:\n\n"
+        f"{account_url}\n\n"
+        "If this was not you, tell your administrator now: somebody else may be "
+        "signed in to your account.\n\n"
+        f"— {tool_name}\n"
+        "Part of Phronon · https://phronon.org"
+    )
+    html = branded_html(tool_name, (
+        '<p style="margin:0 0 16px;">Hello,</p>'
+        f'<p style="margin:0 0 16px;">{happened} on your '
+        f'<strong>{tool_name}</strong> account.{old_codes}</p>'
+        '<p style="margin:0 0 16px;">Please check that you have saved your recovery codes '
+        'somewhere safe, such as your password manager. They are the only way back into '
+        'your account if you lose your phone or delete your authenticator app.</p>'
+        '<p style="margin:0 0 16px;">The codes were shown once and cannot be shown again. '
+        'If you did not save them, make a new set on your account page.</p>'
+        '<p style="margin:0 0 24px;text-align:center;">'
+        f'<a href="{account_url}" style="display:inline-block;background:#0F1B2D;color:#ffffff;'
+        'text-decoration:none;font-weight:600;padding:12px 28px;border-radius:6px;">'
+        'Open my account</a></p>'
+        '<p style="margin:0;color:#555555;font-size:13px;">If this was not you, tell your '
+        'administrator now: somebody else may be signed in to your account.</p>'
+    ))
+    return text, html
+
+
+def send_two_factor_confirmation(tool_name: str, default_from: str, to_email: str,
+                                 account_url: str, event: str = "enabled",
+                                 subject_prefix: str = "") -> None:
+    """Confirm a two-factor change the account holder just made.
+
+    `event` is a key of TWO_FACTOR_EVENTS. A failed send is logged, never
+    raised: the change itself has already been saved, and the user is looking
+    at their codes. `account_url` is a plain page behind the login, not a
+    credential.
+    """
+    if event not in TWO_FACTOR_EVENTS:
+        raise ValueError(f"unknown two-factor event {event!r}")
+    if not os.getenv("SMTP_PASSWORD"):
+        _unsendable("two-factor confirmation", to_email)
+        return
+    sender = _sender_address(default_from)
+    text, html = two_factor_confirmation_bodies(tool_name, account_url, event)
+    subject_tail = TWO_FACTOR_EVENTS[event][0]
+    try:
+        _smtp_send(sender, to_email, _multipart(
+            f"{subject_prefix}{tool_name} — {subject_tail}",
+            sender, to_email, text, html))
+    except Exception:
+        logger.exception("two-factor confirmation to %s failed",
+                         recipient_domain(to_email))
+
+
 # ── Participant resume and withdrawal links (3 September 2026) ──────────────
 # The two participant-facing mails the fleet identity mechanism needs, worded
 # once. Tools with their own locales (Polarity Profiler, Whiteout, Layoff)

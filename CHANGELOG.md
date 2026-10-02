@@ -4,6 +4,26 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.58.0 — 2026-10-02
+
+- **Recovery codes must be downloaded before the user can continue.** New shared
+  script `recovery-codes.js`, shipped to all nine tools through
+  `shared_assets` (the hub included). On the page that shows freshly made
+  recovery codes it adds a Download button that saves them as
+  `<tool>-recovery-codes.txt`, and it keeps the "I have saved my recovery
+  codes" button locked until the download has happened. Modelled on GitHub's
+  enrolment, at the owner's request; Download is the only unlock (owner's
+  choice, copying does not count). The file is built in the browser from the
+  codes on the page, so nothing serves the codes a second time. Without
+  JavaScript the button is never locked.
+- **`emails.send_two_factor_confirmation(..., event)`**: one mail for the three
+  changes an account holder makes to their own two-factor: `enabled`,
+  `replaced` (new authenticator) and `codes_regenerated`. It asks them to check
+  that the codes are saved, points to the account page to make new ones (the
+  fleet cannot show codes again, unlike GitHub), and doubles as the "this was
+  not you" alarm. Never carries a code or the secret. A failed send is logged
+  with the domain only and never raised.
+
 ## 1.57.0 — 2026-10-01
 
 - **`once`: a background side effect happens at most once, however many
