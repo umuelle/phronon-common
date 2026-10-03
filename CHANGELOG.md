@@ -4,6 +4,15 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.68.0 — 2026-10-03
+
+- **Drawbridge notice `2026-10-03-db-comparison` (TO DO DB-003, owner-approved
+  wording).** The research-row bullet in the retention section now says what a
+  kept row is used for: it counts toward the "All previous responses" totals an
+  educator can open next to their own session's results; no single response is
+  shown and small gender/age groups are hidden. Wording only; archived in
+  `CONSENT-WORDING-ARCHIVE.md`.
+
 ## 1.67.0 — 2026-10-03
 
 - **The backoffice nav bar grows instead of clipping** (`backoffice-nav.css`).

@@ -285,8 +285,12 @@ the responsibility of the educator who writes them.</p>""",
         # 2026-09-04-identity: the deletion code is no longer held in the database between
         # submitting and the page that shows it — it is created by that
         # page, so no copy of it exists anywhere else, ever.
-        "notice_version": "2026-09-04-identity",
-        "last_updated": "2026-10-02",
+        # 2026-10-03-db-comparison: the research-row bullet now says what a kept
+        # row is FOR: it counts toward the "All previous responses" totals an
+        # educator can compare their own session with (FL-049, live since
+        # 28 August). Owner-approved wording, TO DO DB-003. Wording only.
+        "notice_version": "2026-10-03-db-comparison",
+        "last_updated": "2026-10-03",
         "art9": True,  # moral-judgment attributions
         "purpose": {
             "en": "The Drawbridge Drama presents a short illustrated narrative and "
@@ -340,7 +344,7 @@ The data we store is <strong>pseudonymous</strong>, per submission:</p>
             "en": """
 <ul>
   <li><strong>Session responses</strong> — erased automatically <strong>30 days</strong> after the session is closed, or 30 days after the last response if it is never closed. A session nobody ever joined is removed 90 days after it was created. Erasure removes the whole session: every response, the free-text answers, the optional demographics and the browser hashes. Educators are warned 14 days beforehand and may postpone up to three times by 30 days. The latest possible date is <strong>120 days after</strong> the session closed or the last response — 90 days beyond the original deletion date.</li>
-  <li><strong>If you tick the optional research box</strong> — one row of yours is kept after that date: the experimental story version and factor levels, your choice, certainty, optional closed-choice follow-up, and any demographics you gave. <strong>Your free-text explanation is never copied.</strong> The row has no session code or session name and no date finer than the half-year. It does carry a new random cohort key shared by people who answered in the same session, so co-membership can be analysed without retaining which session it was. Those rows are <strong>pseudonymous, not anonymous</strong>: the deletion code you were given still matches yours, which is exactly what lets you withdraw it. If you do not tick it, nothing of yours survives the deadline.</li>
+  <li><strong>If you tick the optional research box</strong> — one row of yours is kept after that date: the experimental story version and factor levels, your choice, certainty, optional closed-choice follow-up, and any demographics you gave. <strong>Your free-text explanation is never copied.</strong> The row has no session code or session name and no date finer than the half-year. It does carry a new random cohort key shared by people who answered in the same session, so co-membership can be analysed without retaining which session it was. Those rows are <strong>pseudonymous, not anonymous</strong>: the deletion code you were given still matches yours, which is exactly what lets you withdraw it. <strong>Kept rows are also used for one comparison that educators see.</strong> Next to the results of their own session, an educator can open “All previous responses”, which adds up the answers from all earlier sessions, including the rows kept after a deadline. It shows totals per choice and per story version. No single response is shown, and a breakdown by gender or age is hidden wherever the group is too small to keep a person out of view. If you do not tick it, nothing of yours survives the deadline.</li>
   <li><strong>Baseline (Prolific) responses</strong> — a one-time benchmark sample, collected as research from the outset with consent given through Prolific and retained as part of that dataset. It is not on the session clock above. The Prolific ID is held only for deduplication and for withdrawal through Prolific.</li>
   <li><strong>Educator accounts</strong> — retained until deactivated or deleted by an administrator.</li>
 </ul>""",
