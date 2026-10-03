@@ -21,6 +21,13 @@ fleet's choices around it and is the only place that calls it:
 - The challenge travels in a signed, HTTP-only cookie that lives five minutes
   (`CHALLENGE_COOKIE`), bound to its purpose ("login", or "register:<account
   id>"), and is deleted once used. The server keeps no challenge table.
+- Deleting the cookie does not stop a REPLAY: whoever holds a copy of the
+  cookie and of the signed answer could send both again within the five
+  minutes, and synced passkeys (iCloud, Google) keep no signature counter that
+  would catch it. So a sign-in is only good if `record_sign_in` wins a
+  conditional UPDATE on the passkey's row: the challenge must have been issued
+  AFTER the passkey was last used. One use per challenge, across every worker,
+  with no new table (found by review, 3 October 2026).
 - The relying-party id is the tool's own domain without "www.", and both the
   bare and the "www." address are accepted. Each tool is its own domain, so a
   passkey belongs to one tool, exactly as the TOTP entries do today.
@@ -34,6 +41,7 @@ from __future__ import annotations
 
 import json
 import secrets
+import time
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -48,6 +56,7 @@ from webauthn.helpers.structs import (AuthenticatorSelectionCriteria,
                                       ResidentKeyRequirement,
                                       UserVerificationRequirement)
 
+from . import once as _once
 from .signing import CookieSigner
 
 #: The one cookie the ceremonies need. Listed in every tool's cookie table.
@@ -102,20 +111,37 @@ def _signer(secret_key) -> CookieSigner:
                         max_age=CHALLENGE_SECONDS)
 
 
+@dataclass(frozen=True)
+class SealedChallenge:
+    value: bytes
+    issued_at: int      # unix seconds, the clock `record_sign_in` compares with
+
+
 def seal_challenge(secret_key, challenge: bytes, purpose: str) -> str:
     """The cookie value carrying `challenge` for one `purpose`."""
-    return _signer(secret_key).dumps({"c": bytes_to_base64url(challenge), "p": purpose})
+    return _signer(secret_key).dumps({"c": bytes_to_base64url(challenge), "p": purpose,
+                                      "t": int(time.time())})
 
 
-def open_challenge(secret_key, cookie_value: str | None, purpose: str) -> bytes | None:
-    """The challenge, if the cookie is genuine, fresh and for this purpose."""
+def open_sealed_challenge(secret_key, cookie_value: str | None,
+                          purpose: str) -> SealedChallenge | None:
+    """The challenge and when it was issued, if the cookie is genuine, fresh
+    and for this purpose. A cookie sealed before issue times were added has no
+    "t" and is refused like an expired one (it could live five minutes)."""
     data = _signer(secret_key).loads(cookie_value)
     if not isinstance(data, dict) or data.get("p") != purpose:
         return None
     try:
-        return base64url_to_bytes(data["c"])
+        return SealedChallenge(base64url_to_bytes(data["c"]), int(data["t"]))
     except Exception:
         return None
+
+
+def open_challenge(secret_key, cookie_value: str | None, purpose: str) -> bytes | None:
+    """The challenge, if the cookie is genuine, fresh and for this purpose.
+    Enough for registering; a sign-in needs `open_sealed_challenge`."""
+    sealed = open_sealed_challenge(secret_key, cookie_value, purpose)
+    return sealed.value if sealed else None
 
 
 def cookie_kwargs(secure: bool = True) -> dict:
@@ -197,6 +223,31 @@ def verify_authentication(*, credential_json: str, challenge: bytes, base_url: s
     except (InvalidAuthenticationResponse, ValueError, KeyError, TypeError) as e:
         raise PasskeyError("That passkey was not accepted.") from e
     return v.new_sign_count
+
+
+def record_sign_in(get_db, passkey_id: int, sign_count: int, issued_at: int, *,
+                   table: str = "passkeys") -> bool:
+    """Store the new counter and the use, but ONLY if the challenge is newer
+    than the passkey's last use. False means refuse the sign-in: the same
+    challenge was already spent (a replay, or the same request twice), or an
+    older challenge from another tab arrived after a newer one was used; the
+    user simply tries again.
+
+    One conditional UPDATE, so two workers handed the same replay cannot both
+    win. Both times come from this process's clock: `issued_at` from the
+    cookie, the stored use from `time.time()` now. Call it after
+    `verify_authentication` succeeded and before anything signs the user in.
+    `get_db` is the tool's connection factory (the one `once` gets), because
+    the rowcount must come from the cursor.
+    """
+    t = _once._ident(table)
+    sql = ("UPDATE %s SET sign_count = %%s, last_used_at = FROM_UNIXTIME(%%s) "
+           "WHERE id = %%s AND (last_used_at IS NULL OR last_used_at < FROM_UNIXTIME(%%s))" % t)
+    # MySQL counts CHANGED rows, so the stored time is never older than the
+    # challenge: when the condition holds, the row always changes.
+    issued_at = int(issued_at)
+    used_at = max(int(time.time()), issued_at)
+    return _once._run(get_db, sql, [sign_count, used_at, passkey_id, issued_at]) == 1
 
 
 def user_handle_for(secret_key, account_id: int) -> bytes:

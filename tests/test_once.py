@@ -202,3 +202,78 @@ def test_a_failed_release_is_logged_not_raised(caplog):
 
     assert once.once(flaky_get_db, "t", "c", 1, lambda: False) is False
     assert "could not release" in caplog.text
+
+
+# ── a release undoes only this call's claim (review of 3 October 2026) ──────
+
+def test_a_failed_batch_re_arms_only_the_rows_it_claimed():
+    """Row 2 is held by another worker. This call wins row 1 only, fails, and
+    must leave row 2 as the other worker set it."""
+    t = FakeTable({1: None, 2: "theirs"})
+    assert once.once(t.get_db, "responses", "n", [1, 2], lambda: False) is False
+    assert t.rows == {1: None, 2: "theirs"}
+
+
+def _overlap_race(get_db, read):
+    """A holds rows 1 and 2 while it sends; B claims 2 and 3, wins only 3, and
+    fails. A's row 2 must stay marked while A is still sending."""
+    holding, done = threading.Event(), threading.Event()
+
+    def a_sends():
+        holding.set()
+        done.wait(5)
+        return True
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        a = pool.submit(once.once, get_db, "rows", "marked", [1, 2], a_sends, mark=1, restore=0)
+        assert holding.wait(5)
+        assert once.once(get_db, "rows", "marked", [2, 3], lambda: False,
+                         mark=1, restore=0) is False
+        during = read()
+        done.set()
+        assert a.result() is True
+    return during
+
+
+def test_overlapping_batches_never_clear_each_others_rows():
+    t = FakeTable({1: 0, 2: 0, 3: 0})
+    assert _overlap_race(t.get_db, lambda: dict(t.rows)) == {1: 1, 2: 1, 3: 0}
+
+
+def test_overlapping_batches_against_mysql():
+    """The same race through real row locks and transactions. This package's
+    CI has no MySQL; it runs wherever a disposable *_test schema is named."""
+    import os
+    import secrets
+    name = os.environ.get("DB_NAME", "")
+    if not (os.environ.get("DB_HOST") and name.endswith("_test")):
+        pytest.skip("requires a disposable test database")
+    mysql = pytest.importorskip("mysql.connector")
+
+    def get_db():
+        return mysql.connect(host=os.environ["DB_HOST"], user=os.environ["DB_USER"],
+                             password=os.environ.get("DB_PASSWORD", ""), database=name)
+
+    table = f"once_race_{secrets.token_hex(4)}"
+
+    def run(sql):
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+            cur.execute(sql)
+            rows = cur.fetchall() if cur.with_rows else None
+            conn.commit()
+            return rows
+        finally:
+            conn.close()
+
+    run(f"CREATE TABLE {table} (id INT PRIMARY KEY, marked TINYINT NOT NULL DEFAULT 0)")
+    run(f"INSERT INTO {table} (id) VALUES (1), (2), (3)")
+    real_ident = once._ident
+    try:
+        once._ident = lambda n: real_ident(table if n == "rows" else n)
+        during = _overlap_race(get_db, lambda: dict(run(f"SELECT id, marked FROM {table}")))
+        assert during == {1: 1, 2: 1, 3: 0}
+    finally:
+        once._ident = real_ident
+        run(f"DROP TABLE {table}")

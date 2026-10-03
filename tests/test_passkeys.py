@@ -151,3 +151,126 @@ def test_one_passkey_works_on_the_bare_and_the_www_address():
     assert pk.verify_authentication(credential_json=www.get(options), challenge=challenge,
                                     base_url="https://drawbridge-drama.org",
                                     public_key=new.public_key, sign_count=0) == 1
+
+
+# ── replay (review of 3 October 2026) ────────────────────────────────────────
+# Deleting the challenge cookie after a sign-in does not stop someone holding a
+# copy of the cookie and the signed answer from sending both again. py_webauthn
+# cannot catch it for synced passkeys, whose counter stays 0:
+
+def test_verification_alone_accepts_the_same_answer_twice():
+    """Why record_sign_in exists. If this ever starts failing, py_webauthn has
+    begun refusing replays itself; record_sign_in is still needed across
+    workers, so do not delete it on that evidence alone."""
+    auth = SoftAuthenticator(origin=BASE, counts_signatures=False)
+    _o, challenge, cred = _register(auth)
+    new = pk.verify_registration(credential_json=cred, challenge=challenge, base_url=BASE)
+    options, challenge = pk.authentication_options(base_url=BASE)
+    cookie = pk.seal_challenge(SECRET, challenge, "login")
+    assertion = auth.get(options)
+    for _ in range(2):
+        sealed = pk.open_sealed_challenge(SECRET, cookie, "login")
+        assert pk.verify_authentication(credential_json=assertion, challenge=sealed.value,
+                                        base_url=BASE, public_key=new.public_key,
+                                        sign_count=0) == 0
+
+
+def test_the_cookie_says_when_the_challenge_was_issued(monkeypatch):
+    import time
+    monkeypatch.setattr(time, "time", lambda: 1_790_000_000.7)
+    sealed = pk.seal_challenge(SECRET, b"c" * 32, "login")
+    got = pk.open_sealed_challenge(SECRET, sealed, "login")
+    assert got == pk.SealedChallenge(b"c" * 32, 1_790_000_000)
+    assert pk.open_challenge(SECRET, sealed, "login") == b"c" * 32
+
+
+def test_a_cookie_without_an_issue_time_is_refused():
+    """Cookies sealed by the release before this one carry no "t". They live
+    five minutes; refusing them costs one retry during a deploy."""
+    from webauthn.helpers import bytes_to_base64url
+    old = pk._signer(SECRET).dumps({"c": bytes_to_base64url(b"c" * 32), "p": "login"})
+    assert pk.open_sealed_challenge(SECRET, old, "login") is None
+    assert pk.open_challenge(SECRET, old, "login") is None
+
+
+def _test_db():
+    """A connection factory for the tool's disposable *_test schema, or a skip.
+    This package's CI has no MySQL; every tool's suite proves the same rule
+    through its real login route (test_a_replayed_sign_in_is_refused)."""
+    import os
+    name = os.environ.get("DB_NAME", "")
+    if not (os.environ.get("DB_HOST") and name.endswith("_test")):
+        pytest.skip("requires a disposable test database")
+    mysql = pytest.importorskip("mysql.connector")
+
+    def get_db():
+        return mysql.connect(host=os.environ["DB_HOST"], user=os.environ["DB_USER"],
+                             password=os.environ.get("DB_PASSWORD", ""), database=name)
+    return get_db
+
+
+@pytest.fixture
+def passkey_row():
+    import secrets
+    get_db = _test_db()
+    table = f"passkeys_replay_{secrets.token_hex(4)}"
+
+    def run(sql, params=()):
+        conn = get_db()
+        try:
+            cur = conn.cursor()
+            cur.execute(sql, params)
+            rows = cur.fetchall() if cur.with_rows else None
+            conn.commit()
+            return rows
+        finally:
+            conn.close()
+
+    run(f"CREATE TABLE {table} (id INT PRIMARY KEY, sign_count BIGINT UNSIGNED NOT NULL "
+        f"DEFAULT 0, last_used_at DATETIME DEFAULT NULL)")
+    run(f"INSERT INTO {table} (id) VALUES (1)")
+    try:
+        yield get_db, table, run
+    finally:
+        run(f"DROP TABLE {table}")
+
+
+def test_a_challenge_signs_in_once(passkey_row):
+    import time
+    get_db, table, run = passkey_row
+    issued = int(time.time())
+    assert pk.record_sign_in(get_db, 1, 0, issued, table=table) is True
+    assert pk.record_sign_in(get_db, 1, 0, issued, table=table) is False   # the replay
+    # An older challenge (another tab) is refused too; a newer one is fine.
+    assert pk.record_sign_in(get_db, 1, 0, issued - 60, table=table) is False
+    assert pk.record_sign_in(get_db, 1, 0, int(time.time()) + 1, table=table) is True
+    assert run(f"SELECT sign_count FROM {table} WHERE id=1") == [(0,)]
+
+
+def test_the_first_use_stores_the_counter(passkey_row):
+    import time
+    get_db, table, run = passkey_row
+    assert pk.record_sign_in(get_db, 1, 7, int(time.time()), table=table) is True
+    assert run(f"SELECT sign_count, last_used_at IS NOT NULL FROM {table} WHERE id=1") == [(7, 1)]
+
+
+def test_two_workers_handed_the_same_replay_let_one_in(passkey_row):
+    import threading
+    import time
+    from concurrent.futures import ThreadPoolExecutor
+    get_db, table, _run = passkey_row
+    issued = int(time.time())
+    start = threading.Barrier(8)
+
+    def worker(_):
+        start.wait()
+        return pk.record_sign_in(get_db, 1, 0, issued, table=table)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(worker, range(8)))
+    assert results.count(True) == 1
+
+
+def test_record_sign_in_refuses_a_table_name_that_is_not_an_identifier():
+    with pytest.raises(ValueError):
+        pk.record_sign_in(lambda: None, 1, 0, 0, table="passkeys; DROP TABLE x")

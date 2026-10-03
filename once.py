@@ -32,6 +32,18 @@ THREE KINDS OF MARK, because the fleet uses three:
   * either of those over several rows at once (``keys`` a list), e.g. PP's
     batch of self-guided responses that one educator mail covers.
 
+WHAT IT DOES NOT PROMISE. "At most once" holds for the claim, not for the
+mail: a worker that dies between claiming and sending leaves the mark set and
+nothing is sent (the safe direction for a warning mail), and a send whose
+outcome is unknown (the server took it, then the connection dropped) counts as
+failed, so the next pass may send it again. Nothing here is exactly-once.
+
+A RELEASE ONLY UNDOES THIS CALL'S OWN CLAIM. With several keys, ``once``
+claims them one by one and remembers which rows it actually marked; on failure
+it re-arms only those. Another worker's claim on an overlapping row is never
+cleared (found by review, 3 October 2026: the old single UPDATE could not say
+which rows it had won, so the release re-armed all of them).
+
 ``get_db`` is the tool's connection factory, the same callable it hands to
 ``retention_heartbeat.record`` and ``audit``. The helper reads
 ``cursor.rowcount`` itself. That matters: several tools' own ``execute``
@@ -127,6 +139,43 @@ def release(get_db: Callable, table: str, column: str, keys: Keys, *,
     _run(get_db, sql, [restore] + ks)
 
 
+def _claim_each(get_db: Callable, table: str, column: str, keys: Keys, *,
+                mark: Any, key_column: str) -> list:
+    """Claim key by key in ONE transaction; return the keys this call marked.
+
+    Sorted, so two workers with overlapping sets take row locks in the same
+    order and cannot deadlock. Two workers with the SAME set stay
+    all-or-nothing: the second blocks on the first row until the first
+    commits, then finds every row marked."""
+    t, c, k = _ident(table), _ident(column), _ident(key_column)
+    ks = _key_list(keys)
+    try:
+        ks = sorted(ks)
+    except TypeError:
+        pass
+    if isinstance(mark, _SqlNow):
+        sql = "UPDATE %s SET %s = %s WHERE %s = %%s AND %s IS NULL" % (t, c, mark.sql, k, c)
+        params_for = lambda key: [key]
+    else:
+        sql = "UPDATE %s SET %s = %%s WHERE %s = %%s AND NOT (%s <=> %%s)" % (t, c, k, c)
+        params_for = lambda key: [mark, key, mark]
+    won = []
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        try:
+            for key in ks:
+                cur.execute(sql, params_for(key))
+                if cur.rowcount == 1:
+                    won.append(key)
+            conn.commit()
+        finally:
+            cur.close()
+    finally:
+        conn.close()
+    return won
+
+
 def once(get_db: Callable, table: str, column: str, keys: Keys,
          action: Callable[[], Any], *, mark: Any = NOW, restore: Any = None,
          key_column: str = "id",
@@ -144,12 +193,14 @@ def once(get_db: Callable, table: str, column: str, keys: Keys,
     previous state was not NULL (PP's previous deadline, a FALSE flag).
 
     With several keys, the action runs if ANY row was claimed. Two callers
-    that selected the same set get all-or-nothing (row locks serialise the
-    two UPDATEs). Only callers that selected overlapping but DIFFERENT sets,
-    which needs a row to cross the job's time threshold in the milliseconds
-    between their SELECTs, could each claim part and each act once.
+    that selected the same set get all-or-nothing (see ``_claim_each``). Only
+    callers that selected overlapping but DIFFERENT sets, which needs a row to
+    cross the job's time threshold in the milliseconds between their SELECTs,
+    could each claim part and each act once; a failure re-arms only the part
+    that caller claimed.
     """
-    if not claim(get_db, table, column, keys, mark=mark, key_column=key_column):
+    won = _claim_each(get_db, table, column, keys, mark=mark, key_column=key_column)
+    if not won:
         return None
     ok = False
     try:
@@ -159,7 +210,7 @@ def once(get_db: Callable, table: str, column: str, keys: Keys,
     finally:
         if not ok:
             try:
-                release(get_db, table, column, keys, restore=restore,
+                release(get_db, table, column, won, restore=restore,
                         key_column=key_column)
             except Exception:
                 # Logged, never raised over the action's own outcome. A failed

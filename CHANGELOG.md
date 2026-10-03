@@ -4,6 +4,32 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.62.0 — 2026-10-03
+
+Two guarantees tightened after a review of the shared code (3 October 2026).
+Each has a test that failed before the change.
+
+- **A passkey challenge signs in once.** Deleting the challenge cookie did not
+  stop a replay: whoever held a copy of the cookie and the signed answer could
+  send both again within five minutes, and synced passkeys (iCloud, Google)
+  keep no counter that would refuse it. Verified in all nine tools before the
+  fix. The cookie now carries its issue time (`open_sealed_challenge`), and
+  `record_sign_in(get_db, passkey_id, sign_count, issued_at)` stores the use
+  with ONE conditional UPDATE that succeeds only if the challenge was issued
+  after the passkey's last use. No new table, no migration. Tools must call it
+  in place of their own `UPDATE passkeys SET sign_count …` and refuse the
+  sign-in when it returns False. `open_challenge` is unchanged for
+  registration. A challenge issued in the same second as the passkey's last
+  use is refused (whole seconds; no person is that fast), and cookies sealed
+  by 1.61.0 are refused once, as if expired.
+- **`once` re-arms only what it claimed.** With several keys it claimed in
+  one UPDATE that could not say which rows it had won, so a failed send
+  released every row, including rows another worker had claimed and was
+  still mailing about. It now claims key by key in one transaction (sorted,
+  so overlapping batches cannot deadlock) and releases only its own rows. The
+  module docstring now says what it does not promise: a crash after claiming
+  sends nothing, and an unknown send outcome may be sent again.
+
 ## 1.61.0 — 2026-10-03
 
 - **Polarity Profiler loses the old name below the waterline (PP-004, owner
