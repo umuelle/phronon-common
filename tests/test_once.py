@@ -240,19 +240,11 @@ def test_overlapping_batches_never_clear_each_others_rows():
     assert _overlap_race(t.get_db, lambda: dict(t.rows)) == {1: 1, 2: 1, 3: 0}
 
 
-def test_overlapping_batches_against_mysql():
-    """The same race through real row locks and transactions. This package's
-    CI has no MySQL; it runs wherever a disposable *_test schema is named."""
-    import os
+def test_overlapping_batches_against_mysql(test_db):
+    """The same race through real row locks and transactions (CI runs it
+    against its MySQL service; see tests/conftest.py)."""
     import secrets
-    name = os.environ.get("DB_NAME", "")
-    if not (os.environ.get("DB_HOST") and name.endswith("_test")):
-        pytest.skip("requires a disposable test database")
-    mysql = pytest.importorskip("mysql.connector")
-
-    def get_db():
-        return mysql.connect(host=os.environ["DB_HOST"], user=os.environ["DB_USER"],
-                             password=os.environ.get("DB_PASSWORD", ""), database=name)
+    get_db = test_db
 
     table = f"once_race_{secrets.token_hex(4)}"
 

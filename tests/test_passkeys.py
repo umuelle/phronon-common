@@ -193,26 +193,10 @@ def test_a_cookie_without_an_issue_time_is_refused():
     assert pk.open_challenge(SECRET, old, "login") is None
 
 
-def _test_db():
-    """A connection factory for the tool's disposable *_test schema, or a skip.
-    This package's CI has no MySQL; every tool's suite proves the same rule
-    through its real login route (test_a_replayed_sign_in_is_refused)."""
-    import os
-    name = os.environ.get("DB_NAME", "")
-    if not (os.environ.get("DB_HOST") and name.endswith("_test")):
-        pytest.skip("requires a disposable test database")
-    mysql = pytest.importorskip("mysql.connector")
-
-    def get_db():
-        return mysql.connect(host=os.environ["DB_HOST"], user=os.environ["DB_USER"],
-                             password=os.environ.get("DB_PASSWORD", ""), database=name)
-    return get_db
-
-
 @pytest.fixture
-def passkey_row():
+def passkey_row(test_db):
     import secrets
-    get_db = _test_db()
+    get_db = test_db
     table = f"passkeys_replay_{secrets.token_hex(4)}"
 
     def run(sql, params=()):

@@ -44,6 +44,17 @@ if "__path__" in globals():  # absent when pytest imports this file as a plain m
     __path__ = [_os.path.realpath(_p) for _p in __path__]
     __file__ = _os.path.realpath(__file__)
 
+# WHICH RELEASE THIS PROCESS LOADED, readable from outside (3 October 2026).
+# A release directory carries a `.release` file (`<tag> <commit>`). Holding it
+# open for the life of the process puts the release in /proc/<pid>/fd, where
+# `server-ops/common_release.sh status` reads it: the release a worker ACTUALLY
+# imported, instead of one inferred from its start time. A checkout or a wheel
+# has no `.release`, and nothing is opened.
+try:
+    _RELEASE_MARKER = open(_os.path.join(__path__[0], ".release"), "rb")  # noqa: SIM115
+except (OSError, NameError):
+    _RELEASE_MARKER = None
+
 # THE GIT TAG IS THE REAL VERSION. Every tool's CI pins this package by tag
 # (`…/phronon-common.git@vX.Y.Z`) and `server-ops/check_common_pin.py` compares
 # those pins against the release /var/www/phronon_common points at — that is

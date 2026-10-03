@@ -3,14 +3,35 @@ name: CI
 #   1. py_compile every tracked .py     — syntax
 #   2. parse every Jinja template        — template syntax
 #   3. install deps + the shared phronon_common package, then pytest
-# The DB-backed and live-email tests skip automatically when no database / SMTP
-# is present (as they do off-server), so no secrets or services are needed here.
+# A MySQL service runs the DB-backed tests, which must not skip here
+# (PHRONON_REQUIRE_DB=1, tests/conftest.py). No secrets are needed.
 on:
   push:
   pull_request:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # Since 3 October 2026: a real MySQL, and PHRONON_REQUIRE_DB=1 so the
+    # DB-backed tests (passkey one-use rule, once() under row locks) FAIL here
+    # if they cannot run, instead of skipping as they did on every CI run.
+    services:
+      mysql:
+        image: mysql:8.0.46   # the fleet's pinned image (see the tools' ci.yml)
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root
+          MYSQL_DATABASE: phronon_common_test
+          MYSQL_USER: phronon_common
+          MYSQL_PASSWORD: ci-pass
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-root"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_USER: phronon_common
+      DB_PASSWORD: ci-pass
+      DB_NAME: phronon_common_test
+      PHRONON_REQUIRE_DB: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

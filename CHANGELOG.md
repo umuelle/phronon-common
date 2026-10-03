@@ -4,6 +4,19 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.66.0 — 2026-10-03
+
+- **A process holds its release's `.release` file open** (`_RELEASE_MARKER`),
+  so `server-ops/common_release.sh status` reads the release each worker
+  ACTUALLY loaded from /proc/<pid>/fd instead of inferring it from start
+  times. A checkout or a wheel has no `.release`; nothing is opened.
+- **CI runs the DB-backed tests against MySQL and they may not skip.** The
+  workflow has a MySQL service and sets `PHRONON_REQUIRE_DB=1`;
+  `tests/conftest.py`'s `test_db` fixture fails instead of skipping there.
+  Until now the tests proving the passkey one-use rule and `once()` under real
+  row locks skipped on every CI run. `mysql-connector-python==9.7.0` joins
+  requirements-test.txt (the fleet's version).
+
 ## 1.65.0 — 2026-10-03
 
 - **`testing.repair_contract`** (contract version `2026-09-25`): the README's

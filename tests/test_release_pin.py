@@ -74,3 +74,24 @@ def test_a_new_process_gets_the_new_release(tmp_path):
          "print(p.__path__[0])", str(root)],
         capture_output=True, text=True, check=True).stdout.strip()
     assert out == str(a.resolve())
+
+
+def test_a_process_holds_its_release_marker_open(tmp_path):
+    """`common_release.sh status` reads /proc/<pid>/fd for an open
+    `.release` file: that is how it knows what a worker really loaded."""
+    a = _copy(tmp_path / "releases" / "A")
+    (a / ".release").write_text("v9.9.9 abc\n")
+    root = tmp_path / "www"
+    root.mkdir()
+    (root / "phronon_common").symlink_to(a)
+    out = subprocess.run(
+        [sys.executable, "-c",
+         "import sys; sys.path.insert(0, sys.argv[1]); import phronon_common as p; "
+         "print(p._RELEASE_MARKER.name if p._RELEASE_MARKER else 'none')", str(root)],
+        capture_output=True, text=True, check=True).stdout.strip()
+    assert out == str((a / ".release").resolve())
+
+
+def test_a_checkout_opens_no_marker():
+    import phronon_common
+    assert phronon_common._RELEASE_MARKER is None
