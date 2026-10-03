@@ -14,13 +14,11 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-logger = logging.getLogger(__name__)
+# How long a confirm-your-new-address link lives, in hours. The policy is
+# account.py's; the mail states it, so it reads the same number.
+from .account import EMAIL_CHANGE_HOURS  # noqa: F401 (re-exported)
 
-#: How long a confirm-your-new-address link lives, in hours. Defined HERE, where
-#: the mail that states it is written, and imported by `account.py` for the
-#: signature age limit — so the sentence in the mail and the limit the server
-#: enforces cannot disagree. Matches the password-reset window.
-EMAIL_CHANGE_HOURS = 2
+logger = logging.getLogger(__name__)
 
 
 def recipient_domain(address) -> str:

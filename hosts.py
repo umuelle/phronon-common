@@ -12,9 +12,11 @@ when the name matches its `server_name`. It is defence in depth rather than a
 live hole. But "canonical URLs come from configuration, not from the request"
 is the property worth having, and this is where it is cheapest to state.
 
-THE LIST IS DERIVED, NOT TYPED. It comes from the tool's own entry in
-legal_conf — the same domain its published privacy notice names — so the
-software and the notice cannot disagree about what this tool is called.
+THE LIST IS DERIVED, NOT TYPED. It comes from the tool's canonical domain in
+`registry`, the one place that says what a tool is. The published notice names
+the same domain: `server-ops/tool_registry_check.py` fails when legal_conf's
+domain and the registry's disagree. (Until 3 October 2026 this read
+legal_conf, which tied host enforcement to the legal-page configuration.)
 
 FOUR ADDITIONS, each of which breaks something if it is missing:
 
@@ -29,7 +31,7 @@ FOUR ADDITIONS, each of which breaks something if it is missing:
 """
 from __future__ import annotations
 
-from phronon_common.legal_conf import get_tool
+from phronon_common.registry import TOOLS
 
 # Not "*" anywhere. A wildcard here would make the middleware a decoration.
 _ALWAYS = ("localhost", "127.0.0.1", "testserver")
@@ -37,5 +39,5 @@ _ALWAYS = ("localhost", "127.0.0.1", "testserver")
 
 def trusted_hosts(tool_key: str, extra: tuple[str, ...] = ()) -> list[str]:
     """Allowed Host values for one tool, from its published domain."""
-    domain = get_tool(tool_key)["domain"]
+    domain = TOOLS[tool_key].canonical_domain
     return [domain, f"www.{domain}", *_ALWAYS, *extra]

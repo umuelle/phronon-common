@@ -41,13 +41,16 @@ from __future__ import annotations
 import re
 import unicodedata
 
-from .emails import EMAIL_CHANGE_HOURS
 from .signing import CookieSigner
 
-# Two hours, matching the password-reset link. Long enough to walk to another
-# machine and read mail there, short enough that a link found in a mailbox
-# months later is worth nothing. The number itself lives in `emails.py`, next to
-# the sentence in the mail that promises it.
+#: How long a confirm-your-new-address link lives, in hours: two, matching the
+#: password-reset link. Long enough to walk to another machine and read mail
+#: there, short enough that a link found in a mailbox months later is worth
+#: nothing. Defined here, with the policy it is part of; `emails.py` imports it
+#: for the sentence that promises it, so the mail and the limit cannot disagree.
+#: (It lived in emails.py until 3 October 2026, which made account policy
+#: depend on the mail module; `emails.EMAIL_CHANGE_HOURS` still answers.)
+EMAIL_CHANGE_HOURS = 2
 EMAIL_CHANGE_MAX_AGE = EMAIL_CHANGE_HOURS * 60 * 60
 
 #: Salt for the signer. Distinct from every session/cookie salt in the fleet, so

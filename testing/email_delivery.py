@@ -39,7 +39,7 @@ from pathlib import Path
 # The canonical brand list lives with the sample-mail harness, which is what
 # puts a brand name into a real message; re-exported here because this contract
 # is where the leak check reads it.
-from phronon_common.testing.mail_harness import FLEET_TOOL_NAMES  # noqa: F401
+from phronon_common.mail_diagnostics import FLEET_TOOL_NAMES  # noqa: F401
 
 
 def other_fleet_names(tool_name: str) -> list[str]:

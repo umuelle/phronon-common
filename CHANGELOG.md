@@ -4,6 +4,32 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.63.0 — 2026-10-03
+
+Boundary cleanups from the commons review of 3 October 2026. No behaviour
+changes; every old import keeps working.
+
+- **`mail_diagnostics`** is the live sample-mail harness, moved out of the test
+  kit: eight production scripts (`scripts/send_test_emails.py`) imported
+  `phronon_common.testing.mail_harness`, so a test-helper change could change
+  what a production script loads. `testing.mail_harness` is now the SAME
+  module object under its old name (a `sys.modules` alias, not a re-export),
+  so patching through either name patches the code that runs.
+- **`request_ip`** holds `client_ip` and `default_trusted_proxies`, with no web
+  framework import. `audit` took `client_ip` from `rate_limit`, so writing an
+  audit row loaded FastAPI and Starlette's middleware. `rate_limit` and
+  `audit` re-export the identical objects.
+- **`account.EMAIL_CHANGE_HOURS`**: the address-change lifetime moved from
+  `emails` to the account policy it belongs to; `emails` imports it (and
+  `emails.EMAIL_CHANGE_HOURS` still answers). Account policy no longer depends
+  on the mail module.
+- **`hosts`** reads the tool's domain from `registry` instead of `legal_conf`.
+  Same answer: `server-ops/tool_registry_check.py` fails when the two disagree.
+- **New test `tests/test_import_boundaries.py`** imports every module alone in
+  a fresh interpreter and fails when a production module loads the test kit,
+  a non-web module loads FastAPI/Starlette, anything but `passkeys` loads
+  py_webauthn, or `mail_diagnostics` loads anything outside the stdlib.
+
 ## 1.62.0 — 2026-10-03
 
 Two guarantees tightened after a review of the shared code (3 October 2026).

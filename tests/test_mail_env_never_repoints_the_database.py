@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import os
 
-from phronon_common.testing import mail_harness
+from phronon_common import mail_diagnostics as mail_harness
 
 
 def test_it_fills_what_is_missing(tmp_path, monkeypatch):

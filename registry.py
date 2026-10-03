@@ -250,7 +250,7 @@ def display_names() -> tuple[str, ...]:
 
     This is the list the e-mail leak check uses: a message for one tool must
     carry its own name and no other. It lived as eight private copies, five of
-    which had dropped a name; `phronon_common.testing.mail_harness` holds the
+    which had dropped a name; `phronon_common.mail_diagnostics` holds the
     canonical tuple and now derives it from here.
     """
     return tuple(TOOLS[k].display_name for k in TEACHING_TOOLS)

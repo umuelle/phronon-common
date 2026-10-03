@@ -169,12 +169,12 @@ def prune(get_conn: Callable[[], Any], days: int = RETENTION_DAYS) -> int:
                 pass
 
 
-# There is deliberately NO client_ip() here. phronon_common.rate_limit.client_ip
+# There is deliberately NO client_ip() here. phronon_common.request_ip.client_ip
 # already answers "whose address is this request really from", including the
 # trusted-proxy rule that stops a caller writing its own address into the log.
 # A second copy in this module is how the fleet ends up with two answers — the
 # same way it ended up with four copies of one e-mail design.
-from phronon_common.rate_limit import client_ip  # noqa: E402,F401 — re-export
+from phronon_common.request_ip import client_ip  # noqa: E402,F401 — re-export
 
 
 class AuditRecorder:

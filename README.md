@@ -39,6 +39,7 @@ imports. One version, everywhere, or the deploy stops.
 | `provisioning` | the hub → tool account-provisioning contract |
 | `twofactor` | TOTP second factor for admin logins, standard library only |
 | `audit` | the admin audit trail |
+| `request_ip` | whose address a request is from, behind the trusted proxy (re-exported by `rate_limit` and `audit`) |
 
 ### Participants, data and retention
 
@@ -50,6 +51,7 @@ imports. One version, everywhere, or the deploy stops.
 | `exports` | spreadsheet formula-injection escaping (`csv_safe`) |
 | `retention_heartbeat` | last-successful-run heartbeat for the retention workers |
 | `emails` | branded transactional-email building |
+| `mail_diagnostics` | the live sample-mail run (`scripts/send_test_emails.py`): where sample mail may go, and whether to send at all. Was `testing.mail_harness` (still importable) |
 
 ### Front-end masters
 
@@ -77,7 +79,6 @@ wrapper, so a tool cannot quietly stop running a check while its CI stays green.
 | `csrf_fetch` | every `fetch()` that POSTs sends the token where this tool reads it |
 | `manage_account` | the Manage account page: wiring and the guards that make it safe |
 | `email_delivery` | what the messages say, and whether they actually go out |
-| `mail_harness` | where sample mail may go, and whether to send at all |
 | `fleet_baseline` | routes answer, login round-trips, anonymous visitors stay out |
 | `run_reporting` | an unrecognised skip fails the run where green is a gate |
 | `undefined_names` | names a module reads but never binds |
