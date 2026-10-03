@@ -4,6 +4,18 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.64.0 — 2026-10-03
+
+- **One release per process.** On first import the package resolves its own
+  location (`__path__`, `__file__`) through any symlink. On the server
+  `/var/www/phronon_common` becomes a symlink to an immutable release
+  directory (`server-ops/common_release.sh`); with this, a worker's later
+  imports and every template it reads come from the release it started with,
+  however the symlink moves. Before, a worker loaded part of one version at
+  startup and the rest, lazily, from whatever the shared checkout held later.
+  A checkout or a wheel is unaffected (the path is already real).
+  New test `tests/test_release_pin.py` swaps a symlink under a running process.
+
 ## 1.63.0 — 2026-10-03
 
 Boundary cleanups from the commons review of 3 October 2026. No behaviour

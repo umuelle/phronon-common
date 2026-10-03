@@ -29,9 +29,23 @@ README.md lists all thirty-odd of them, grouped, with the rules.
 Keep tool-specific logic OUT of here — only what is identical everywhere.
 """
 
+# ONE RELEASE PER PROCESS (3 October 2026). On the server the tools import
+# /var/www/phronon_common, a symlink to an immutable release directory that
+# `server-ops/common_release.sh activate` swaps. Resolving the package's own
+# location HERE, at first import, makes every later import of a submodule and
+# every template a module reads by its __file__ come from the release this
+# process started with, however the symlink moves afterwards. Without it a
+# worker would load half of the old release at startup and the rest, lazily,
+# from the new one. Elsewhere (a checkout, a wheel) the path is already real
+# and this changes nothing.
+import os as _os
+
+__path__ = [_os.path.realpath(_p) for _p in __path__]
+__file__ = _os.path.realpath(__file__)
+
 # THE GIT TAG IS THE REAL VERSION. Every tool's CI pins this package by tag
 # (`…/phronon-common.git@vX.Y.Z`) and `server-ops/check_common_pin.py` compares
-# those pins against the tag checked out at /var/www/phronon_common — that is
+# those pins against the release /var/www/phronon_common points at — that is
 # the mechanism, and nothing at runtime reads the string below.
 #
 # It is DERIVED rather than typed, because a second hand-kept copy of a version
