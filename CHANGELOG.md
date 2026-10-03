@@ -4,8 +4,17 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
-## Unreleased
+## 1.65.0 — 2026-10-03
 
+- **`testing.repair_contract`** (contract version `2026-09-25`): the README's
+  repair contract as three assertions each tool runs on its own routes:
+  `assert_refusal_changes_nothing` (snapshot every row the route could touch,
+  attempt, require a refusal, compare), `assert_audit_never_names` (no
+  participant address in ANY column of the audit rows; the educator may be
+  named), `assert_page_never_shows` (a value promised private appears nowhere
+  in the page, hidden fields included). Shared as behaviour, not code: each
+  tool keeps its routes, SQL and audit actions. First use found Layoff writing
+  participant addresses into three audit actions.
 - **`NEW-TOOL.md` and `examples/minimal_tool/app.py`:** how a new tool stands on
   this package (what to import, what stays in the tool, the seven steps, and
   what the review decided must stay local). The example imports no tool's code
