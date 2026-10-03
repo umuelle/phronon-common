@@ -7,7 +7,7 @@ whichever was nearest to hand:
   fleet key            `polarity`               server-ops/fleet.conf, legal_conf
   workspace directory  `polarity-profiler`      the Mac, server-ops gates
   GitHub repository    `polarity-profiler`      CI checks out under THIS name
-  systemd unit / path  `lsr-profiler`           /var/www/lsr-profiler
+  systemd unit / path  `polarity-profiler`      /var/www/polarity-profiler
   entitlement key      `polarity_profiler`      the hub, PROVISION_SECRET_<KEY>
   display name         `Polarity Profiler`      notices, e-mail, page titles
 
@@ -164,16 +164,13 @@ TOOLS: dict[str, ToolIdentity] = {
         ),
         ToolIdentity(
             key="polarity", repo_dir="polarity-profiler",
-            github_repo="polarity-profiler", service="lsr-profiler",
-            server_path="/var/www/lsr-profiler", port=8003,
+            github_repo="polarity-profiler", service="polarity-profiler",
+            server_path="/var/www/polarity-profiler", port=8003,
             entitlement_key="polarity_profiler", display_name="Polarity Profiler",
             canonical_domain="polarity-profiler.org",
-            # The old brand. nginx serves it only to 301 everything to the
-            # canonical domain — classroom posters with QR codes do not get
-            # reprinted because a product was renamed. Anything that BUILDS a
-            # URL must use canonical_domain; this tuple exists so a check can
-            # tell a legacy address from a wrong one.
-            legacy_domains=("lsr-profiler.org",),
+            # No legacy domain since 3 October 2026: lsr-profiler.org was  (old-name-ok)
+            # retired with its redirect (no QR posters in use any more; owner,
+            # TO DO PP-004).
             locales=("en", "de"),
         ),
         ToolIdentity(

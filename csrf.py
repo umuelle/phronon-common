@@ -1,4 +1,4 @@
-"""CSRF token generation and validation (shared; from the LSR/Drawbridge version).
+"""CSRF token generation and validation (shared; from the Polarity Profiler/Drawbridge version).
 
 The session cookie name used to bind tokens is configurable so each tool can keep
 its own cookie name while sharing this code.

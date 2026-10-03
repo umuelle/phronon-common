@@ -58,7 +58,7 @@ EMAIL_CHANGE_SALT = "phronon-account-email-change"
 MAX_EMAIL_LENGTH = 255
 MAX_NAME_LENGTH = 255
 
-# LSR's rule, promoted: no whitespace anywhere, exactly one @, and a dot in the
+# Polarity Profiler's rule, promoted: no whitespace anywhere, exactly one @, and a dot in the
 # domain. Whiteout's copy allowed spaces and several @s, which is the sort of
 # address that is accepted here and then rejected by the mail server, leaving an
 # account nobody can reach. Promote the strictest copy, never the most

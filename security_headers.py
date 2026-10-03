@@ -1,4 +1,4 @@
-"""Security headers middleware (shared; identical to the LSR/Drawbridge version).
+"""Security headers middleware (shared; identical to the Polarity Profiler/Drawbridge version).
 
 Per-request CSP nonce: every response mints a nonce, exposed as
 `request.state.csp_nonce` for templates to stamp on inline <script> blocks. If a

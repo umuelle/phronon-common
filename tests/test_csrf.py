@@ -1,6 +1,6 @@
 """CSRF middleware: exemptions, session binding, and the catch-all guard.
 
-Background (2026-07-28): LSR-profiler and ControversyGenerator both shipped a
+Background (2026-07-28): Polarity Profiler and ControversyGenerator both shipped a
 bare "/" in the middleware's prefix exempt list. Matching is
 `path.startswith(entry)` and every path starts with "/", so every request was
 exempt — backoffice login, class management, user administration, the lot. It

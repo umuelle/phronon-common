@@ -208,7 +208,7 @@ def undefined_names(source: str, filename: str = "<source>") -> list[tuple[int, 
 def unreachable_statements(source: str, filename: str = "<source>") -> list[tuple[int, str]]:
     """(line, why) for every statement that can never run.
 
-    THE OTHER HALF OF THE SAME LESSON. LSR's `delete_class` had its
+    THE OTHER HALF OF THE SAME LESSON. Polarity Profiler's `delete_class` had its
     `return RedirectResponse(...)` at function level instead of inside the
     `if not cls:` branch above it, so the entire deletion — ownership check,
     consent fork, the DELETE itself — sat below a return and never ran. "Delete

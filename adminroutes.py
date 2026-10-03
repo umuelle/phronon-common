@@ -27,7 +27,7 @@ applied to one silently misses the rest.
 
 DELIBERATELY SOURCE-LEVEL. It reads `app.py` and never starts the app, so it
 needs no database, no cookies and no live server — which means it CANNOT skip.
-The tools whose route tests are mocked locally (LSR, Inequality) would otherwise
+The tools whose route tests are mocked locally (Polarity Profiler, Inequality) would otherwise
 have no coverage of this at all, and a skipped test is indistinguishable from a
 passing one in a green run. Same reasoning as `tests/test_join_codes.py`.
 

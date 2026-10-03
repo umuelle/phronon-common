@@ -1,7 +1,7 @@
 """`recipient_domain` — the one implementation, and why it is strict.
 
 Four tools grew their own copy of this twelve-line helper (Controversy
-Generator, LSR, Whiteout, Moral Mirror). By 16 August 2026 three of them
+Generator, Polarity Profiler, Whiteout, Moral Mirror). By 16 August 2026 three of them
 returned the WHOLE string for input containing no "@" — so a participant who
 mistyped their address had their raw input written to the journal in full, by
 the helper whose entire purpose is to stop that. Three also left surrounding

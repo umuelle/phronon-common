@@ -5,7 +5,7 @@ WHY (external review, 16 August 2026).
 Several tools put a credential in the URL PATH, because that is what makes a
 link work from an inbox without a password:
 
-    LSR         /report/<token>          /withdraw/<token>
+    Polarity    /report/<token>          /withdraw/<token>
     Controversy /withdraw/<token>
     Inequality  /results/<code>/<token>
     Whiteout    /resume?token=…          /backoffice/postpone/<id>?token=…

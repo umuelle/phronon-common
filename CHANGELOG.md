@@ -4,6 +4,18 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.61.0 — 2026-10-03
+
+- **Polarity Profiler loses the old name below the waterline (PP-004, owner
+  3 October 2026).** `registry` PP entry: `service` and `server_path` are now
+  `polarity-profiler` / `/var/www/polarity-profiler`, and `legacy_domains` is
+  empty: `lsr-profiler.org` and its redirect are retired (no QR posters in use).
+- **PP notice `2026-10-03-pp-name`.** The provenance line says "The Polarity
+  Profiler framework…" instead of "The LSR framework…", and the cookie table
+  names the renamed two-factor cookies `pp_pending_totp` / `pp_pending2fa`
+  (EN and DE). Wording only; archived in `CONSENT-WORDING-ARCHIVE.md`.
+- Comments and docstrings say Polarity Profiler where they said LSR.
+
 ## 1.60.0 — 2026-10-03
 
 - **One set of entry addresses (owner's decision).** `registry.BACKOFFICE_LOGIN`

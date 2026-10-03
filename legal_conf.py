@@ -21,7 +21,7 @@ our own database):
                                                  warnings, 3 x 30-day postponements,
                                                  unused sessions deleted at 90 d
                                                  (converged 2026-09-03)
-  lsr          lifecycle.py                      30 days, postponable by educator
+  polarity     lifecycle.py                      30 days, postponable by educator
                                                  (converged 2026-09-03)
   orgsim       _retention_worker()               hourly; completed runs anonymised
                                                  30 d after close (or last completed
@@ -42,7 +42,7 @@ and that is exactly where the false statements were:
   whiteout    the notice said no name/e-mail was collected. /join REQUIRES an
               e-mail, stores it on participants.email, and shows it to the
               educator. Corrected.
-  lsr         the notice called the e-mail optional; the form marks it required
+  polarity    the notice called the e-mail optional; the form marks it required
               and the handler rejects a submission without it. It also called
               the benchmarking tick-box "optional consent" while the handler
               refuses to continue unless it is ticked. Both corrected.
@@ -730,8 +730,13 @@ original works created for teaching.</p>""",
         # row (fleet rule 7) and the last deletion link still deletes it, as
         # this notice's own erasure section says. Retention now agrees with
         # erasure and with the code (TO DO PP-009). Wording only.
-        "notice_version": "2026-09-29-pp-withdrawal",
-        "last_updated": "2026-10-02",
+        # 2026-10-03-pp-name: the old product name left the notice. The
+        # provenance line said "The LSR framework"; the two two-factor cookies  (old-name-ok)
+        # were renamed lsr_* -> pp_* when the server, service and database lost  (old-name-ok)
+        # the old name (TO DO PP-004, owner 3 October 2026). Wording only; no
+        # processing changed.
+        "notice_version": "2026-10-03-pp-name",
+        "last_updated": "2026-10-03",
         "art9": False,  # leadership-style point allocations
         "purpose": {
             "en": "The Polarity Profiler collects scenario-based point allocations and "
@@ -865,13 +870,13 @@ erforderlich</strong>, um den Profiler zu starten — ohne sie kann keine Antwor
 gespeichert werden. Die demografischen Fragen sind tatsächlich freiwillig.</p>""",
         },
         "provenance": {
-            "en": """<p>The LSR framework, scenarios, scoring model and report
+            "en": """<p>The Polarity Profiler framework, scenarios, scoring model and report
 design are original works created for executive teaching.</p>""",
         },
         "cookies": [
             ("participant_session", "Signed, HTTP-only. Holds a random identifier and nothing else. Your progress through the questionnaire is held on our server against it, and afterwards it lets you reopen your results page.", "8 hours", "participants"),
             ("backoffice", "Keeps educators and administrators signed in (signed, HTTP-only).", "6 hours (educators) / 3 hours (administrators)", "backoffice"),
-            ("lsr_pending_totp / lsr_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
+            ("pp_pending_totp / pp_pending2fa", "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).", "5-15 minutes", "backoffice"),
             ("passkey_challenge", "Set only while you add a passkey or sign in with one: a signed, HTTP-only one-time challenge for your device to sign. Deleted as soon as it has been used.", "5 minutes", "backoffice"),
         ],
         # The German page renders THIS list, not the one above — same cookies,
@@ -885,7 +890,7 @@ design are original works created for executive teaching.</p>""",
              '8 Stunden', 'Teilnehmende'),
             ('backoffice', 'Hält Lehrpersonen und Administratoren angemeldet (signiert, HTTP-only).',
              '6 Stunden (Lehrpersonen) / 3 Stunden (Administratoren)', 'Backoffice'),
-            ('lsr_pending_totp / lsr_pending2fa', 'Überträgt den Zwischenschritt der Zwei-Faktor-Anmeldung: die Markierung der offenen Anmeldung (5 Minuten) und, während der Einrichtung, das noch nicht bestätigte TOTP-Geheimnis (15 Minuten).',
+            ('pp_pending_totp / pp_pending2fa', 'Überträgt den Zwischenschritt der Zwei-Faktor-Anmeldung: die Markierung der offenen Anmeldung (5 Minuten) und, während der Einrichtung, das noch nicht bestätigte TOTP-Geheimnis (15 Minuten).',
              '5–15 Minuten', 'Backoffice'),
             ('passkey_challenge', 'Wird nur gesetzt, während Sie einen Passkey hinzufügen oder sich damit anmelden: eine signierte, HTTP-only Einmal-Aufgabe, die Ihr Gerät signiert. Wird gelöscht, sobald sie verwendet wurde.',
              '5 Minuten', 'Backoffice'),

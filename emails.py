@@ -27,7 +27,7 @@ def recipient_domain(address) -> str:
     """A log-safe stand-in for a recipient address: `"@domain"`, or a placeholder.
 
     ONE implementation, fleet-wide, since 16 August 2026. There were four —
-    Controversy Generator, LSR, Whiteout and Moral Mirror each grew their own,
+    Controversy Generator, Polarity Profiler, Whiteout and Moral Mirror each grew their own,
     the last of them written the same week with a comment saying "there is no
     shared helper for it, so it lives here". They had already diverged, and not
     harmlessly: three of the four returned `"@not-an-address"` for a string
@@ -72,11 +72,11 @@ def branded_html(tool_name: str, inner_html: str, card_width: int = 520,
     results are ready") is how nine tools drift into nine headers again; every
     template already puts its heading in the body, which is where it belongs.
     `subtitle` is the optional second line under it — a standing tagline, not a
-    per-mail line: LSR's mails carry "Leadership Style Repertoire" (12 August
-    2026, added so LSR could adopt this shell without losing its header).
+    per-mail line: Polarity Profiler's mails carry "Leadership Style Repertoire" (12 August
+    2026, added so Polarity Profiler could adopt this shell without losing its header).
 
     `footer_note` sits above the Phronon line and is for a tool's standing
-    disclaimer. It exists because LSR's mails carry one that matters: "not a
+    disclaimer. It exists because Polarity Profiler's mails carry one that matters: "not a
     psychometric diagnosis or a basis for selection decisions." A shell without
     a slot for it would have quietly dropped that sentence during the
     conversion, which is the sort of thing a cosmetic change is not allowed to

@@ -74,7 +74,7 @@ def test_privacy_art13_essentials(key):
         assert needle in html, f"{key}: privacy notice lacks {needle!r}"
 
 
-# "lsr" until the Polarity Profiler rename (PP-004) retired that key from
+# The old fleet key until the Polarity Profiler rename (PP-004) retired it from
 # TOOLS and left this parametrization pointing at nothing — a KeyError, so the
 # whole shared suite was red and therefore gating nothing.
 @pytest.mark.parametrize("key", ["polarity", "whiteout", "layoff"])
