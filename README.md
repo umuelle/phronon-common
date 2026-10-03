@@ -85,6 +85,8 @@ wrapper, so a tool cannot quietly stop running a check while its CI stays green.
 
 ## Using it from a tool
 
+Starting a NEW tool: read `NEW-TOOL.md` and begin from `examples/minimal_tool/app.py`.
+
 Install the pinned tag, as CI and the server do:
 
 ```bash

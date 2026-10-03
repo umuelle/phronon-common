@@ -4,6 +4,16 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## Unreleased
+
+- **`NEW-TOOL.md` and `examples/minimal_tool/app.py`:** how a new tool stands on
+  this package (what to import, what stays in the tool, the seven steps, and
+  what the review decided must stay local). The example imports no tool's code
+  and `tests/test_minimal_tool.py` runs it (headers + CSP nonce, the shared
+  legal pages, CSRF on a POST, the Host check, and that it loads no tool
+  module), so a wiring change here breaks the example's test, not the next new
+  tool. No runtime code changed.
+
 ## 1.64.0 — 2026-10-03
 
 - **One release per process.** On first import the package resolves its own
