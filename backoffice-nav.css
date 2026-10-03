@@ -42,18 +42,41 @@ html {
   scroll-padding-top: calc(var(--bo-nav-h) + 12px);
 }
 
+/* THE BAR GROWS, IT NEVER CLIPS (3 October 2026). Until then the bar had a
+ * fixed `height` and only the phone rule below let it grow. Between the phone
+ * breakpoint and about 1200px (tablets, small laptops, split screens) a tool
+ * with many links wrapped them into two or three 58px rows inside a 58px bar:
+ * the rows were centred, so the first sat ABOVE the viewport and the last hung
+ * below the bar as white text on the light page. Whiteout at 1024px lost four
+ * links that way; Polarity Profiler, Layoff and Inequality at 800px. Now the
+ * bar is a minimum height and wraps its children: the account area drops to a
+ * second row first, then the links get a row of their own. A bar that fits
+ * stays exactly 58px. Gate: the browser journey (deploy step 1d) measures every
+ * nav control at 800, 1024 and 1180px. */
 .bo-nav {
-  height: var(--bo-nav-h);
+  min-height: var(--bo-nav-h);
   background: var(--bo-nav-bg);
   color: #fff;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;       /* vertical centring for EVERY child, including the logo */
   padding: 0 1.5rem;
-  gap: 2rem;                 /* brand → links. Never a margin on the brand: mixing
+  gap: 0 2rem;               /* brand → links. Never a margin on the brand: mixing
                                 the two is what made the spacing differ per tool. */
   position: sticky;
   top: 0;
   z-index: 100;
+}
+
+/* When the bar wraps, a row holding only the brand or only the account area
+ * would be as tall as its text and sit against the bar's edge. */
+.bo-nav__brand,
+.bo-nav__user { min-height: 2.5rem; }
+
+/* A wrapped bar is up to ~135px tall and still sticky, so keyboard focus needs
+ * the larger offset there (see scroll-padding-top above). */
+@media (min-width: 721px) and (max-width: 1279px) {
+  html { scroll-padding-top: calc(var(--bo-nav-h) + 5rem + 12px); }
 }
 
 .bo-nav--admin { background: var(--bo-nav-bg-admin); }
@@ -164,19 +187,20 @@ html {
   margin: 0;
 }
 
-/* Narrow screens: let the bar grow rather than clip, and stop pinning it so a
- * wrapped two-line bar cannot eat the top of the page. */
+/* Narrow screens: compact rows, and stop pinning the bar so a wrapped
+ * two-line bar cannot eat the top of the page. */
 @media (max-width: 720px) {
+  .bo-nav__brand,
+  .bo-nav__user { min-height: 0; }
   .bo-nav {
-    height: auto;
-    min-height: var(--bo-nav-h);
-    flex-wrap: wrap;
     gap: .75rem 1rem;
     padding: .6rem 1rem;
     position: static;
   }
   .bo-nav__links a { line-height: 1.6; }
-  .bo-nav__user { margin-left: 0; }
+  /* The account row may shrink: a long address is cut with an ellipsis
+   * instead of pushing "Log out" off the right edge of a phone. */
+  .bo-nav__user { margin-left: 0; flex: 1 1 auto; min-width: 0; }
 }
 
 

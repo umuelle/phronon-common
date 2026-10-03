@@ -4,6 +4,23 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.67.0 — 2026-10-03
+
+- **The backoffice nav bar grows instead of clipping** (`backoffice-nav.css`).
+  The bar had a fixed 58px height and only the phone rule (≤720px) let it
+  grow, while its links wrapped. Between 721px and about 1200px a tool with
+  many links stacked them in two or three 58px rows centred in a 58px bar:
+  Whiteout at 1024px showed four links above the viewport and one below the
+  bar; Polarity Profiler, Layoff and Inequality did the same at 800px. Live
+  since the shared nav (29 July). The bar is now `min-height` with
+  `flex-wrap`: the account area drops to a second row first, then the links
+  take a row of their own. A bar that fits stays exactly 58px. On a wrapped
+  bar `scroll-padding-top` is larger so keyboard focus is not hidden under it.
+- **Phones: a long account address no longer pushes "Log out" off the
+  screen.** The account row may shrink and cuts the address with an ellipsis.
+- Gate: `server-ops/browser_submit_check.py` measures every nav control at
+  800, 1024 and 1180px, with the real and with a long account address.
+
 ## 1.66.0 — 2026-10-03
 
 - **A process holds its release's `.release` file open** (`_RELEASE_MARKER`),
