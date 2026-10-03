@@ -33,6 +33,8 @@ import os
 import re
 from pathlib import Path
 
+from phronon_common.registry import BACKOFFICE_DASHBOARD, BACKOFFICE_LOGIN
+
 #: Routes whose name or path hints at a side effect stay out of the blind walk.
 SIDE_EFFECT_HINTS = ("send", "mail", "export", "download", "withdraw",
                      "logout", "delete", "anonym", "reset")
@@ -69,6 +71,9 @@ def csrf_token(html: str) -> str:
     return m.group(1)
 
 
+_REDIRECTS = (301, 302, 303, 307, 308)
+
+
 class FleetBaseline:
     """The four checks. A tool subclasses this and supplies the constants.
 
@@ -77,8 +82,10 @@ class FleetBaseline:
     fixtures, passed in by its wrapper.
     """
 
-    LOGIN_PATH = "/backoffice/login"
-    LOGIN_POST = "/backoffice/login"
+    #: One address fleet-wide since 3 October 2026; a wrapper no longer says
+    #: where its login lives (two tools said "/backoffice"), the registry does.
+    LOGIN_PATH = BACKOFFICE_LOGIN
+    LOGIN_POST = BACKOFFICE_LOGIN
     PROTECTED_PREFIXES: tuple = ("/backoffice/",)
     #: The tool sets this from `strict_here(__file__)`.
     STRICT = False
@@ -171,4 +178,37 @@ class FleetBaseline:
             "no Content-Security-Policy with script-src on the login page — "
             "the shared middleware (or its exact csp= argument) is missing"
         )
+        return None
+
+    def check_the_entry_addresses_are_the_fleet_ones(self, client):
+        """One shape on every teaching tool (owner's decision, 3 October 2026).
+
+        Signed out: the login page answers at BACKOFFICE_LOGIN with a password
+        field, and /backoffice, /backoffice/ and BACKOFFICE_DASHBOARD all lead
+        there. Two tools signed in at /backoffice and 404ed the login address,
+        two listed sessions somewhere other than the dashboard address, two
+        404ed /backoffice. The signed-in half (the dashboard renders, and
+        /backoffice leads to it) needs a session and lives in each tool's own
+        test of its entry addresses.
+        """
+        page = client.get(BACKOFFICE_LOGIN, follow_redirects=False)
+        if page.status_code >= 500 and not self.STRICT:
+            return "requires the live server environment (login page needs the database)"
+        assert page.status_code == 200, (
+            f"{BACKOFFICE_LOGIN} answered {page.status_code}: the sign-in page "
+            "must live at the fleet address")
+        assert 'type="password"' in page.text, f"{BACKOFFICE_LOGIN} has no password field"
+        for path in ("/backoffice", "/backoffice/", BACKOFFICE_DASHBOARD):
+            resp = client.get(path, follow_redirects=False)
+            if resp.status_code >= 500 and not self.STRICT:
+                return f"requires the live server environment ({path} needs the database)"
+            where = resp.headers.get("location", "")
+            assert resp.status_code in _REDIRECTS, (
+                f"{path} answered {resp.status_code} to a signed-out visitor; "
+                f"it must lead to {BACKOFFICE_LOGIN}")
+            # A trailing-slash hop (/backoffice/ -> /backoffice) is allowed as
+            # long as the chain ends on the login page.
+            final = client.get(path, follow_redirects=True)
+            assert final.url.path == BACKOFFICE_LOGIN, (
+                f"{path} -> {where} ends at {final.url.path}, not {BACKOFFICE_LOGIN}")
         return None

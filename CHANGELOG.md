@@ -4,6 +4,21 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.60.0 — 2026-10-03
+
+- **One set of entry addresses (owner's decision).** `registry.BACKOFFICE_LOGIN`
+  (`/backoffice/login`) and `registry.BACKOFFICE_DASHBOARD`
+  (`/backoffice/dashboard`) for the eight teaching tools, `HUB_LOGIN` /
+  `HUB_DASHBOARD` (`/admin/login`, `/admin`) for the hub, and
+  `ToolIdentity.login_path` / `.dashboard_path`. Until now two tools signed in
+  at `/backoffice` (and 404ed the login address), two listed sessions away from
+  the dashboard address, and two 404ed `/backoffice`; every server-ops script
+  kept its own table of who was where.
+- **Test kit:** `FleetBaseline.check_the_entry_addresses_are_the_fleet_ones`
+  (signed out: the login page answers at the fleet address with a password
+  field; `/backoffice`, `/backoffice/` and the dashboard address all lead to it).
+  `LOGIN_PATH` / `LOGIN_POST` now default to the registry value.
+
 ## 1.59.0 — 2026-10-02
 
 - **Passkeys (FL-065).** New `passkeys.py`: the only caller of py_webauthn

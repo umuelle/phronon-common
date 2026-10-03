@@ -36,6 +36,23 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
+# ── Entry addresses (3 October 2026, owner's decision) ──────────────────────
+# Until then the eight teaching tools disagreed: Controversy Generator and
+# Polarity Profiler signed in at /backoffice (and 404ed /backoffice/login),
+# Drawbridge and Moral Mirror listed sessions at /backoffice/ and /backoffice
+# (and 404ed /backoffice/dashboard), Inequality and OrgDesignSim 404ed
+# /backoffice. Now one shape: sign in at BACKOFFICE_LOGIN, land on
+# BACKOFFICE_DASHBOARD, and /backoffice or /backoffice/ lead to one or the
+# other depending on whether you are signed in. The old addresses redirect.
+# The hub keeps /admin (a different area, two or three accounts) and sends
+# /backoffice/login on to HUB_LOGIN. Read these here; never spell them out
+# again in a script.
+BACKOFFICE_LOGIN = "/backoffice/login"
+BACKOFFICE_DASHBOARD = "/backoffice/dashboard"
+HUB_LOGIN = "/admin/login"
+HUB_DASHBOARD = "/admin"
+
+
 @dataclass(frozen=True)
 class ToolIdentity:
     """The stable facts. Every field is a name something else already uses."""
@@ -60,6 +77,17 @@ class ToolIdentity:
     @property
     def public_url(self) -> str:
         return f"https://{self.canonical_domain}"
+
+    @property
+    def login_path(self) -> str:
+        """Where an account holder signs in. One address fleet-wide since
+        3 October 2026 (see BACKOFFICE_LOGIN); the hub's area is /admin."""
+        return HUB_LOGIN if self.key == "phronon" else BACKOFFICE_LOGIN
+
+    @property
+    def dashboard_path(self) -> str:
+        """Where a signed-in account holder lands: the sessions list."""
+        return HUB_DASHBOARD if self.key == "phronon" else BACKOFFICE_DASHBOARD
 
     @property
     def default_sender(self) -> str:
