@@ -72,8 +72,10 @@ def test_only_passkeys_loads_webauthn(footprints):
 
 
 def test_the_mail_diagnostic_is_stdlib_only(footprints):
-    extra = set(footprints["mail_diagnostics"]["roots"]) - set(sys.stdlib_module_names) \
-        - {"phronon_common", "__main__", "_distutils_hack", "_virtualenv"}
+    extra = {r for r in footprints["mail_diagnostics"]["roots"]
+             if not r.startswith("__editable__")}   # pip install -e's finder (CI), not a dependency
+    extra -= set(sys.stdlib_module_names) | {"phronon_common", "__main__", "_distutils_hack",
+                                              "_virtualenv"}
     assert extra == set()
 
 

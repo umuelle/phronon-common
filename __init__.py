@@ -40,8 +40,9 @@ Keep tool-specific logic OUT of here — only what is identical everywhere.
 # and this changes nothing.
 import os as _os
 
-__path__ = [_os.path.realpath(_p) for _p in __path__]
-__file__ = _os.path.realpath(__file__)
+if "__path__" in globals():  # absent when pytest imports this file as a plain module (CI)
+    __path__ = [_os.path.realpath(_p) for _p in __path__]
+    __file__ = _os.path.realpath(__file__)
 
 # THE GIT TAG IS THE REAL VERSION. Every tool's CI pins this package by tag
 # (`…/phronon-common.git@vX.Y.Z`) and `server-ops/check_common_pin.py` compares
