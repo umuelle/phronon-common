@@ -1,5 +1,15 @@
 """Per-tool configuration for the shared legal pages — ALL NINE TOOLS IN ONE FILE.
 
+FROZEN SINCE 4 OCTOBER 2026 — DO NOT EDIT A TOOL'S NOTICE HERE.
+Each tool now publishes from its own `legal_content/notice.json`
+(phronon_common/legal_content.py). `TOOLS` below is kept unchanged only for
+tool versions that have not migrated yet and for earlier versions a rollback
+may restore; tests/test_legal_conf_frozen.py fails on any change to it. To
+change a tool's notice, edit that tool's file and deploy that tool. The
+fleet-wide side-by-side view this file used to give is now
+server-ops/legal_table.py. `lifetime_seconds()` below stays live: every
+reader of the published lifetimes uses it.
+
 Blueprint: phronon-legal-blueprint.md (rev. 2). The sorting rule is Part 3:
 an element is FLEET-CONSTANT if it describes the operator or the
 infrastructure — that text lives in phronon_common/legal_templates/ and may

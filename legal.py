@@ -9,7 +9,14 @@ fails "ständig verfügbar" by construction).
 Usage in a tool's app.py, replacing its hand-rolled legal routes:
 
     from phronon_common.legal import build_legal_router
-    app.include_router(build_legal_router("whiteout"))
+    from phronon_common.legal_content import load_legal_config
+    LEGAL = load_legal_config("whiteout", BASE_DIR / "legal_content" / "notice.json")
+    app.include_router(build_legal_router("whiteout", config=LEGAL))
+
+Since 4 October 2026 each tool passes its OWN content (legal_content.py says
+why). Without `config=` the router still reads the frozen entry in
+legal_conf.TOOLS: that is how tools not yet migrated, and earlier tool
+versions a rollback may restore, keep working with this package.
 
 Route map (Part 2.3):
     /impressum      German § 5 DDG page, lang="de". Canonical. Never a redirect.
@@ -53,9 +60,14 @@ _TITLES = {
 }
 
 
-def render_legal(tool_key: str, doc: str, lang: str = "en") -> str:
-    """Render one legal document to HTML. Exposed for tests."""
-    cfg = get_tool(tool_key)
+def render_legal(tool_key: str, doc: str, lang: str = "en", config: dict | None = None) -> str:
+    """Render one legal document to HTML. Exposed for tests.
+
+    `config`: the tool's own content (legal_content.load_legal_config). Without
+    it, the frozen legacy entry for `tool_key` (unmigrated tools)."""
+    if config is not None and config.get("key") != tool_key:
+        raise ValueError(f"legal config for {config.get('key')!r} passed to render {tool_key!r}")
+    cfg = config if config is not None else get_tool(tool_key)
     template = _env.get_template(f"{doc}.html")
     return template.render(
         cfg=cfg,
@@ -65,15 +77,20 @@ def render_legal(tool_key: str, doc: str, lang: str = "en") -> str:
     )
 
 
-def build_legal_router(tool_key: str) -> APIRouter:
-    cfg = get_tool(tool_key)  # fail at import time if the key is unknown
+def build_legal_router(tool_key: str, config: dict | None = None) -> APIRouter:
+    """The legal routes. `config`: the tool's own content, loaded once at
+    startup; every page renders from that one snapshot, the same one the app
+    reads its notice version from. Without it, the legacy entry (unmigrated)."""
+    if config is not None and config.get("key") != tool_key:
+        raise ValueError(f"legal config for {config.get('key')!r} passed to the router for {tool_key!r}")
+    cfg = config if config is not None else get_tool(tool_key)  # unknown key: fail at import
     router = APIRouter()
 
     def page(doc: str, lang: str = "en"):
         # Default arguments bind doc/lang per closure; FastAPI needs a
         # distinct callable per route.
         async def _page(doc=doc, lang=lang) -> HTMLResponse:
-            return HTMLResponse(render_legal(tool_key, doc, lang))
+            return HTMLResponse(render_legal(tool_key, doc, lang, config=config))
         return _page
 
     # Every route is NAMED so templates can url_path_for() it — Phronon's

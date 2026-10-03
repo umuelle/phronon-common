@@ -4,6 +4,28 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.69.0 — 2026-10-04
+
+- **Each tool owns its legal content.** New `legal_content.py`:
+  `load_legal_config(tool_key, path)` reads a tool's own
+  `legal_content/notice.json`, checks it (schema version, the tool's key,
+  every required field and type, no unknown fields, English everywhere and
+  German wherever the tool serves German except the source credits, the
+  cookie tables' shape and order, an explicit notice version) and returns a
+  fresh object. `build_legal_router(key, config=...)` and
+  `render_legal(..., config=...)` render from it; one loaded object feeds both
+  the pages and the notice version an app records. A broken file stops the app
+  at startup. Why: 13 of the last 39 releases changed `legal_conf.py`, 8 of
+  them nothing else, and each was a fleet release for one tool's sentence.
+- **Backward compatible.** Without `config=` the router still reads
+  `legal_conf.TOOLS`, now FROZEN (a test fails on any change to it) for tools
+  that have not migrated and for rollbacks. All nine published notices render
+  byte for byte as before (72 pages compared, incl. Decision Room).
+- **`testing.legal_content.LegalContent`:** the content checks that ran here
+  over all nine entries (forbidden strings, Impressum, Art. 13 essentials,
+  German tables, promise counts, session lifetimes) now run in each tool's own
+  suite against its own file.
+
 ## 1.68.0 — 2026-10-03
 
 - **Drawbridge notice `2026-10-03-db-comparison` (TO DO DB-003, owner-approved
