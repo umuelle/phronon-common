@@ -1,8 +1,9 @@
 """A tool that mounts the account kit: the kit's routes, once, and no leftovers.
 
-phronon_common.account_kit (FL-083) serves a tool's code prompt, authenticator
-setup, passkeys and Manage account page from one router. Two ways a tool can
-get that wrong without any page failing to render:
+phronon_common.account_kit (FL-083) serves a tool's sign-in, sign-out,
+password-reset links, code prompt, authenticator setup, passkeys, Manage
+account page and the administrator's two-factor reset from one router. Two
+ways a tool can get that wrong without any page failing to render:
 
   * a route left behind in app.py, or added there again later. FastAPI answers
     a path with the FIRST route that matches, so whichever was registered
@@ -49,10 +50,8 @@ def effective_routes(app) -> list[tuple[str, str, str]]:
 
 def kit_routes(legacy_password_path: str | None = None) -> list[tuple[str, str]]:
     from phronon_common import account_kit
-    gets = {"/backoffice/verify", "/backoffice/two-factor", "/backoffice/account",
-            "/backoffice/account/email/confirm"}
-    routes = [(p, "GET") for p in gets]
-    routes += [(p, "POST") for p in account_kit.PATHS if p != "/backoffice/account"]
+    routes = [(p, "GET") for p in account_kit.GET_PATHS]
+    routes += [(p, "POST") for p in account_kit.PATHS if p != account_kit.ACCOUNT_URL]
     if legacy_password_path:
         routes += [(legacy_password_path, "GET"), (legacy_password_path, "POST")]
     return sorted(routes)
@@ -81,3 +80,23 @@ def assert_no_template_shadows_the_kit(project_root: Path | str) -> None:
     assert not stale, (
         f"templates/backoffice/{stale} are copies the kit replaced; the page "
         f"people see is the kit's, so an edit there changes nothing")
+
+
+#: The tool's own pages the kit renders: each tool's branded entrance.
+OWN_ENTRANCE_PAGES = {"login.html": "/backoffice/login",
+                      "password_reset.html": "/backoffice/password-reset"}
+
+
+def assert_the_tool_keeps_its_entrance_pages(project_root: Path | str) -> None:
+    """The kit renders the tool's own sign-in and reset pages and hands them
+    `csrf_token`. A page that is missing, still reads another name for the
+    token, or posts somewhere else renders, and every sign-in then fails."""
+    templates = Path(project_root) / "templates" / "backoffice"
+    for name, action in OWN_ENTRANCE_PAGES.items():
+        page = templates / name
+        assert page.is_file(), f"templates/backoffice/{name} is missing; the kit renders it"
+        html = page.read_text(encoding="utf-8")
+        assert 'name="csrf_token" value="{{ csrf_token }}"' in html, (
+            f"{name}: the form's token must be the kit's `csrf_token`")
+        assert f'action="{action}"' in html, f"{name}: the form must post to {action}"
+

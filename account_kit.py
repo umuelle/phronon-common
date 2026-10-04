@@ -1,56 +1,85 @@
-"""The account kit: a tool's signed-in account routes, written once (FL-083 pilot).
+"""The account kit: a tool's account routes, written once (FL-083).
 
 WHAT THIS IS
 Every tool carried its own copy of the routes an account holder uses on
-themselves: the code prompt after the password, setting up and replacing the
-authenticator app, new recovery codes, passkeys (add, remove, sign in), and
-the Manage account page (name, e-mail change with its mailed confirmation,
-password change). The logic was the same everywhere; local names, table
-columns, cookie names and a handful of policies were not. Two tools (Moral
-Mirror and Drawbridge) mount this router instead, as a pilot; the other seven
-keep their own code for now.
+themselves: signing in with a password and then the code, signing out, the
+password-reset links, setting up and replacing the authenticator app, new
+recovery codes, passkeys (add, remove, sign in), and the Manage account page
+(name, e-mail change with its mailed confirmation, password change); and of
+two things around them: the gate that holds an account with a temporary
+password (or an administrator without an authenticator) to the pages it may
+use, and the administrator's "reset this account's two-factor" button. The
+logic was the same everywhere; local names, table columns, cookie names and a
+handful of policies were not. Moral Mirror and Drawbridge mount this router
+and gate; the other seven tools keep their own code for now and adopt the kit
+one at a time.
 
     from phronon_common import account_kit
     account_kit.install_templates(templates.env)
-    app.include_router(account_kit.build_account_router(account_kit.AccountKit(...)))
+    kit = account_kit.AccountKit(...)
+    app.include_router(account_kit.build_account_router(kit))
+    ...
+    app.middleware("http")(account_kit.account_gate(kit))
 
-The routes, form fields, cookies, redirects, messages, audit actions and mails
-are the ones both tools already had, so nothing a user, a browser or a stored
-credential sees changes. Password hashes, TOTP secrets, recovery codes and
-passkeys stay in the tool's own tables, read and written exactly as before.
+The routes, form fields, cookies, redirects, audit actions and mails are the
+ones the tools already had. Password hashes, TOTP secrets, recovery codes,
+passkeys and reset tokens stay in the tool's own tables, read and written as
+before, so a credential, a session or a mailed link issued earlier still
+works.
+
+THE POLICIES ARE THE FLEET'S (owner's decision, 4 October 2026, FL-083)
+Where the two pilot tools differed in policy, Drawbridge's rule is the kit's
+rule for every tool, because it was the stricter one each time:
+  (a) lockout: phronon_common.lockout (one minute after five failures,
+      doubling), for a wrong password, a wrong code and a refused passkey;
+  (b) a form re-shown with a validation error answers 400;
+  (c) sign-in: five attempts a minute per address, shared by the password
+      form and the passkey; a locked account is refused (429) before its
+      password is checked; an unknown, wrong or deactivated account hears
+      "Invalid email or password.";
+  (d) password reset: five requests per five minutes per address; a
+      deactivated account gets no link (and is told nothing different); a
+      request that is neither "send me a link" nor "set this password" is a
+      400; completing a reset does not lift a lockout;
+  (e) sign-out needs a session and a token minted for that account.
 
 WHAT A TOOL SUPPLIES — the `AccountKit` adapter
 Everything that is the tool's own: its tables (`AccountTables`) and database
-functions, its session (who is signed in, how a session cookie is issued and
-what "signed out" answers), its pages (`render` puts a kit template inside the
-tool's own backoffice layout), its CSRF check, its audit recorder, its mail
-module, its lockout policy. Nothing in here branches on a tool's name: where
-the two pilot tools behave differently, the difference is a named field of the
-adapter, and its docstring says whether it is a decision or an accident kept
-so that adopting the kit changed nothing.
-
-WHAT STAYS IN THE TOOL (for now)
-The password sign-in itself (/backoffice/login, which issues the pending
-cookie this module's code prompt reads), sign-out, the password-reset links,
-the must-change / forced-enrolment middleware, and the administrator's
-"reset this account's two-factor" button. They carry most of the remaining
-per-tool differences (lockout policy, rate limits, messages, which accounts
-count as active), which want an owner's decision before they move (TO DO
-FL-083).
+functions, its session (who is signed in, how a session or pending-login
+cookie is issued, what "signed out" answers), its pages (`render` puts a page
+inside the tool's own layout; the sign-in and reset pages are the tool's own
+templates, see below), its CSRF check, its audit recorder and its mail module.
+Nothing in here branches on a tool's name: where the two pilot tools still
+behave differently, the difference is a named field of the adapter, and its
+docstring says whether it is deliberate or an accident kept so that adopting
+the kit changed nothing.
 
 TEMPLATES
 `account_templates/` ships in the package (pyproject package-data) and is
 reached as `account_kit/<name>.html` once `install_templates` has added it to
 the tool's Jinja environment. Each extends the tool's own
 "backoffice/base.html", so the pages render inside the tool's layout and nav.
+The sign-in page and the password-reset page are the tool's own
+(`backoffice/login.html`, `backoffice/password_reset.html`): they are each
+tool's branded entrance. The kit renders them with `error`, `notice` (sign-in)
+or `token`, `error`, `success`, `message` (reset), and the `csrf_token` the
+tool's `render` supplies.
+
+WHAT STAYS IN THE TOOL
+The users list and everything else an administrator does to other accounts
+(invite, edit, deactivate, delete, set a password, send a reset link), the
+participant side, and the two page templates above.
 """
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
 import logging
 import re
+import secrets
 from dataclasses import dataclass, field
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -72,11 +101,46 @@ logger = logging.getLogger(__name__)
 TEMPLATE_DIR = Path(__file__).resolve().parent / "account_templates"
 #: The name the kit's templates are reached under in a tool's environment.
 TEMPLATE_PREFIX = "account_kit"
+#: The tool's own pages the kit renders (see TEMPLATES above).
+LOGIN_TEMPLATE = "backoffice/login.html"
+RESET_TEMPLATE = "backoffice/password_reset.html"
 
 LOGIN_URL = "/backoffice/login"
+LOGOUT_URL = "/backoffice/logout"
+RESET_URL = "/backoffice/password-reset"
+VERIFY_URL = "/backoffice/verify"
 DASHBOARD_URL = "/backoffice/dashboard"
 ACCOUNT_URL = "/backoffice/account"
 TWO_FACTOR_URL = "/backoffice/two-factor"
+USERS_URL = "/backoffice/users"
+ADMIN_TWO_FACTOR_RESET_URL = "/backoffice/users/{user_id}/reset-two-factor"
+
+#: (b) A form re-shown with a validation error (a wrong code, an invalid name
+#: or address, a dead confirmation link) answers 400.
+RESHOWN = 400
+#: (c) Sign-in attempts per address: (requests, seconds), one budget shared by
+#: the password form and the passkey, which nginx's exact-match limit on
+#: /backoffice/login does not cover.
+SIGN_IN_LIMIT = (5, 60)
+#: (d) Password-reset requests per address: (requests, seconds). Each one can
+#: send a mail.
+RESET_LIMIT = (5, 300)
+#: (c) What a failed password sign-in hears, whatever the reason: an unknown
+#: address, a wrong password, a deactivated account.
+SIGN_IN_REFUSED = "Invalid email or password."
+RESET_SENT = "If that email is registered you will receive a reset link shortly."
+RESET_DONE = "Password updated. You can now log in."
+RESET_DEAD = "Token is invalid or expired."
+
+#: Paths a signed-in account with a temporary password may still reach: the
+#: account page carries the password form (and shows nothing else in that
+#: state), and the rest is signing in and out. A prefix list, as the tools had
+#: it. The tool's legacy password address, and for one tool the enrolment
+#: page, are added in `account_gate`.
+MUST_CHANGE_OPEN = (ACCOUNT_URL, LOGOUT_URL, LOGIN_URL, RESET_URL, VERIFY_URL)
+#: Paths an administrator without an authenticator may still reach. Enrolling
+#: is the one thing such an account may do.
+ENROLMENT_OPEN = (TWO_FACTOR_URL, LOGOUT_URL, LOGIN_URL, RESET_URL, VERIFY_URL)
 
 #: Fixed texts, addressed by key. The redirect after a POST carries `?msg=` /
 #: `?err=`, and the KEY is looked up here: a page that prints back whatever the
@@ -115,7 +179,7 @@ def _ident(name: str) -> str:
 class AccountTables:
     """Where the tool keeps its accounts and passkeys, and how to reach them.
 
-    The four functions are the tool's own database helpers, so connections,
+    The five functions are the tool's own database helpers, so connections,
     pooling and commits stay exactly as the tool has them. Parameters are
     passed as a tuple.
     """
@@ -128,20 +192,36 @@ class AccountTables:
     #: () -> a DB-API connection. `passkeys.record_sign_in` needs the cursor's
     #: rowcount to decide whether a sign-in won its one use of the challenge.
     get_conn: Callable[[], Any]
+    #: [(sql, params), ...] -> None; runs the statements in ONE transaction
+    #: (a completed reset changes the password and spends every link at once).
+    transaction: Callable[[list], Any]
     accounts: str = "admins"
     passkeys: str = "passkeys"
     #: The passkey table's column naming the account. Moral Mirror's says
     #: `educator_id`, Drawbridge's `admin_id`: a historic naming, not a design.
     passkey_owner: str = "admin_id"
-    #: How `last_login_at` is stamped on a completed sign-in: None writes the
-    #: database's NOW() (Moral Mirror, whose pool sets no time zone); a function
-    #: supplies the value instead (Drawbridge: Python's UTC clock). KEPT so the
-    #: column means what it meant; both are "now", but they agree only where
-    #: the MySQL session clock is UTC.
-    last_login_at: Optional[Callable[[], Any]] = None
+    reset_tokens: str = "password_reset_tokens"
+    #: The reset-token table's column naming the account (Moral Mirror
+    #: `educator_id`, Drawbridge `admin_id`, as for passkeys).
+    reset_token_owner: str = "admin_id"
+    #: The column that marks a reset link spent. A name ending in `_at` is a
+    #: timestamp, NULL until the link is used; any other name is a TINYINT,
+    #: 0 until it is used. Drawbridge's table has `used`. Moral Mirror's live
+    #: table has `used_at` (migration 001; its 004 changed nothing, being a
+    #: CREATE TABLE IF NOT EXISTS), although its old code asked for `used`
+    #: (MM-008).
+    reset_token_spent: str = "used"
+    #: How the kit stamps a time it writes (`last_login_at` on a completed
+    #: sign-in, a reset link's expiry): None writes the database's NOW()
+    #: (Moral Mirror, whose pool sets no time zone); a function supplies "now"
+    #: instead (Drawbridge: Python's UTC clock). KEPT so each column means
+    #: what it meant; the two agree only where the MySQL session clock is UTC.
+    #: An expiry is CHECKED against the database's NOW() in both tools.
+    clock: Optional[Callable[[], Any]] = None
 
     def __post_init__(self):
-        for name in (self.accounts, self.passkeys, self.passkey_owner):
+        for name in (self.accounts, self.passkeys, self.passkey_owner, self.reset_tokens,
+                     self.reset_token_owner, self.reset_token_spent):
             _ident(name)
 
 
@@ -190,19 +270,26 @@ class AccountKit:
 
     # ── its session ──────────────────────────────────────────────────────────
     #: request -> the signed-in account row (every column), or None. Never
-    #: raises: the JSON routes answer 401 rather than redirecting.
+    #: raises for a missing or dead session: the JSON routes answer 401 rather
+    #: than redirecting. It returns None for a deactivated account, and it may
+    #: raise when the database is down (the sign-in page then shows the form).
     current_account: Callable[[Request], Optional[dict]]
     #: request -> what a page answers when nobody is signed in. May raise
     #: (Drawbridge raises its 302); Moral Mirror returns a 303.
     signed_out: Callable[[Request], Response]
     #: request -> the account whose password was right and whose code is still
-    #: owed (the tool's login sets that cookie), or None.
+    #: owed, or None. The code prompt trusts it: it must return None for an
+    #: account that may no longer sign in (deactivated).
     pending_account: Callable[[Request], Optional[dict]]
     #: The pending-login cookie, deleted once the code is accepted.
     pending_cookie: str
+    #: (response, account_id) -> mark a sign-in whose password was right and
+    #: whose code is still owed (the cookie `pending_account` reads).
+    set_pending_cookie: Callable[[Response, int], None]
     #: (response, account_id) -> issue a fresh session cookie.
     set_session_cookie: Callable[[Response, int], None]
-    #: The session cookie, deleted when an address change ends every session.
+    #: The session cookie, deleted on sign-out and when an address change ends
+    #: every session.
     session_cookie: str
     #: The cookie carrying a not-yet-confirmed authenticator secret.
     enrolment_cookie: str
@@ -221,61 +308,98 @@ class AccountKit:
     render: Callable[..., Response]
     #: (request, submitted_token, account_or_None) -> may this POST proceed?
     #: None means a pre-sign-in form. A tool whose CSRF check already runs
-    #: app-wide (Moral Mirror's dependency, 403 before any route) answers True.
-    #: A False here is answered the way Drawbridge answered it: 400 on a page,
-    #: a JSON error on the passkey calls, the sign-in page from the code prompt.
+    #: app-wide (Moral Mirror's dependency, 403 before any route) answers True;
+    #: its tokens are bound to the session cookie, so a token minted for one
+    #: account is refused for another there. A False here is answered the way
+    #: Drawbridge answered it: 400 on a page, a JSON error on the passkey calls,
+    #: the sign-in page from the code prompt.
     csrf_ok: Callable[[Request, str, Optional[dict]], bool]
+    #: request -> what a signed-in account that is not an administrator hears
+    #: from the admin "reset two-factor" action. May raise. Moral Mirror
+    #: redirects to the dashboard (303), Drawbridge answers 403: ACCIDENTAL,
+    #: kept (each tool's other admin routes answer the same way).
+    not_an_admin: Callable[[Request], Response]
+    #: (request, admin_row) -> what the administrator sees after resetting
+    #: another account's two-factor: the tool's own users list. Moral Mirror
+    #: renders it with a note saying so; Drawbridge redirects to /backoffice/users
+    #: (303) and says nothing. ACCIDENTAL, kept.
+    after_two_factor_reset: Callable[[Request, dict], Response]
 
     # ── its policy ───────────────────────────────────────────────────────────
     #: The tool's phronon_common.audit.AuditRecorder.
     audit: Callable[..., Any]
     #: The bcrypt module (passed in: this package declares no bcrypt).
     bcrypt: Any
-    #: failed_logins_before -> (failed_logins, locked_until_or_None). A wrong
-    #: code or a refused passkey counts like a wrong password, so this must be
-    #: the rule the tool's own password sign-in applies: one lockout per tool.
-    #: Drawbridge passes phronon_common.lockout.register_failure (one minute,
-    #: doubling, the fleet policy since 24 July 2026). Moral Mirror locks for a
-    #: fixed 15 minutes after five, in its login too: ACCIDENTAL (it never
-    #: adopted the shared policy); kept, and to be changed in both places at once.
-    register_failure: Callable[[int], tuple]
-    #: request -> the address the passkey sign-in is rate-limited by.
+    #: request -> the address sign-in and reset requests are rate-limited by.
+    #: Moral Mirror's is proxy-aware (phronon_common.rate_limit.client_ip);
+    #: Drawbridge's is the connection's own address, as its login had it.
     client_ip: Callable[[Request], str]
-    #: (requests, seconds) for the passkey sign-in, which nginx's exact-match
-    #: limit on /backoffice/login does not cover. Moral Mirror 10/60, keyed by
-    #: the proxy-aware address; Drawbridge 5/60, the bucket its password form
-    #: shares.
-    login_rate_limit: tuple = (10, 60)
-    #: Where a completed sign-in goes while a temporary password is in force.
-    #: Drawbridge still says /backoffice/change-password, which redirects to
-    #: the account page; Moral Mirror goes there directly.
-    must_change_url: str = ACCOUNT_URL
+    #: How long a mailed reset link lives, in hours (each tool's
+    #: RESET_TOKEN_HOURS).
+    reset_token_hours: int = 2
     #: The tool's mail module, imported by name at send time (so a test that
     #: replaces one of its functions is honoured): it provides
-    #: send_two_factor_confirmation, send_email_change_confirm and
+    #: send_password_reset, send_two_factor_confirmation,
+    #: send_two_factor_reset_notice, send_email_change_confirm and
     #: send_email_change_notice.
     mail_module: str = "services.email"
     #: Where "could not send" is logged — the tool's own logger, so the line
     #: lands where it always did.
     logger: logging.Logger = field(default=logger)
-    #: The status of a page re-shown with a validation error (a wrong code, an
-    #: invalid name or address, a dead confirmation link). Moral Mirror 200,
-    #: Drawbridge 400. ACCIDENTAL; kept.
-    error_status: int = 200
-    #: Refuse a password change whose confirmation differs, or whose new
-    #: password is the current one. Drawbridge does; Moral Mirror's form has
-    #: the confirmation field but its server never read it. ACCIDENTAL (a gap
-    #: in Moral Mirror); kept until the owner says otherwise.
-    password_change_checks_confirmation: bool = True
-    #: Password-change fields a request must carry or be refused with FastAPI's
-    #: 422. Moral Mirror declared current/new password required, Drawbridge the
-    #: CSRF token. Only a hand-made request can tell; kept so it cannot.
-    password_form_required: tuple = ()
     #: An older address the password form also answers at, and whose GET
     #: redirects to the account page (Drawbridge: /backoffice/change-password,
-    #: kept for bookmarks and the fleet's probes).
+    #: kept for bookmarks and the fleet's probes). Deliberate.
     legacy_password_path: Optional[str] = None
     layout: AccountPageLayout = field(default_factory=AccountPageLayout)
+
+    # ── differences kept as they were ────────────────────────────────────────
+    # Each looks ACCIDENTAL (one tool improved its copy and the other never
+    # heard) and is kept so that adopting the kit changed nothing a person or
+    # a browser can see. Harmonising one is an owner's decision, then one edit
+    # here. The defaults are what a tool adopting the kit should normally get.
+
+    #: Where a completed sign-in goes while a temporary password is in force.
+    #: Drawbridge still says /backoffice/change-password, which redirects to
+    #: the account page; Moral Mirror goes there directly.
+    must_change_url: str = ACCOUNT_URL
+    #: Refuse a password change whose confirmation differs, or whose new
+    #: password is the current one. Drawbridge does; Moral Mirror's form had
+    #: the confirmation field but its server never read it (MM-005).
+    password_change_checks_confirmation: bool = True
+    #: Password-change fields (other than the CSRF token) a request must carry
+    #: or be refused with FastAPI's 422. Moral Mirror declared current and new
+    #: password required. Only a hand-made request can tell.
+    password_form_required: tuple = ()
+    #: Declare the `csrf_token` field required on the sign-in, sign-out,
+    #: password-reset and password-change forms, so a request without it is
+    #: FastAPI's 422 rather than a refused token (Drawbridge). Moral Mirror's
+    #: app-wide CSRF dependency answers such a request with its 403 first.
+    #: Only a hand-made request can tell.
+    csrf_field_required: bool = False
+    #: The redirect status of the sign-in page for a browser already signed in:
+    #: Moral Mirror 303, Drawbridge 307 (the framework's default). Both send a
+    #: GET to the dashboard.
+    signed_in_redirect_status: int = 303
+    #: request -> True to delete the session cookie when the sign-in page is
+    #: reached with one it does not accept (Drawbridge: when its signature is
+    #: good but the session is not current, so a stale cookie cannot loop).
+    #: None leaves the cookie alone (Moral Mirror). Never asked when the
+    #: session lookup failed, so an outage cannot sign anybody out.
+    drop_dead_session_cookie: Optional[Callable[[Request], bool]] = None
+    #: The sign-in page shows the kit's keyed texts for `?msg=` and `?err=`,
+    #: among them "Your e-mail address has been changed" after a confirmed
+    #: address change. Drawbridge's never read them (DB-006).
+    sign_in_page_shows_messages: bool = True
+    #: The enrolment page stays reachable while a temporary password is in
+    #: force (Drawbridge). Moral Mirror sends such an account to the password
+    #: form first.
+    must_change_allows_two_factor: bool = False
+    #: request -> the row the gate judges (needs must_change_password, role,
+    #: totp_enabled), or None. None here means `current_account`. Drawbridge's
+    #: gate read the session cookie's account id WITHOUT checking the session
+    #: epoch, its age or is_active, so a dead session meets the gate's
+    #: redirect first and the sign-in page one hop later.
+    gate_account: Optional[Callable[[Request], Optional[dict]]] = None
 
 
 # ── templates ────────────────────────────────────────────────────────────────
@@ -305,6 +429,12 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     T = kit.tables.accounts
     PK = kit.tables.passkeys
     OWNER = kit.tables.passkey_owner
+    RT = kit.tables.reset_tokens
+    RT_OWNER = kit.tables.reset_token_owner
+    SPENT = kit.tables.reset_token_spent
+    # A spent-at timestamp is NULL until the link is used; a flag is 0.
+    UNSPENT, SPEND = ((f"{SPENT} IS NULL", f"{SPENT}=NOW()") if SPENT.endswith("_at")
+                      else (f"{SPENT}=0", f"{SPENT}=1"))
     q1, qall, run = kit.tables.query_one, kit.tables.query_all, kit.tables.execute
     email_signer = account_mod.email_change_signer(kit.secret_key)
     page_kit = {
@@ -321,6 +451,15 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         context["account_kit"] = page_kit
         return kit.render(request, template(name), context, status_code=status_code,
                           csrf_for=csrf_for, preauth=preauth)
+
+    def tool_page(request, path, *, status_code=200, **context):
+        """One of the tool's own pre-sign-in pages (sign-in, reset)."""
+        return kit.render(request, path, context, status_code=status_code, csrf_for=None,
+                          preauth=True)
+
+    def csrf_field():
+        """The CSRF field, declared required where the tool declared it so."""
+        return Form(...) if kit.csrf_field_required else Form("")
 
     def redirect(url: str) -> RedirectResponse:
         return RedirectResponse(url, status_code=303)
@@ -351,17 +490,17 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         """A wrong code or a refused passkey counts towards the same lockout as
         a wrong password — otherwise the second factor could be guessed
         without limit."""
-        fails, until = kit.register_failure(row.get("failed_logins") or 0)
+        fails, until = lockout.register_failure(row.get("failed_logins") or 0)
         run(f"UPDATE {T} SET failed_logins=%s, locked_until=%s WHERE id=%s",
             (fails, until, row["id"]))
 
     def record_sign_in(row: dict) -> None:
-        if kit.tables.last_login_at is None:
+        if kit.tables.clock is None:
             run(f"UPDATE {T} SET failed_logins=0, locked_until=NULL, last_login_at=NOW() "
                 f"WHERE id=%s", (row["id"],))
         else:
             run(f"UPDATE {T} SET failed_logins=0, locked_until=NULL, last_login_at=%s "
-                f"WHERE id=%s", (kit.tables.last_login_at(), row["id"]))
+                f"WHERE id=%s", (kit.tables.clock(), row["id"]))
 
     def landing(row: dict) -> str:
         return kit.must_change_url if row.get("must_change_password") else DASHBOARD_URL
@@ -393,6 +532,164 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return page(request, "two_factor.html", status_code=status_code, csrf_for=account,
                     **values)
 
+    # ── signing in with a password, and signing out ──────────────────────────
+
+    def sign_in_page(request, *, error=None, notice=None, status_code=200):
+        return tool_page(request, LOGIN_TEMPLATE, status_code=status_code,
+                         error=error, notice=notice)
+
+    @router.get(LOGIN_URL)
+    def sign_in_form(request: Request):
+        # Signed in already: the form has nothing to offer, so go to the
+        # dashboard (fleet entry-address rule, 3 October 2026). Looking the
+        # session up needs the database, and this page must still render when
+        # it is down: it is the page somebody reaches for when something is
+        # wrong. Only this page treats a failed lookup as "signed out".
+        lookup_failed = False
+        try:
+            signed_in = kit.current_account(request)
+        except Exception:  # noqa: BLE001 — during an outage the form still renders
+            kit.logger.exception("login page: session lookup failed; showing the form")
+            signed_in, lookup_failed = None, True
+        if signed_in:
+            return RedirectResponse(DASHBOARD_URL, status_code=kit.signed_in_redirect_status)
+        # A confirmed address change lands here, signed out on purpose (the
+        # login itself has just changed). Both texts come from the fixed
+        # tables above: the query string carries a key, and only the key is
+        # read.
+        error = notice = None
+        if kit.sign_in_page_shows_messages:
+            error = ACCOUNT_ERRORS.get(request.query_params.get("err", ""))
+            notice = ACCOUNT_MESSAGES.get(request.query_params.get("msg", ""))
+        resp = sign_in_page(request, error=error, notice=notice)
+        if (not lookup_failed and request.cookies.get(kit.session_cookie)
+                and kit.drop_dead_session_cookie and kit.drop_dead_session_cookie(request)):
+            resp.delete_cookie(kit.session_cookie)
+        return resp
+
+    @router.post(LOGIN_URL)
+    def sign_in(request: Request, csrf_token: str = csrf_field(),
+                email: str = Form(...), password: str = Form(...)):
+        # (c) the budget first, then the token, then the account.
+        if not sign_in_allowed(request):
+            raise HTTPException(429, "Too many login attempts")
+        if not kit.csrf_ok(request, csrf_token, None):
+            raise bad_csrf()
+        # (c) A deactivated account is not looked up at all, so it hears what
+        # an unknown address hears and nothing is counted against it.
+        row = q1(f"SELECT * FROM {T} WHERE email=%s AND is_active=1", (email.strip().lower(),))
+        # (c) A locked account is refused before its password is checked, so
+        # guessing during the lock learns nothing and does not extend it.
+        if row and lockout.is_locked(row.get("locked_until")):
+            kit.audit("login_locked", request=request, admin_id=row["id"],
+                      admin_email=row["email"])
+            return sign_in_page(request, error=lockout.LOCKED_MESSAGE, status_code=429)
+        # bcrypt reads only the first 72 bytes and bcrypt >= 4.1 raises on
+        # longer input, so every call site truncates (audit item G1).
+        if not row or not kit.bcrypt.checkpw(password.encode()[:72],
+                                             row["password_hash"].encode()):
+            if row:
+                count_failure(row)                       # (a) the fleet's lockout
+                kit.audit("login_failed", request=request, admin_id=row["id"],
+                          admin_email=row["email"])
+            return sign_in_page(request, error=SIGN_IN_REFUSED)
+        record_sign_in(row)
+        # A1: the password was right, but no session is granted yet while a
+        # code is owed: a pending cookie that no guarded page accepts.
+        if row.get("totp_enabled"):
+            resp = redirect(VERIFY_URL)
+            kit.set_pending_cookie(resp, row["id"])
+            return resp
+        kit.audit("login_success", request=request, admin_id=row["id"], admin_email=row["email"])
+        resp = redirect(landing(row))
+        kit.set_session_cookie(resp, row["id"])
+        return resp
+
+    @router.post(LOGOUT_URL)
+    def sign_out(request: Request, csrf_token: str = csrf_field()):
+        # (e) A session, and a token minted for it: otherwise any page on the
+        # web could sign a person out.
+        account = kit.current_account(request)
+        if not account:
+            return kit.signed_out(request)
+        if not kit.csrf_ok(request, csrf_token, account):
+            raise bad_csrf()
+        resp = redirect(LOGIN_URL)
+        resp.delete_cookie(kit.session_cookie)
+        return resp
+
+    # ── the password-reset links ─────────────────────────────────────────────
+    # Tokens are stored hashed; the raw token only ever appears in the mailed
+    # link. A tool's own "send a reset link" (an administrator's button) mints
+    # tokens of the same shape, which is why `reset_token_hash` is public.
+
+    def reset_page(request, *, token="", error=None, success=False, message=None):
+        return tool_page(request, RESET_TEMPLATE, token=token, error=error, success=success,
+                         message=message)
+
+    def issue_reset_token(account_id) -> str:
+        raw = secrets.token_urlsafe(32)
+        if kit.tables.clock is None:
+            run(f"INSERT INTO {RT} ({RT_OWNER}, token_hash, expires_at) "
+                f"VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL %s HOUR))",
+                (account_id, reset_token_hash(raw), kit.reset_token_hours))
+        else:
+            run(f"INSERT INTO {RT} ({RT_OWNER}, token_hash, expires_at) VALUES (%s, %s, %s)",
+                (account_id, reset_token_hash(raw),
+                 kit.tables.clock() + timedelta(hours=kit.reset_token_hours)))
+        return raw
+
+    @router.get(RESET_URL)
+    def password_reset_form(request: Request, token: str = ""):
+        return reset_page(request, token=token)
+
+    @router.post(RESET_URL)
+    def password_reset(request: Request, csrf_token: str = csrf_field(),
+                       email: str = Form(""), token: str = Form(""),
+                       new_password: str = Form("")):
+        limit, window = RESET_LIMIT                      # (d) each request can send a mail
+        if not is_allowed(f"pwreset:{kit.client_ip(request)}", max_requests=limit,
+                          window_seconds=window):
+            raise HTTPException(429, "Too many requests")
+        if not kit.csrf_ok(request, csrf_token, None):
+            raise bad_csrf()
+        if email and not token:
+            # Step 1: send a link. The answer is the same whether or not the
+            # address belongs to an account, and (d) a deactivated account
+            # gets no link.
+            address = email.strip().lower()
+            row = q1(f"SELECT id FROM {T} WHERE email=%s AND is_active=1", (address,))
+            if row:
+                raw = issue_reset_token(row["id"])
+                try:
+                    mail("send_password_reset")(address, f"{kit.base_url()}{RESET_URL}?token={raw}")
+                    kit.audit("password_reset_requested", request=request, admin_email=address)
+                except Exception:  # noqa: BLE001 — never reveal whether the address exists
+                    pass
+            return reset_page(request, success=True, message=RESET_SENT)
+        if token and new_password:
+            # Step 2: set the new password.
+            row = q1(f"SELECT * FROM {RT} WHERE token_hash=%s AND {UNSPENT} "
+                     f"AND expires_at > NOW()", (reset_token_hash(token),))
+            if not row:
+                return reset_page(request, token=token, error=RESET_DEAD)
+            ok, why = pw_policy.validate_password(new_password)
+            if not ok:
+                return reset_page(request, token=token, error=why)
+            owner = row[RT_OWNER]
+            pw_hash = kit.bcrypt.hashpw(new_password.encode()[:72], kit.bcrypt.gensalt()).decode()
+            # session_epoch+1: a reset ends every session opened before it (A2).
+            # Every outstanding link for the account is spent, this one and any
+            # other. (d) A lockout stays: it runs out on its own.
+            kit.tables.transaction([
+                (f"UPDATE {T} SET password_hash=%s, must_change_password=0, "
+                 f"session_epoch=session_epoch+1 WHERE id=%s", (pw_hash, owner)),
+                (f"UPDATE {RT} SET {SPEND} WHERE {RT_OWNER}=%s AND {UNSPENT}", (owner,)),
+            ])
+            kit.audit("password_reset_completed", request=request, admin_id=owner)
+            return reset_page(request, success=True, message=RESET_DONE)
+        raise HTTPException(400, "Invalid request")      # (d)
+
     # ── the code prompt after a right password ───────────────────────────────
 
     @router.get("/backoffice/verify")
@@ -414,7 +711,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         if not ok:
             count_failure(row)
             return page(request, "two_factor_verify.html", preauth=True,
-                        status_code=kit.error_status, error="That code is not valid.")
+                        status_code=RESHOWN, error="That code is not valid.")
         if remaining is not None:          # a recovery code was spent — persist it
             run(f"UPDATE {T} SET totp_backup_codes=%s WHERE id=%s",
                 (json.dumps(remaining), row["id"]))
@@ -486,7 +783,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         secret = request.cookies.get(kit.enrolment_cookie)
         if not secret or not twofactor.verify(secret, code):
             uri = twofactor.provisioning_uri(secret or "", account["email"], kit.tool_name)
-            return two_factor_page(request, account, status_code=kit.error_status,
+            return two_factor_page(request, account, status_code=RESHOWN,
                                    secret=secret, qr_svg=twofactor.qr_svg(uri),
                                    replacing=replacing,
                                    error="That code did not match — check the app and try again.")
@@ -593,7 +890,8 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return resp
 
     def sign_in_allowed(request) -> bool:
-        limit, window = kit.login_rate_limit
+        """(c) One budget per address for the password form and the passkey."""
+        limit, window = SIGN_IN_LIMIT
         return is_allowed(f"login:{kit.client_ip(request)}", max_requests=limit,
                           window_seconds=window)
 
@@ -686,7 +984,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             return redirect(f"{ACCOUNT_URL}?err=password_needed")
         cleaned, error = account_mod.validate_name(display_name)
         if error:
-            return account_page(request, account, error=error, status_code=kit.error_status)
+            return account_page(request, account, error=error, status_code=RESHOWN)
         if cleaned != (account.get("display_name") or ""):
             run(f"UPDATE {T} SET display_name=%s WHERE id=%s", (cleaned, account["id"]))
             kit.audit("account_name_changed", request=request, admin_id=account["id"],
@@ -721,7 +1019,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             return redirect(f"{ACCOUNT_URL}?err=wrong_password")
         email, error = account_mod.validate_email(new_email, current=account.get("email"))
         if error:
-            return account_page(request, account, error=error, status_code=kit.error_status)
+            return account_page(request, account, error=error, status_code=RESHOWN)
         # The UNIQUE key would catch a duplicate at write time — two hours later,
         # in a route nobody is watching, after the person was told to check mail.
         if q1(f"SELECT id FROM {T} WHERE email=%s AND id!=%s", (email, account["id"])):
@@ -760,7 +1058,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         button because mail scanners fetch every URL they see."""
         payload, _row, error = read_email_change(token)
         return page(request, "account_confirm_email.html", preauth=True,
-                    status_code=kit.error_status if error else 200,
+                    status_code=RESHOWN if error else 200,
                     error=error, payload=payload, token="" if error else token)
 
     @router.post("/backoffice/account/email/confirm")
@@ -771,7 +1069,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             raise bad_csrf()
         payload, row, error = read_email_change(token)
         if error:
-            return page(request, "account_confirm_email.html", status_code=kit.error_status,
+            return page(request, "account_confirm_email.html", status_code=RESHOWN,
                         error=error, payload=None, token="")
         # The epoch bump is not bookkeeping: the address IS the login, so every
         # session opened under the old one ends here, on every device.
@@ -790,7 +1088,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     @router.post("/backoffice/account/password")
     def account_password(request: Request,
-                         csrf_token: str = form_field("csrf_token"),
+                         csrf_token: str = csrf_field(),
                          current_password: str = form_field("current_password"),
                          new_password: str = form_field("new_password"),
                          confirm_password: str = form_field("confirm_password")):
@@ -824,6 +1122,44 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         kit.set_session_cookie(resp, account["id"])
         return resp
 
+    # ── an administrator resets another account's two-factor ─────────────────
+
+    # The path spelled out (it is ADMIN_TWO_FACTOR_RESET_URL): the fleet's
+    # account-page contract finds this handler by its decorator.
+    @router.post("/backoffice/users/{user_id}/reset-two-factor")
+    def reset_two_factor_by_admin(request: Request, user_id: int, csrf_token: str = Form("")):
+        """Clear another account's second factor, so it can enrol again.
+
+        The lost-phone case: recovery codes are the first line, but somebody
+        who lost the phone AND the codes had nowhere to go but a database edit.
+        It adds no power an administrator lacks (they can already send that
+        account a password reset, i.e. become it). What it adds is a record and
+        a mail, because "an admin reset my second factor" and "somebody took my
+        account" look identical from the inside.
+        """
+        account = kit.current_account(request)
+        if not account:
+            return kit.signed_out(request)
+        if account.get("role") != "admin":
+            return kit.not_an_admin(request)
+        if not kit.csrf_ok(request, csrf_token, account):
+            raise bad_csrf()
+        target = q1(f"SELECT * FROM {T} WHERE id=%s", (user_id,))
+        if not target or not target.get("totp_enabled"):
+            return redirect(USERS_URL)
+        # The epoch bump ends the target's open sessions: if this is used to
+        # recover a compromised account, leaving the intruder signed in undoes it.
+        run(f"UPDATE {T} SET totp_secret=NULL, totp_enabled=0, totp_backup_codes=NULL, "
+            f"session_epoch=session_epoch+1 WHERE id=%s", (user_id,))
+        kit.audit("two_factor_reset_by_admin", request=request, admin_id=account["id"],
+                  admin_email=account.get("email"), subject=str(user_id),
+                  details={"email": target.get("email")})
+        try:
+            mail("send_two_factor_reset_notice")(target["email"], f"{kit.base_url()}{ACCOUNT_URL}")
+        except Exception:  # noqa: BLE001 — a mail outage must not eat the reset
+            kit.logger.exception("two-factor reset notice could not be sent")
+        return kit.after_two_factor_reset(request, account)
+
     if kit.legacy_password_path:
         def legacy_password_page():
             """The old address. Kept as a redirect: bookmarks, and the fleet's probes."""
@@ -846,6 +1182,9 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 #: Every path the router answers, for a tool's gates and tests. The legacy
 #: password path is added by the tool's own adapter when it has one.
 PATHS = (
+    LOGIN_URL,
+    LOGOUT_URL,
+    RESET_URL,
     "/backoffice/verify",
     TWO_FACTOR_URL,
     "/backoffice/passkeys/options",
@@ -858,4 +1197,61 @@ PATHS = (
     "/backoffice/account/email",
     "/backoffice/account/email/confirm",
     "/backoffice/account/password",
+    ADMIN_TWO_FACTOR_RESET_URL,
 )
+#: The paths that answer GET (and HEAD) as well.
+GET_PATHS = (LOGIN_URL, RESET_URL, "/backoffice/verify", TWO_FACTOR_URL, ACCOUNT_URL,
+             "/backoffice/account/email/confirm")
+
+
+def reset_token_hash(raw: str) -> str:
+    """How a reset token is stored: the first 32 hex digits of its SHA-256.
+    Both pilot tools, and their administrators' "send a reset link" buttons,
+    store exactly this, so links already mailed keep working."""
+    return hashlib.sha256(raw.encode()).hexdigest()[:32]
+
+
+# ── the gate ─────────────────────────────────────────────────────────────────
+
+def account_gate(kit: AccountKit):
+    """The middleware that holds two kinds of signed-in account to the pages
+    they may use. Install it where the tool's own gate was, so the middleware
+    order does not change:
+
+        app.middleware("http")(account_kit.account_gate(kit))
+
+    A temporary password in force: everything under /backoffice except the
+    must-change paths redirects to the password form (`must_change_url`).
+    Without this, the redirect issued at sign-in is defeated by typing any
+    other address.
+
+    An administrator without an authenticator (A1: two-factor is required for
+    admins, offered to educators): everything else redirects to the enrolment
+    page. Educators are never forced; they may enrol from the same page.
+
+    A failed lookup lets the request through (fail OPEN): a database hiccup
+    must not lock the whole backoffice out, and every page checks the session
+    again itself.
+    """
+    must_change_open = MUST_CHANGE_OPEN
+    if kit.legacy_password_path:
+        must_change_open += (kit.legacy_password_path,)
+    if kit.must_change_allows_two_factor:
+        must_change_open += (TWO_FACTOR_URL,)
+    who = kit.gate_account or kit.current_account
+
+    async def gate(request: Request, call_next):
+        path = request.url.path
+        if path.startswith("/backoffice") and not path.startswith(must_change_open):
+            try:
+                row = who(request)
+            except Exception:  # noqa: BLE001 — fail open, see above
+                row = None
+            if row and row.get("must_change_password"):
+                return RedirectResponse(kit.must_change_url, status_code=303)
+            if (row and twofactor.is_required(row.get("role")) and not row.get("totp_enabled")
+                    and not path.startswith(ENROLMENT_OPEN)):
+                return RedirectResponse(TWO_FACTOR_URL, status_code=303)
+        return await call_next(request)
+
+    return gate

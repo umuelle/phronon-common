@@ -78,11 +78,17 @@ belongs in your tool.
 3. **Accounts.** The scaffold signs in with `passwords`' rules, `lockout`,
    `sessions` (the epoch and the role-aware age) and `CookieSigner`, and it
    refuses an account with two-factor switched on. Before the first deploy
-   the code prompt, authenticator setup, recovery codes, passkeys, password
-   reset and the Manage account page come from `account_kit`: build an
-   `AccountKit` adapter (Moral Mirror's and Drawbridge's app.py are the two
-   worked examples, one with an app-wide CSRF dependency, one with per-form
-   checks) and mount `build_account_router(...)`. Admins must use two-factor.
+   that sign-in is replaced by `account_kit`, which serves sign-in (password,
+   code, passkey), sign-out, the reset links, authenticator setup, recovery
+   codes, passkeys, the Manage account page, the administrator's two-factor
+   reset and the gate for a temporary password or an un-enrolled
+   administrator, with the fleet's lockout, rate limits and messages: build
+   an `AccountKit` adapter (Moral Mirror's and Drawbridge's app.py are the
+   two worked examples, one with an app-wide CSRF dependency, one with
+   per-form checks), mount `build_account_router(...)` and install
+   `account_gate(...)` as middleware. The tool keeps its own
+   `backoffice/login.html` and `backoffice/password_reset.html`. Admins must
+   use two-factor.
 4. **The tool itself.** Sessions, the participant pages, the public join
    sheet at `/share/<code>`, retention (`retention.py`), `/about` and
    `/llms.txt` from a `ToolPresentation` entry, the `/accessibility`

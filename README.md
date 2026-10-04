@@ -34,7 +34,7 @@ imports. One version, everywhere, or the deploy stops.
 | Module | Purpose |
 |---|---|
 | `account` | self-service account management — the parts that must not differ |
-| `account_kit` | the account ROUTES and pages from a per-tool adapter: code prompt, authenticator setup, recovery codes, passkeys, Manage account (FL-083 pilot: Moral Mirror, Drawbridge) |
+| `account_kit` | the account ROUTES, pages and gate from a per-tool adapter: sign-in, sign-out, reset links, code prompt, authenticator setup, recovery codes, passkeys, Manage account, the admin two-factor reset, and the must-change / forced-enrolment gate (FL-083: Moral Mirror, Drawbridge) |
 | `adminroutes` | finds admin-only routes that are not gated on the admin role — in `app.py`'s text, or (`assert_live_admin_routes_are_gated`) in the running app, routers included |
 | `lockout` | the fleet account-lockout policy |
 | `passwords` | the fleet password policy (minimum 12, no composition rules) |
@@ -80,7 +80,7 @@ wrapper, so a tool cannot quietly stop running a check while its CI stays green.
 | `passwords` | the policy has one home, on the server and on the page |
 | `csrf_fetch` | every `fetch()` that POSTs sends the token where this tool reads it |
 | `manage_account` | the Manage account page: wiring and the guards that make it safe |
-| `account_kit` | a tool mounting `account_kit` answers each of its routes once, with no stale template copies |
+| `account_kit` | a tool mounting `account_kit` answers each of its routes once, with no stale template copies, and keeps its own sign-in and reset pages |
 | `email_delivery` | what the messages say, and whether they actually go out |
 | `fleet_baseline` | routes answer, login round-trips, anonymous visitors stay out, the stylesheet ships through bundles |
 | `run_reporting` | an unrecognised skip fails the run where green is a gate |

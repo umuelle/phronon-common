@@ -22,10 +22,11 @@ TOOLS THAT MOUNT THE ACCOUNT KIT (FL-083, 4 October 2026). Moral Mirror and
 Drawbridge no longer write these routes or the account templates themselves:
 `phronon_common/account_kit.py` does, from an adapter in their app.py. For
 such a tool every check below reads the code where it now lives: a route's
-body is found in the kit when app.py has none, the page is the kit's
-template, and the row the account page renders is followed from the
-adapter's `current_account=` into the tool's own session helper. A tool that
-does not mount the kit is read exactly as before.
+body is found in the kit when app.py has none (the administrator's two-factor
+reset included), the page is the kit's template, the two gates are the kit's
+lists, and the row the account page renders is followed from the adapter's
+`current_account=` into the tool's own session helper. A tool that does not
+mount the kit is read exactly as before.
 """
 from __future__ import annotations
 
@@ -194,6 +195,14 @@ class SectionsAreGatedByState(AccountPageContract):
         """An admin who has not enrolled may do exactly one thing. The account
         page is on the must-change list because the password form lives there;
         it must NOT be on the two-factor one."""
+        if self.uses_account_kit:
+            # The kit's gate (account_kit.account_gate) holds both lists; its
+            # own tests drive it. Here: the lists say what this test says.
+            from phronon_common import account_kit
+            assert not "/backoffice/account".startswith(account_kit.ENROLMENT_OPEN), (
+                "the account page is open to an administrator who has not enrolled")
+            assert account_kit.TWO_FACTOR_URL in account_kit.ENROLMENT_OPEN
+            return
         if "_2FA_ALLOWED" not in self.app_src:
             return          # this tool guards the two gates separately already
         block = self.app_src.split("_2FA_ALLOWED")[1][:400]
@@ -203,6 +212,10 @@ class SectionsAreGatedByState(AccountPageContract):
     def test_the_account_page_is_allowed_through_the_must_change_gate(self):
         """It carries the password form now, so a locked-out account has to be
         able to reach it — the section gating above is what makes that safe."""
+        if self.uses_account_kit:
+            from phronon_common import account_kit
+            assert "/backoffice/account" in account_kit.MUST_CHANGE_OPEN
+            return
         block = self.app_src.split("_MUST_CHANGE_ALLOWED")[1][:600]
         assert "/backoffice/account" in block
 
