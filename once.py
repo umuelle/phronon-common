@@ -58,7 +58,7 @@ from typing import Any, Callable, Optional, Sequence, Union
 
 logger = logging.getLogger(__name__)
 
-_IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
 class _SqlNow:
@@ -76,7 +76,7 @@ Keys = Union[Any, Sequence[Any]]
 
 
 def _ident(name: str) -> str:
-    if not isinstance(name, str) or not _IDENT.match(name):
+    if not isinstance(name, str) or not _IDENT.fullmatch(name):
         raise ValueError("not a plain SQL identifier: %r" % (name,))
     return name
 

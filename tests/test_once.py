@@ -103,7 +103,7 @@ def test_a_batch_claim_counts_the_rows_it_took():
     assert once.claim(t.get_db, "responses", "notified", [1, 2, 3], mark=1) == 2
 
 
-@pytest.mark.parametrize("bad", ["classes; DROP TABLE x", "a b", "", "1col", None])
+@pytest.mark.parametrize("bad", ["classes; DROP TABLE x", "a b", "", "1col", None, "classes\n"])
 def test_identifiers_are_never_interpolated_unchecked(bad):
     t = FakeTable({1: None})
     with pytest.raises(ValueError):

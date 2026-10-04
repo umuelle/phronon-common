@@ -118,7 +118,7 @@ def test_the_kit_names_no_tool():
 def test_tables_refuse_anything_but_a_plain_identifier():
     def nothing(*a):
         return None
-    for bad in ("admins; DROP TABLE x", "a b", "", "1col"):
+    for bad in ("admins; DROP TABLE x", "a b", "", "1col", "admins\n"):
         with pytest.raises(ValueError):
             kit_mod.AccountTables(nothing, nothing, nothing, nothing, accounts=bad)
         with pytest.raises(ValueError):
@@ -320,15 +320,31 @@ def test_the_router_answers_exactly_its_paths(world):
     w = world()
     got = sorted((r.path, m) for r in w.router.routes for m in r.methods)
     expected = sorted(
-        [(p, "GET") for p in ("/backoffice/verify", "/backoffice/two-factor",
-                              "/backoffice/account", "/backoffice/account/email/confirm")]
+        [(p, m) for p in ("/backoffice/verify", "/backoffice/two-factor",
+                          "/backoffice/account", "/backoffice/account/email/confirm")
+         for m in ("GET", "HEAD")]
         + [(p, "POST") for p in kit_mod.PATHS if p != "/backoffice/account"])
     assert got == expected
     legacy = world(legacy_password_path="/backoffice/change-password")
     paths = [(r.path, sorted(r.methods)) for r in legacy.router.routes
              if r.path == "/backoffice/change-password"]
-    assert sorted(paths) == [("/backoffice/change-password", ["GET"]),
+    assert sorted(paths) == [("/backoffice/change-password", ["GET", "HEAD"]),
                              ("/backoffice/change-password", ["POST"])]
+
+
+def test_every_page_answers_head_as_it_answers_get(world):
+    """Mail scanners probe a link with HEAD before a person may open it, and
+    the address-change confirmation is a mailed link. The tools' own HEAD loop
+    runs over app.routes, which on FastAPI 0.139 never reaches an included
+    router's routes: before the kit added HEAD itself, each of these was 405."""
+    w = world(legacy_password_path="/backoffice/change-password")
+    c = w.client()
+    for path in ("/backoffice/verify", "/backoffice/two-factor", "/backoffice/account",
+                 "/backoffice/account/email/confirm?token=x", "/backoffice/change-password"):
+        get, head = c.get(path), c.head(path)
+        assert head.status_code != 405, f"HEAD {path} is refused"
+        assert head.status_code == get.status_code, (path, get.status_code, head.status_code)
+        assert head.content == b""
 
 
 # the code prompt

@@ -4,7 +4,7 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
-## Unreleased
+## 1.72.0 — 2026-10-04
 
 - **The account kit (TO DO FL-083, pilot).** New `account_kit.py`:
   `build_account_router(AccountKit(...))` serves the routes an account holder
@@ -25,6 +25,14 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
   that adopting the kit changes nothing. The kit names no tool; a test checks.
   Moral Mirror and Drawbridge adopt it; the other seven are untouched.
   `ACCOUNT_MESSAGES` / `ACCOUNT_ERRORS` are the fixed `?msg=` / `?err=` texts.
+- **Every kit page answers HEAD as it answers GET.** Mail scanners and proxies
+  probe a link with HEAD first, and the address-change confirmation is a mailed
+  link. The tools add HEAD in a loop over `app.routes`, which on FastAPI 0.139
+  never reaches an included router's routes, so the kit adds it to its own GET
+  routes. Found in review: without it each kit page answered HEAD with 405.
+- **Identifier checks match the whole name** (`account_kit` and `once`):
+  `re.match` with `$` accepted a trailing newline (`"admins\n"`); both use
+  `fullmatch` now. Only tool constants reach them.
 - **`testing.account_kit`:** a kit tool answers each kit route exactly once
   (a leftover copy in app.py would silently win or lose) and carries no stale
   or shadowing copy of the kit's templates.

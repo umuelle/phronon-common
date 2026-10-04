@@ -56,6 +56,7 @@ from typing import Any, Callable, Optional
 
 import jinja2
 from fastapi import APIRouter, Form, HTTPException, Request
+from fastapi.routing import APIRoute
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from starlette.background import BackgroundTask
 
@@ -99,13 +100,13 @@ ACCOUNT_ERRORS = {
     "too_many": ("Too many address-change requests. Try again in an hour."),
 }
 
-_IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
 def _ident(name: str) -> str:
     """A table or column name, refused unless it is a plain identifier: these
     are interpolated into SQL, so only the tool's own constants may reach here."""
-    if not isinstance(name, str) or not _IDENT.match(name):
+    if not isinstance(name, str) or not _IDENT.fullmatch(name):
         raise ValueError(f"not a plain SQL identifier: {name!r}")
     return name
 
@@ -831,6 +832,14 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         router.add_api_route(kit.legacy_password_path, legacy_password_page, methods=["GET"])
         router.add_api_route(kit.legacy_password_path, account_password, methods=["POST"])
 
+    # Every GET answers HEAD, as it did in the tools. Mail scanners and proxies
+    # (SafeLinks, Zscaler) probe a link with HEAD first, and the e-mail-change
+    # confirmation is a mailed link; a 405 there reads as a broken link. The
+    # tools add HEAD in a loop over app.routes, which on FastAPI 0.139 never
+    # reaches the routes of an included router, so the kit adds it here.
+    for route in router.routes:
+        if isinstance(route, APIRoute) and "GET" in route.methods:
+            route.methods.add("HEAD")
     return router
 
 
