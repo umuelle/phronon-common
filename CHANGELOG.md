@@ -4,6 +4,40 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## Unreleased
+
+- **The account kit (TO DO FL-083, pilot).** New `account_kit.py`:
+  `build_account_router(AccountKit(...))` serves the routes an account holder
+  uses on themselves — the code prompt after the password (`/backoffice/verify`),
+  setting up / replacing / switching off the authenticator and new recovery
+  codes (`/backoffice/two-factor`), the five passkey routes, and the Manage
+  account page (`/backoffice/account`, `/name`, `/email`, `/email/confirm`,
+  `/password`, plus an optional old password address). Its four pages ship in
+  `account_templates/` (package-data) and render inside the tool's own
+  `backoffice/base.html` once `install_templates(env)` has run. The tool
+  supplies an `AccountKit` adapter: its tables and DB helpers
+  (`AccountTables`), its session, pending-login and enrolment cookies, its
+  `render` and CSRF hook, its audit recorder, mail module, lockout policy and
+  rate limit, and the few policies in which the two pilot tools differed
+  (`error_status`, `password_change_checks_confirmation`,
+  `password_form_required`, `must_change_url`, `legacy_password_path`,
+  `AccountPageLayout`), each documented as deliberate or as an accident kept so
+  that adopting the kit changes nothing. The kit names no tool; a test checks.
+  Moral Mirror and Drawbridge adopt it; the other seven are untouched.
+  `ACCOUNT_MESSAGES` / `ACCOUNT_ERRORS` are the fixed `?msg=` / `?err=` texts.
+- **`testing.account_kit`:** a kit tool answers each kit route exactly once
+  (a leftover copy in app.py would silently win or lose) and carries no stale
+  or shadowing copy of the kit's templates.
+- **`testing.manage_account` reads kit tools where the code now lives:** a
+  route body is looked up in the kit when app.py has none, the pages are the
+  kit's templates, and the account page's row is followed from the adapter's
+  `current_account=`. Tools without the kit are read exactly as before.
+- **`tests/test_import_boundaries.py`:** `account_kit` is web plumbing and
+  reaches py_webauthn through `passkeys`, by design.
+- Tests: `tests/test_account_kit.py` (44): templates parse and keep the
+  password-form, CSRF and recovery-code rules; every route driven against
+  MySQL tables named like no real tool's, through a stand-in adapter, including
+  the passkey one-use rule and a refusing CSRF hook on every POST.
 ## 1.71.0 — 2026-10-04
 
 - **`adminroutes`: the role-gating check can ask the RUNNING app (FL-082).**

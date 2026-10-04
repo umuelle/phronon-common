@@ -20,6 +20,7 @@ copy-pasting (and slowly diverging) the same plumbing:
   * legal            — the shared legal pages: one router, nine tools
   * participant      — one participant identity, resume and withdrawal mechanism
   * account          — self-service account management
+  * account_kit      — the account routes and pages, from a per-tool adapter
   * audit            — the admin audit trail
   * shared_assets    — the CSS/JS masters each tool copies into its static/
   * testing          — the fleet test kit (imports no pytest; see its docstring)

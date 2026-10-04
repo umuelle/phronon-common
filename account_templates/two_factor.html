@@ -1,0 +1,76 @@
+{# Shared by the account kit (phronon_common/account_kit.py). Rendered inside
+   the tool's own backoffice/base.html; `account_kit.tool_name` is the tool's
+   product name. Edit here, not in a tool. -#}
+{% extends "backoffice/base.html" %}
+{% block title %}{{ account_kit.tool_name }} — Two-factor login{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ asset('/static/css/two-factor.css') }}">
+<div class="tfa-card">
+<h1>Two-factor login</h1>
+{% if error %}<div class="tfa-error" role="alert">{{ error }}</div>{% endif %}
+
+{% if codes %}
+  {# Shown once, straight after enrolling. Only hashes are stored, so there is
+     no way to show them again. #}
+  <p><strong>Save these recovery codes now.</strong> They are shown once. Each
+    works a single time, and they are the only way back in if you lose your phone.</p>
+  <ul class="tfa-codes" data-recovery-codes data-recovery-tool="{{ account_kit.tool_name }}">
+    {% for c in codes %}<li>{{ c }}</li>{% endfor %}
+  </ul>
+  <p class="tfa-muted">Store them in your password manager, next to the {{ account_kit.tool_name }} entry.</p>
+  {# Locked by recovery-codes.js until the codes are downloaded. #}
+  <a class="tfa-btn" href="{{ back_url }}" data-recovery-done>I have saved my recovery codes</a>
+  <script src="{{ asset('/static/js/recovery-codes.js') }}" defer></script>
+
+{% elif enabled %}
+  <p>Two-factor login is <strong>on</strong> for this account. You are asked for
+    a code from your authenticator app each time you sign in.</p>
+  {% if not required %}
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="action" value="disable">
+    <button type="submit" class="tfa-btn tfa-btn--secondary">Turn two-factor off</button>
+  </form>
+  {% else %}
+  <p class="tfa-muted">It cannot be switched off for administrator accounts.</p>
+  {% endif %}
+  <p class="tfa-back"><a href="{{ back_url }}">&larr; Back</a></p>
+
+{% else %}
+  {% if replacing %}
+  <p><strong>Replacing your authenticator.</strong> Scan the code below with the new
+    app. Your current one keeps working until the new code is accepted, and your old
+    recovery codes are replaced at the same moment.</p>
+  {% elif required %}
+  <p><strong>Two-factor login is required for administrator accounts.</strong>
+    Set it up here to continue.</p>
+  {% else %}
+  <p>Add a second step to signing in, so a stolen password is not enough on its
+    own. This is optional for your account.</p>
+  {% endif %}
+  <ol>
+    <li>Open an authenticator app (1Password, Google Authenticator, Aegis,
+      Microsoft Authenticator — any of them).</li>
+    <li>Add an account and scan this code, or type the key by hand:</li>
+  </ol>
+  {% if qr_svg %}<div class="tfa-qr">{{ qr_svg|safe }}</div>{% endif %}
+  <code class="tfa-secret">{{ secret }}</code>
+  <ol start="3">
+    <li>Type the six-digit code it shows, to prove the app has the key:</li>
+  </ol>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="action" value="enable">
+    <label class="tfa-label" for="tfa-code">Six-digit code</label>
+    <input class="tfa-code-input" id="tfa-code" type="text" name="code"
+           inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
+           maxlength="6" autofocus required>
+    <button type="submit" class="tfa-btn">Turn two-factor on</button>
+  </form>
+  <p class="tfa-muted" style="margin-top:.8rem">Nothing is switched on until that
+    code is accepted, so a half-finished setup cannot lock you out.</p>
+  {% if not required %}<p class="tfa-back"><a href="{{ back_url }}">&larr; Back</a></p>{% endif %}
+{% endif %}
+</div>
+{% endblock %}

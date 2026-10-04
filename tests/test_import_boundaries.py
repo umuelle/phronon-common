@@ -8,7 +8,8 @@ Rules from the review of 3 October 2026:
   audit row, sending a mail or claiming a background job must work in a
   retention job or a script that never serves a request (audit.py loaded
   FastAPI through rate_limit until that day).
-- Only passkeys loads py_webauthn.
+- Only passkeys loads py_webauthn — and account_kit, which serves the passkey
+  routes and imports passkeys to do it (FL-083, 4 October 2026).
 - mail_diagnostics, run by the service user from scripts/send_test_emails.py,
   loads nothing outside the standard library and this package.
 
@@ -30,6 +31,7 @@ MODULES = sorted(p.stem for p in PKG.glob("*.py") if p.stem != "__init__")
 
 #: Modules whose job is HTTP: they may load FastAPI/Starlette.
 WEB_MODULES = {
+    "account_kit",       # the account routes: a router (FL-083)
     "csrf",              # a middleware
     "legal",             # the legal-pages router
     "rate_limit",        # a middleware
@@ -68,7 +70,10 @@ def test_only_web_plumbing_loads_a_web_framework(footprints):
 
 
 def test_only_passkeys_loads_webauthn(footprints):
-    assert sorted(m for m, f in footprints.items() if "webauthn" in f["roots"]) == ["passkeys"]
+    # account_kit serves the passkey routes, so it reaches webauthn through
+    # passkeys; nothing else may.
+    assert sorted(m for m, f in footprints.items()
+                  if "webauthn" in f["roots"]) == ["account_kit", "passkeys"]
 
 
 def test_the_mail_diagnostic_is_stdlib_only(footprints):

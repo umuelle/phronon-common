@@ -1,0 +1,23 @@
+{# Shared by the account kit (phronon_common/account_kit.py). Rendered inside
+   the tool's own backoffice/base.html; `account_kit.tool_name` is the tool's
+   product name. Edit here, not in a tool. -#}
+{% extends "backoffice/base.html" %}
+{% block title %}{{ account_kit.tool_name }} — Enter your code{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ asset('/static/css/two-factor.css') }}">
+<div class="tfa-card">
+<h1>Enter your code</h1>
+{% if error %}<div class="tfa-error" role="alert">{{ error }}</div>{% endif %}
+<p>Open your authenticator app and type the six-digit code for {{ account_kit.tool_name }}.</p>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label class="tfa-label" for="tfa-code">Six-digit code</label>
+  <input class="tfa-code-input" id="tfa-code" type="text" name="code"
+         autocomplete="one-time-code" maxlength="12" autofocus required>
+  <button type="submit" class="tfa-btn">Continue</button>
+</form>
+<p class="tfa-muted" style="margin-top:.8rem">Lost your phone? Type one of your
+  recovery codes instead — each works once.</p>
+</div>
+{% endblock %}

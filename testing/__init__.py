@@ -33,7 +33,9 @@ reasons. `fleet_baseline` is the only one that applies to all NINE repos: the
 hub has no participant flow and no password forms, but it is a FastAPI app with
 a login and protected pages like the rest. `run_reporting` and `run_lock` are
 called from each conftest's hooks: how a run reports itself, and that only one
-run at a time uses a test database (FL-085).
+run at a time uses a test database (FL-085). `account_kit` holds the checks
+for a tool that mounts phronon_common.account_kit (FL-083): its routes are
+answered once, and no template of its own shadows or duplicates the kit's.
 
 The discovery helpers return plain lists so the caller can parametrize over
 them and get one test per file, with the file's name in the test id, rather

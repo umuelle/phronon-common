@@ -44,7 +44,12 @@ belongs in your tool.
    `get_db`. Read `SECRET_KEY` from the environment with no default.
 3. **Accounts.** Use `passwords`, `lockout`, `twofactor`, `passkeys`,
    `sessions` and `account` for the backoffice sign-in; the tool owns its
-   `admins` table and its routes. The entry addresses are fixed fleet-wide:
+   `admins` table, its sign-in route and its session cookie. The code prompt,
+   authenticator setup, recovery codes, passkeys and the Manage account page
+   come ready-made from `account_kit`: build an `AccountKit` adapter (Moral
+   Mirror's and Drawbridge's app.py are the two worked examples, one with an
+   app-wide CSRF dependency, one with per-form checks) and mount
+   `build_account_router(...)`. The entry addresses are fixed fleet-wide:
    `registry.BACKOFFICE_LOGIN` and `registry.BACKOFFICE_DASHBOARD`.
 4. **Front end.** Register the tool in `shared_assets.ASSETS` / `ONLY_FOR` and
    copy the masters with `server-ops/sync_shared_assets.py --write`. Never edit

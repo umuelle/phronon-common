@@ -62,4 +62,7 @@ package-dir = { "phronon_common" = ".", "phronon_common.testing" = "testing" }
 # against the real master, in its own CI where the package comes from the
 # pinned tag, is for the master to be in the wheel. See shared_assets.py, and
 # server-ops/package_build_check.py, which fails if any of this is missing.
-phronon_common = ["legal_templates/*.html", "*.css", "*.js"]
+#
+# The account kit's pages (account_templates/, FL-083) render inside each
+# tool's own layout; a wheel without them would 500 the account page in CI.
+phronon_common = ["legal_templates/*.html", "account_templates/*.html", "*.css", "*.js"]

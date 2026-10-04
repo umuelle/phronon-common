@@ -1,0 +1,194 @@
+{# Shared by the account kit (phronon_common/account_kit.py). Rendered inside
+   the tool's own backoffice/base.html. `account` is the signed-in row;
+   `account_kit` carries the tool's name and the three layout choices in which
+   the tools' pages used to differ (AccountPageLayout). Edit here, not in a tool. -#}
+{% extends "backoffice/base.html" %}
+{% block title %}{{ account_kit.tool_name }} — Manage account{% endblock %}
+
+{% block content %}
+<div class="bo-page-header">
+  {% if account_kit.back_link_while_must_change or not must_change %}<a href="/backoffice/dashboard" class="back-link">← Dashboard</a>{% endif %}
+  <h1>Manage account</h1>
+</div>
+
+<p class="hint">Signed in as {{ account.email }}.</p>
+
+{% if account_kit.section_wrapper %}<div class="bo-account">{% endif %}
+{% if flash %}<div class="alert alert-success bo-account__full" role="status">{{ flash }}</div>{% endif %}
+{% if error %}<div class="alert alert-error bo-account__full" role="alert">{{ error }}</div>{% endif %}
+
+{% if must_change %}
+<div class="alert alert-error bo-account__full" role="alert">
+  You are signed in with a temporary password. Set your own password below — the
+  rest of this page unlocks once you have.
+</div>
+{% endif %}
+
+{% if not must_change %}
+<div class="bo-form-card">
+  <h2>Change name or e-mail address</h2>
+
+  <form method="post" action="/backoffice/account/name" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="field">
+      <label for="display_name">Name</label>
+      <input type="text" id="display_name" name="display_name" maxlength="255"
+             value="{{ account.display_name or '' }}" required>
+      <span class="hint">Shown to colleagues in the user list.</span>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save name change</button>
+    </div>
+  </form>
+
+  <form method="post" action="/backoffice/account/email" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="field">
+      <label for="new_email">E-mail address</label>
+      <input type="email" id="new_email" name="new_email" maxlength="255"
+             value="{{ account.email }}" autocomplete="email" required>
+      <span class="hint">This is what you sign in with, and where a password reset is
+        sent. We will mail the new address a link — nothing changes until you open
+        it. Your other Phronon tools keep their own address.</span>
+    </div>
+    <div class="field">
+      <label for="email_current_password">Confirm with your password</label>
+      <input type="password" id="email_current_password" name="current_password"
+             autocomplete="current-password" required>
+      <span class="hint">Asked for because changing this address changes who owns the account.</span>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Send confirmation link</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<div class="bo-form-card">
+  <h2>Change password</h2>
+  <form method="post" action="/backoffice/account/password" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="field">
+      <label for="current_password">Current password</label>
+      <input type="password" id="current_password" name="current_password"
+             autocomplete="current-password" required>
+    </div>
+    <div class="field">
+      <label for="new_password">New password <span style="color:var(--bo-danger);">*</span></label>
+      {% if account_kit.password_tools %}
+      <div class="pw-input-wrap">
+        <input type="password" id="new_password" name="new_password"
+               autocomplete="new-password" minlength="12" required>
+        <button type="button" class="pw-toggle" data-target="new_password">Show</button>
+        <button type="button" class="pw-generate" data-target="new_password">Generate</button>
+      </div>
+      {% else %}
+      <input type="password" id="new_password" name="new_password"
+             autocomplete="new-password" minlength="12" required>
+      {% endif %}
+      <span class="hint">{{ password_hint }}</span>
+    </div>
+    <div class="field">
+      <label for="confirm_password">Confirm new password <span style="color:var(--bo-danger);">*</span></label>
+      <input type="password" id="confirm_password" name="confirm_password"
+             autocomplete="new-password" required>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Update password</button>
+    </div>
+  </form>
+</div>
+
+{% if not must_change %}
+<div class="bo-form-card">
+  <h2>Two-factor login</h2>
+
+  {% if totp_enabled %}
+  <p>Two-factor login is <strong>on</strong>. You are asked for a code from your
+    authenticator app each time you sign in.</p>
+
+  <p><a href="/backoffice/two-factor?replace=1" class="btn btn-ghost">Replace authenticator</a></p>
+  <p class="hint">New phone? Scan a fresh code there. Two-factor stays on throughout.</p>
+
+  <form method="post" action="/backoffice/two-factor" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="action" value="regenerate">
+    <div class="field">
+      <label for="regen_code">New recovery codes</label>
+      <input type="text" id="regen_code" name="code" inputmode="numeric"
+             pattern="[0-9]*" maxlength="6" autocomplete="one-time-code"
+             placeholder="Six-digit code" required>
+      <span class="hint">Running low? A code from your app issues ten fresh ones and
+        retires the old sheet.</span>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Issue new codes</button>
+    </div>
+  </form>
+
+  {% if not totp_required %}
+  <form method="post" action="/backoffice/two-factor" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="action" value="disable">
+    <div class="form-actions">
+      <button type="submit" class="btn btn-ghost">Turn two-factor off</button>
+    </div>
+  </form>
+  {% else %}
+  <p class="hint">It cannot be switched off for administrator accounts.</p>
+  {% endif %}
+
+  {% else %}
+  <p>Two-factor login is <strong>off</strong>. Adding it means a stolen password is
+    not enough on its own — you are asked for a six-digit code from an authenticator
+    app as well.
+    {% if totp_required %}It is required for administrator accounts.{% else %}
+    It is optional for your account, and you can switch it off again at any time.{% endif %}</p>
+  <p><a href="/backoffice/two-factor" class="btn btn-primary">Set up two-factor login</a></p>
+  {% endif %}
+</div>
+
+{# Passkeys (FL-065). Behaviour in the shared passkeys.js; the add block stays
+   hidden in a browser that cannot do passkeys. #}
+<div class="bo-form-card">
+  <h2>Passkeys</h2>
+  <p>Sign in with your fingerprint, face or device PIN instead of your password
+    and code. The passkey stays on your device; we only keep its public key.</p>
+  {% if passkeys %}
+  <ul class="bo-passkeys">
+    {% for k in passkeys %}
+    <li>
+      <strong>{{ k.name }}</strong>
+      <span class="hint">added {{ k.created_at.strftime('%d %b %Y') }}{% if k.last_used_at %}, last used {{ k.last_used_at.strftime('%d %b %Y') }}{% endif %}</span>
+      <form method="post" action="/backoffice/passkeys/{{ k.id }}/delete" class="bo-inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-ghost btn-sm">Remove</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="hint">You have no passkeys yet.</p>
+  {% endif %}
+  <div data-passkey-register hidden
+       data-options-url="/backoffice/passkeys/options"
+       data-submit-url="/backoffice/passkeys"
+       data-csrf="{{ csrf_token }}">
+    <div class="field">
+      <label for="passkey_name">Name for this device (optional)</label>
+      <input type="text" id="passkey_name" maxlength="60" placeholder="e.g. MacBook" data-passkey-name>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary" data-passkey-start>Add a passkey</button>
+    </div>
+    <p class="hint" data-passkey-status role="status"></p>
+  </div>
+  <script src="{{ asset('/static/js/passkeys.js') }}" defer></script>
+</div>
+{% endif %}
+{% if account_kit.section_wrapper %}</div>{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if account_kit.password_tools %}<script src="/static/js/users-password.js"></script>{% endif %}
+{% endblock %}

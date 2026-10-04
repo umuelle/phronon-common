@@ -17,6 +17,15 @@ and stay overridable below; the third is gone.
 Each tool subclasses the mixins in its own tests/ file, which is what keeps the
 check inside that project's own gate. No pytest import here — see
 phronon_common/testing/__init__.py.
+
+TOOLS THAT MOUNT THE ACCOUNT KIT (FL-083, 4 October 2026). Moral Mirror and
+Drawbridge no longer write these routes or the account templates themselves:
+`phronon_common/account_kit.py` does, from an adapter in their app.py. For
+such a tool every check below reads the code where it now lives: a route's
+body is found in the kit when app.py has none, the page is the kit's
+template, and the row the account page renders is followed from the
+adapter's `current_account=` into the tool's own session helper. A tool that
+does not mount the kit is read exactly as before.
 """
 from __future__ import annotations
 
@@ -33,6 +42,23 @@ def _read(path: Path) -> str:
 #: A route decorator: `@app.post(...)` in a tool whose routes are in app.py,
 #: `@router.post(...)` in one that keeps them in APIRouter modules (FL-082).
 _DECORATOR = r"@(?:app|router)\."
+
+#: The shared account routes and their templates (account_kit.py). Found next
+#: to this package rather than imported: the wheel ships both.
+KIT_PY = Path(__file__).resolve().parents[1] / "account_kit.py"
+KIT_TEMPLATES = Path(__file__).resolve().parents[1] / "account_templates"
+#: What an app.py that mounts the kit contains.
+KIT_MOUNT = "account_kit.build_account_router("
+
+
+def _route_pattern(owner: str, method: str, path: str) -> "re.Pattern":
+    """A route's decorator, its def line, and the body up to the next route.
+    `owner` is `app` for a tool's app.py, `router` for the kit, whose routes
+    are nested in build_account_router and therefore indented."""
+    return re.compile(
+        r"@%s\.%s\(\s*['\"]%s['\"].*?\n(?:[ \t]*@%s\.\w+\([^\n]*\n)*"
+        r"[ \t]*(?:async )?def [^\n]*\n(.*?)(?=\n[ \t]*@%s\.|\n[ \t]*%s\.add_api_route|\Z)"
+        % (owner, method, re.escape(path), owner, owner, owner), re.S)
 
 
 class AccountPageContract:
@@ -80,12 +106,29 @@ class AccountPageContract:
         return "\n".join(self.app_texts)
 
     @property
+    def uses_account_kit(self) -> bool:
+        """Does this tool mount phronon_common.account_kit (FL-083)?"""
+        return KIT_MOUNT in self.app_src
+
+    @property
+    def kit_src(self) -> str:
+        return _read(KIT_PY)
+
+    def _page(self, name: str) -> Path:
+        """The tool's own template, or the kit's when the tool mounts the kit
+        and no longer carries one."""
+        own = self.tpl / name
+        if self.uses_account_kit and not own.is_file():
+            return KIT_TEMPLATES / name
+        return own
+
+    @property
     def account_html(self) -> str:
-        return _read(self.tpl / "account.html")
+        return _read(self._page("account.html"))
 
     @property
     def confirm_html(self) -> str:
-        return _read(self.tpl / "account_confirm_email.html")
+        return _read(self._page("account_confirm_email.html"))
 
     @property
     def nav_html(self) -> str:
@@ -110,6 +153,10 @@ class AccountPageContract:
             re.S)
         for text in self.app_texts:
             m = pattern.search(text)
+            if m:
+                return m.group(1)
+        if self.uses_account_kit:
+            m = _route_pattern("router", method, path).search(self.kit_src)
             if m:
                 return m.group(1)
         raise AssertionError(f"no @app.{method} route for {path} — the page is not wired")
@@ -175,7 +222,8 @@ class ChangingTheAddress(AccountPageContract):
 
     def test_nothing_is_written_before_the_link_comes_back(self):
         src = self.route_src("/backoffice/account/email")
-        assert not re.search(r"UPDATE admins SET\s+email", src, re.I), (
+        # `{T}` is the kit's name for the tool's account table.
+        assert not re.search(r"UPDATE (?:admins|\{T\}) SET\s+email", src, re.I), (
             "the address must not change until the new mailbox has been proved")
 
     def test_both_addresses_are_told(self):
@@ -222,7 +270,8 @@ class TwoFactorFromTheAccountPage(AccountPageContract):
     def test_new_recovery_codes_need_a_current_code(self):
         marker = "'regenerate'" if "'regenerate'" in self.app_src else '"regenerate"'
         block = self.route_src("/backoffice/two-factor").split(marker)[1]
-        assert "twofactor.verify" in block.split("_audit")[0]
+        audit_call = "kit.audit(" if self.uses_account_kit else "_audit"
+        assert "twofactor.verify" in block.split(audit_call)[0]
 
     def test_the_disable_button_is_hidden_from_admins(self):
         assert "{% if not totp_required %}" in self.account_html
@@ -233,11 +282,15 @@ class TwoFactorFromTheAccountPage(AccountPageContract):
         second, unlocked list that no route filled any more (FL-066, deleted);
         a template that lists codes again must bring the lock with it."""
         root = Path(self.PROJECT_ROOT) / "templates"
-        for page in root.rglob("*.html"):
+        pages = [(p, root) for p in root.rglob("*.html")]
+        if self.uses_account_kit:
+            pages += [(p, KIT_TEMPLATES) for p in KIT_TEMPLATES.glob("*.html")]
+        assert pages, "no templates found — this check would pass vacuously"
+        for page, base in pages:
             html = _read(page)
             if not re.search(r"{%\s*for \w+ in codes\s*%}", html):
                 continue
-            where = page.relative_to(root)
+            where = page.relative_to(base)
             assert "data-recovery-codes" in html, f"{where}: codes listed without the download lock"
             assert "data-recovery-done" in html, f"{where}: nothing for the lock to hold back"
             assert "/static/js/recovery-codes.js" in html, f"{where}: the lock's script is not loaded"
@@ -282,6 +335,10 @@ class MessagesAreNotRenderedFromTheUrl(AccountPageContract):
     def test_the_page_looks_texts_up_by_key(self):
         """`?msg=` carries a key, never a sentence — a page that prints back
         whatever the URL says can be sent to somebody saying anything."""
+        if self.uses_account_kit:      # the kit's tables, and its lookups
+            assert ("ACCOUNT_MESSAGES.get(" in self.kit_src
+                    and "ACCOUNT_ERRORS.get(" in self.kit_src)
+            return
         assert ("_ACCOUNT_MESSAGES.get(" in self.app_src
                 and "_ACCOUNT_ERRORS.get(" in self.app_src)
 
@@ -315,7 +372,9 @@ class EveryFormPostsToARouteThatExists(AccountPageContract):
                                        for part in re.split(r"\{\{.*?\}\}", path))
             assert re.search(
                 r'%s(?:post|api_route)\(\s*[\'"]%s[\'"]' % (_DECORATOR, pattern),
-                self.app_src), f"nothing answers POST {path}"
+                self.app_src) or (self.uses_account_kit and re.search(
+                    r'@router\.(?:post|api_route)\(\s*[\'"]%s[\'"]' % pattern,
+                    self.kit_src)), f"nothing answers POST {path}"
 
 
 class ThePageIsActuallyStyled(AccountPageContract):
@@ -386,6 +445,12 @@ class ThePageReadsARowThatHasTheColumns(AccountPageContract):
                     return m.group(0)
             return None
 
+        if self.uses_account_kit:
+            # The kit renders the row the adapter's `current_account=` returns,
+            # and that is the tool's own function: start the walk there.
+            m = re.search(r"current_account\s*=\s*([A-Za-z_]\w*)", self.app_src)
+            assert m, "the kit is mounted but no current_account= is visible in app.py"
+            src = f"{m.group(1)}()"
         called = set(re.findall(r"\b([a-zA-Z_][\w]*)\s*\(", src))
         bodies = [src]
         for name in called:
