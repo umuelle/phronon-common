@@ -6,16 +6,17 @@ decision about the tool's own pages, data and routes stays here. Read it with
 NEW-TOOL.md; tests/test_minimal_tool.py runs it, so it cannot rot.
 
 What it shows, in order:
-  1. identity      the tool's entry in phronon_common.registry (and legal_conf)
+  1. identity      the tool's entry in phronon_common.registry
   2. security      security headers + CSP nonce, trusted Host names, CSRF
-  3. legal pages   the shared router: imprint, privacy, cookies, accessibility
+  3. legal pages   the shared router: imprint, privacy, cookies, terms
   4. assets        content-hashed URLs for the tool's own static files
   5. one form      a page with a CSRF token and a rate-limited POST
   6. audit         the shared audit trail, bound to THIS tool's database
 
 The tool key comes from MINIMAL_TOOL_KEY. A real tool hard-codes its own key
 once it is registered; this example borrows a registered one only so the
-legal pages and Host list have an entry to read.
+legal pages and Host list have an entry to read. server-ops/new_tool.py turns
+this file into a new tool's app.py (NEW-TOOL.md, step 1).
 """
 from __future__ import annotations
 
@@ -56,6 +57,9 @@ app.add_middleware(CSRFMiddleware, csrf_protection=csrf, session_cookie=None)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts(TOOL_KEY))
 
 # 3. legal pages ──────────────────────────────────────────────────────────────
+# A real tool passes its OWN content (since v1.69.0): legal_content/notice.json,
+# loaded once with phronon_common.legal_content.load_legal_config and handed
+# over as config=. The example borrows a registered tool's frozen entry instead.
 app.include_router(build_legal_router(TOOL_KEY))
 
 # 4. assets ───────────────────────────────────────────────────────────────────

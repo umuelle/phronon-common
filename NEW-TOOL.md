@@ -1,8 +1,11 @@
 # Building a new tool on phronon_common
 
-Written 3 October 2026 as the last step of the commons review. The worked
-example is `examples/minimal_tool/app.py`; `tests/test_minimal_tool.py` runs it
-on every change to this package, so the example cannot quietly go stale.
+Written 3 October 2026 as the last step of the commons review; since
+4 October 2026 the first step is one command (`server-ops/new_tool.py`, TO DO
+FL-081). The worked example is `examples/minimal_tool/app.py`;
+`tests/test_minimal_tool.py` runs it on every change to this package, so the
+example cannot quietly go stale, and the scaffolder builds a new tool's
+`app.py` from it.
 
 ## The rule in one sentence
 
@@ -15,13 +18,13 @@ used to end up with nine diverging versions of one mechanism.
 
 | Shared (import it) | Stays in the tool (decide it there) |
 |---|---|
-| identity: `registry` (+ `legal_conf` for the published notice) | routes, templates, page wording |
+| identity: `registry` | routes, templates, page wording |
 | security: `security_headers`, `csrf`, `hosts`, `rate_limit`, `request_ip` | the database schema and migrations |
 | sign-in: `passwords`, `lockout`, `twofactor`, `passkeys`, `sessions`, `account` | which accounts exist, roles, what a role may do |
 | participants: `participant`, `joincode`, `kanon` | what is collected, scoring, results |
 | data duties: `audit`, `exports`, `retention_heartbeat`, `once` | WHICH rows expire when, and what a deletion takes with it |
 | mail: `emails`, `mail_diagnostics` | which events send mail, and their text |
-| legal: `legal` (the router) | the tool's entry in `legal_conf` (what it collects, on what basis) |
+| legal: `legal` (the router), `legal_content` (the loader) | its notice, `legal_content/notice.json` (what it collects, on what basis) |
 | front end: `assets`, the masters in `shared_assets` | the tool's own CSS/JS |
 
 Shared code never imports a tool. Where it needs the tool's database it takes a
@@ -34,53 +37,100 @@ belongs in your tool.
 
 ## Steps
 
-1. **Identity.** Add the tool to `phronon_common/registry.py` (key, workspace
-   folder, GitHub repo, systemd unit, server path, port, entitlement key, brand,
-   domain, locales) and its entry to `legal_conf.py` (what it collects, the
-   legal basis, cookies, retention). `server-ops/tool_registry_check.py` fails
-   until the two agree with each other and with `fleet.conf`.
-2. **Wiring.** Start `app.py` from `examples/minimal_tool/app.py`: middleware in
-   that order, the legal router, `asset_url`, the audit recorder bound to your
-   `get_db`. Read `SECRET_KEY` from the environment with no default.
-3. **Accounts.** Use `passwords`, `lockout`, `twofactor`, `passkeys`,
-   `sessions` and `account` for the backoffice sign-in; the tool owns its
-   `admins` table, its sign-in route and its session cookie. The code prompt,
-   authenticator setup, recovery codes, passkeys and the Manage account page
-   come ready-made from `account_kit`: build an `AccountKit` adapter (Moral
-   Mirror's and Drawbridge's app.py are the two worked examples, one with an
-   app-wide CSRF dependency, one with per-form checks) and mount
-   `build_account_router(...)`. The entry addresses are fixed fleet-wide:
-   `registry.BACKOFFICE_LOGIN` and `registry.BACKOFFICE_DASHBOARD`.
-4. **Front end.** Register the tool in `shared_assets.ASSETS` / `ONLY_FOR` and
-   copy the masters with `server-ops/sync_shared_assets.py --write`. Never edit
-   a copied master in the tool; fix the master.
+1. **Scaffold.** Work in a session that has `server-ops` and `phronon_common`
+   (`server-ops/session.sh start <name> server-ops phronon_common`), then:
+
+       server-ops/new_tool.py <key> --name "<Brand>" --dir <Folder> \
+           --domain <domain> --port <port> [--locales en,de] \
+           [--write-common] [--create-local-test-db]
+
+   It refuses a folder that exists and any name, domain or port the fleet
+   already uses; `--dry-run` lists what it would write. It creates
+   `<Folder>/` as a git repository with one commit: `app.py` built from the
+   example (the tool's key, its own `legal_content/notice.json`, `db.py`,
+   templates and a backoffice sign-in at the fleet addresses), `schema.sql`
+   and `migrations/001`, `ops/tool.json` (the facts server-ops reads, see
+   below), a stub `ops/browser_journey.py`, the test kit's wrappers and the
+   tool's own tests, `.github/workflows/ci.yml` on the two central actions,
+   `.env.example` and `.env.test`, `TODO.md`, and the nginx site and
+   systemd unit as TEMPLATES. `--write-common` adds the registry and
+   shared-assets entries to the `phronon_common` beside it, uncommitted
+   (it refuses a linked one). `--create-local-test-db` builds `<db>_test`
+   on this Mac's test MySQL (README §9) and never touches an existing
+   schema. In a session workspace, move the new folder into the primary
+   workspace after `session.sh finish`, which leaves it in place.
+2. **Identity, and the release it is.** The tool's entry in
+   `registry.py` (key, folder, GitHub repo, unit, server path, port,
+   entitlement key, brand, domain, locales) and its folder in
+   `shared_assets.py` (`TOOLS`, `_TOOLS_WITH_PARTICIPANTS`) are printed by
+   the scaffolder or written with `--write-common`. Both are a change to this
+   package, so they go out as a release (below). The line the scaffolder
+   prints for `server-ops/fleet.conf` lands with it:
+   `server-ops/tool_registry_check.py` fails until the registry, `fleet.conf`
+   and the tool's notice agree. The notice lives in the tool,
+   `legal_content/notice.json` (since v1.69.0; `legal_conf.py` is frozen for
+   rollbacks and takes no new tool).
+3. **Accounts.** The scaffold signs in with `passwords`' rules, `lockout`,
+   `sessions` (the epoch and the role-aware age) and `CookieSigner`, and it
+   refuses an account with two-factor switched on. Before the first deploy
+   the code prompt, authenticator setup, recovery codes, passkeys, password
+   reset and the Manage account page come from `account_kit`: build an
+   `AccountKit` adapter (Moral Mirror's and Drawbridge's app.py are the two
+   worked examples, one with an app-wide CSRF dependency, one with per-form
+   checks) and mount `build_account_router(...)`. Admins must use two-factor.
+4. **The tool itself.** Sessions, the participant pages, the public join
+   sheet at `/share/<code>`, retention (`retention.py`), `/about` and
+   `/llms.txt` from a `ToolPresentation` entry, the `/accessibility`
+   statement, and the notice's real text (reviewed before anything is
+   published). The tool's `TODO.md` lists them; `ops/tool.json` leaves
+   their sections empty rather than declaring exceptions, so the gates that
+   read them (`retention_contract_check.py`, `share_card_layout_check.py`,
+   `audit_wiring_scan.py`) say what is missing.
 5. **Tests.** The fleet invariants come from `phronon_common.testing`; the tool
-   keeps thin wrappers. `server-ops/fleet_testkit_check.py` lists the wrapper
-   files every tool must carry (`tests/conftest.py`,
-   `tests/test_fleet_baseline.py`, `tests/test_shared_assets_match.py`,
-   `tests/test_identity_matches_the_registry.py`, and the account, mail and
-   CSRF ones) and fails a tool that re-implements what the kit owns. Give the
-   tool a disposable `*_test` schema (`.env.test`) before any DB test runs,
-   and let its conftest hold that schema for the run
-   (`run_lock.hold_the_test_database(session)` in `pytest_sessionstart`).
-6. **CI and deploy.** Copy a tool's `.github/workflows/ci.yml` (MySQL service,
-   schema from migrations, the `phronon_common` pin at the fleet's tag, the
-   browser-journey action). Add the line to `server-ops/fleet.conf`, the nginx
-   site, the systemd unit. `./deploy.sh <key>` then runs every gate.
-7. **Before calling it done:** `server-ops/closing_audit.py` and
+   keeps thin wrappers. `server-ops/fleet_testkit_check.py <dir>` lists the
+   wrapper files every tool must carry and fails a tool that re-implements
+   what the kit owns. The scaffold has the conftest (with
+   `run_lock.hold_the_test_database(session)`), the baseline, identity,
+   shared-assets and CSRF wrappers; the account, password-form, mail and
+   machine-facing ones come with those features. The stub browser journey
+   fails on purpose until the participant flow exists, so CI's journey step
+   and deploy step 1d are red until then.
+6. **The server, by hand.** The scaffolder prints each of these and installs
+   none: the databases `<db>` and `<db>_test` with their users, built from
+   `schema.sql` (the `_test` one before the first deploy), the `.env`, the
+   service user `svc-<key>` and the unit, `requirements.lock` generated on the
+   server, DNS, the nginx site and its certificate (then
+   `server-ops/nginx_mirror_check.py --write`), the GitHub repository. Then
+   `./deploy.sh <key>` from the primary workspace runs every gate.
+7. **Preview.** `server-ops/preview.py <key>` works once the tool is in
+   `fleet.conf`; the scaffolder prints its `.claude/launch.json` entry.
+8. **Before calling it done:** `server-ops/closing_audit.py` and
    `CHANGE-CHECKLIST.md`, like any change.
+
+### What server-ops knows about the tool: `ops/tool.json`
+
+Each tool carries its own facts for the gates (FL-080): its test schema, the
+`.env.example` contract, the audit scan's files and tables, the session
+verifier, and for a teaching tool retention, participant policy, the probe
+admin row, the share card and mutation-probe targets. `server-ops/tool_manifest.py`
+describes the format; `./tool_manifest.py --file <Folder>/ops/tool.json`
+checks a new tool's manifest before its registry entry exists.
 
 ## Changing the shared package because of the new tool
 
-Sometimes the new tool needs something the shared package does not offer yet.
-Add it as a parameter or a new function, never as a branch on the tool's name,
-then prove it in every tool before tagging:
+The registry entry is always such a change. Sometimes the new tool also needs
+something the shared package does not offer yet: add it as a parameter or a
+new function, never as a branch on the tool's name. Either way, prove it in
+every tool before tagging:
 
     server-ops/common_candidate_matrix.py <commit>
 
-Tag, bump the ten pins, `server-ops/common_release.sh publish <tag>` and
-`activate <tag>`, deploy the fleet, and `common_release.sh status` must report
-every worker on the new release. README §3 has the reasons for each step.
+Then tag it, set the fleet's one pin (`PHRONON_COMMON_TAG` in
+`server-ops/fleet-pins.env`, since 4 October 2026), and run
+`server-ops/common_release.sh publish <tag>`, `verify <tag>`, `activate <tag>`
+and `refresh <tag>`; `common_release.sh status` must report every worker on
+the new release. README §3 and the header of `common_release.sh` have the
+reasons for each step.
 
 ## What the review decided stays local (do not "harmonize" these)
 
