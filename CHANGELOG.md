@@ -4,6 +4,20 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.73.0 — 2026-10-04
+
+- **A malformed passkey is refused, never a 500 (FL-086).** `passkeys.
+  verify_registration` and `verify_authentication` caught py_webauthn's
+  "invalid response" errors but not its parse errors (`InvalidJSONStructure`,
+  `InvalidCBORData`, ...), so broken JSON or nonsense CBOR with a valid
+  challenge ended in a server error, in all nine tools: when adding a passkey
+  (signed in) and when signing in with one (anonymous, but only with a real
+  credential id, since the tool looks the passkey up first). Both now catch
+  `WebAuthnException`, the base of everything py_webauthn raises, and answer
+  with the usual `PasskeyError` refusal. Test:
+  `test_a_malformed_credential_is_refused_at_both_steps` (six broken variants
+  of a real credential at each step; red before the fix).
+
 ## 1.72.0 — 2026-10-04
 
 - **The account kit (TO DO FL-083, pilot).** New `account_kit.py`:

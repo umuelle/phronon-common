@@ -49,8 +49,7 @@ from webauthn import (base64url_to_bytes, generate_authentication_options,
                       generate_registration_options, options_to_json,
                       verify_authentication_response, verify_registration_response)
 from webauthn.helpers import bytes_to_base64url
-from webauthn.helpers.exceptions import (InvalidAuthenticationResponse,
-                                         InvalidRegistrationResponse)
+from webauthn.helpers.exceptions import WebAuthnException
 from webauthn.helpers.structs import (AuthenticatorSelectionCriteria,
                                       PublicKeyCredentialDescriptor,
                                       ResidentKeyRequirement,
@@ -180,7 +179,11 @@ def verify_registration(*, credential_json: str, challenge: bytes,
             credential=credential_json, expected_challenge=challenge,
             expected_rp_id=rp_id_for(base_url), expected_origin=origins_for(base_url),
             require_user_verification=True)
-    except (InvalidRegistrationResponse, ValueError, KeyError, TypeError) as e:
+    except (WebAuthnException, ValueError, KeyError, TypeError) as e:
+        # WebAuthnException is the base of everything py_webauthn raises: a
+        # refused response AND a malformed one (InvalidJSONStructure,
+        # InvalidCBORData, ...). Only the first was caught until 4 October 2026
+        # (FL-086), so broken JSON with a valid challenge was a 500.
         raise PasskeyError("That passkey could not be added. Please try again.") from e
     return NewPasskey(v.credential_id, v.credential_public_key, v.sign_count)
 
@@ -220,7 +223,8 @@ def verify_authentication(*, credential_json: str, challenge: bytes, base_url: s
             expected_rp_id=rp_id_for(base_url), expected_origin=origins_for(base_url),
             credential_public_key=public_key, credential_current_sign_count=sign_count,
             require_user_verification=True)
-    except (InvalidAuthenticationResponse, ValueError, KeyError, TypeError) as e:
+    except (WebAuthnException, ValueError, KeyError, TypeError) as e:
+        # Malformed assertions included (FL-086), as in verify_registration.
         raise PasskeyError("That passkey was not accepted.") from e
     return v.new_sign_count
 

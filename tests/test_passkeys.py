@@ -81,6 +81,36 @@ def test_a_bad_signature_a_wrong_challenge_and_a_wrong_site_are_refused():
         pk.verify_authentication(credential_json=other.get(options), challenge=challenge, **kw)
 
 
+def _malformed(credential_json: str) -> list[str]:
+    """Broken variants of a REAL credential: what a buggy browser, an extension
+    or a hand-made request sends. Each must be refused, never a 500."""
+    good = json.loads(credential_json)
+    no_response = {k: v for k, v in good.items() if k != "response"}
+    garbled = json.loads(credential_json)
+    for field in garbled["response"]:
+        garbled["response"][field] = "AAAA"        # valid base64url, nonsense CBOR/JSON
+    return ["{not json", "[]", "{}", json.dumps(no_response), json.dumps(garbled),
+            credential_json[: len(credential_json) // 2]]
+
+
+def test_a_malformed_credential_is_refused_at_both_steps():
+    """FL-086 (4 October 2026): py_webauthn raises InvalidJSONStructure,
+    InvalidCBORData and others for a response it cannot parse. Only its
+    "invalid response" errors were caught, so broken JSON with a valid
+    challenge ended in a server error. Every case below escaped before."""
+    auth = SoftAuthenticator(origin=BASE)
+    _o, challenge, cred = _register(auth)
+    for bad in _malformed(cred):
+        with pytest.raises(pk.PasskeyError):
+            pk.verify_registration(credential_json=bad, challenge=challenge, base_url=BASE)
+    new = pk.verify_registration(credential_json=cred, challenge=challenge, base_url=BASE)
+    options, challenge = pk.authentication_options(base_url=BASE)
+    for bad in _malformed(auth.get(options)):
+        with pytest.raises(pk.PasskeyError):
+            pk.verify_authentication(credential_json=bad, challenge=challenge, base_url=BASE,
+                                     public_key=new.public_key, sign_count=0)
+
+
 def test_a_counter_that_goes_backwards_is_refused():
     """A cloned authenticator shows up as a counter that does not move forward."""
     auth = SoftAuthenticator(origin=BASE)
