@@ -37,11 +37,26 @@ regexes that were too clever — one matched `role, is_active … FROM admins` a
 role check (false positive), the other missed `sess['fac_role'] != 'admin'`
 because of the bracket (false negative). A plain substring is dull and
 predictable, which is what a security check should be.
+
+TWO WAYS IN (4 October 2026, FL-082). The source-level check reads ONE file,
+`app.py`. That was the whole app while every route lived there; it stops
+being true the day a tool moves routes into router modules, and a route that
+moves out of `app.py` does not fail the check — it silently leaves it, which
+is the failure mode this module exists to prevent. `assert_live_admin_routes_
+are_gated` asks the RUNNING app instead: every route it actually dispatches
+(routers included, prefixes applied), whichever file the handler lives in.
+"Gated" means the same thing in both — the guard text in the handler, not
+narrowed by an `and` — plus, for the live check only, a guard DEPENDENCY the
+tool names (a `Depends(require_admin)` on the route or its router). The
+source-level functions stay for the tools whose routes are all in `app.py`.
 """
 from __future__ import annotations
 
 import ast
-from typing import Iterable, NamedTuple
+import inspect
+import os
+import textwrap
+from typing import Callable, Iterable, NamedTuple
 
 
 class Route(NamedTuple):
@@ -176,6 +191,173 @@ def assert_admin_routes_are_gated(app_py, prefixes, guards, allow=()) -> None:
         f'no routes found under {list(prefixes)} — the prefixes are wrong, or '
         f'the routes moved. A check that inspects nothing passes vacuously.')
     bad = unguarded_admin_routes(source, prefixes, guards, allow)
+    assert not bad, (
+        'admin-only routes reachable by any logged-in user:\n  '
+        + '\n  '.join(str(r) for r in bad)
+        + '\n\nGate the ROUTE, not just the template: the query runs before the '
+          'template does, so hiding the buttons still hands over the data.')
+
+
+# ── The running app (FL-082, 4 October 2026) ────────────────────────────────
+# Everything above reads `app.py` as text. Everything below asks the app that
+# would serve the request. Lazy imports throughout: this module is not web
+# plumbing (tests/test_import_boundaries.py), and the source-level half must
+# keep working where FastAPI is not installed.
+
+class AppRoute(NamedTuple):
+    """One route the running app dispatches, as the app sees it."""
+    path: str                    # the full path, router prefixes applied
+    methods: frozenset           # what the router answers, HEAD included
+    name: str
+    endpoint: Callable
+    dependencies: tuple          # every dependency callable, nested ones too
+
+
+class LiveRoute(NamedTuple):
+    methods: str
+    path: str
+    handler: str
+    source: str                  # the file the handler is defined in
+    lineno: int
+
+    def __str__(self) -> str:    # what a failing test prints
+        return f'{self.methods} {self.path}  ({self.handler}, {self.source}:{self.lineno})'
+
+
+def _dependency_calls(dependant) -> tuple:
+    """Every dependency callable under `dependant`, outermost first."""
+    out = []
+
+    def walk(node):
+        for dep in getattr(node, 'dependencies', None) or ():
+            call = getattr(dep, 'call', None)
+            if call is not None:
+                out.append(call)
+            walk(dep)
+
+    walk(dependant)
+    return tuple(out)
+
+
+def app_routes(app) -> list[AppRoute]:
+    """Every APIRoute `app` dispatches, INCLUDING those inside included routers.
+
+    Iterating `app.routes` is not enough on the FastAPI this fleet pins
+    (0.139): `include_router()` no longer copies a router's routes onto the
+    app, it appends ONE node that holds the router, so a loop over
+    `app.routes` that keeps the APIRoutes silently skips every included route
+    (the legal pages have been invisible to such loops since the shared legal
+    router arrived). `fastapi.routing.iter_route_contexts` is FastAPI's own
+    walk through those nodes and returns each route with its EFFECTIVE path,
+    methods and dependencies. On an older FastAPI, which copied routes flat,
+    the plain loop was already complete.
+
+    Call it on an app that has finished building: the walk fixes the routes'
+    effective view (FastAPI caches it until a route is added).
+    """
+    from fastapi.routing import APIRoute
+    try:
+        from fastapi.routing import iter_route_contexts
+    except ImportError:          # FastAPI before the lazy include
+        iter_route_contexts = None
+    routes = getattr(app, 'routes', app)
+    out = []
+    if iter_route_contexts is None:
+        for r in routes:
+            if isinstance(r, APIRoute):
+                out.append(AppRoute(r.path, frozenset(r.methods or ()), r.name,
+                                    r.endpoint, _dependency_calls(r.dependant)))
+        return out
+    for ctx in iter_route_contexts(routes):
+        if not isinstance(ctx.original_route, APIRoute):
+            continue
+        out.append(AppRoute(ctx.path, frozenset(ctx.methods or ()), ctx.name,
+                            ctx.endpoint or ctx.original_route.endpoint,
+                            _dependency_calls(ctx.dependant)))
+    return out
+
+
+def _handler_source(endpoint) -> tuple[str, str, int]:
+    """(dedented source, file, first line) of a route's handler.
+
+    ('', '?', 0) when Python cannot show it — a lambda built at runtime, a
+    callable object — and the caller then treats the route as UNGATED: a
+    handler nobody can read is not one anybody has checked.
+    """
+    fn = inspect.unwrap(endpoint)
+    try:
+        lines, lineno = inspect.getsourcelines(fn)
+        path = inspect.getsourcefile(fn) or '?'
+    except (OSError, TypeError):
+        return '', '?', 0
+    try:
+        shown = os.path.relpath(path)
+    except ValueError:           # another drive (Windows): keep it absolute
+        shown = path
+    if shown.startswith('..'):
+        shown = path
+    return textwrap.dedent(''.join(lines)), shown, lineno
+
+
+def live_admin_routes(app, prefixes: Iterable[str]) -> list[tuple[LiveRoute, str, tuple]]:
+    """(route, handler_source, dependency_calls) under `prefixes`, from the RUNNING app."""
+    prefixes = tuple(prefixes)
+    out = []
+    for r in app_routes(app):
+        if not r.path.startswith(prefixes):
+            continue
+        body, source, lineno = _handler_source(r.endpoint)
+        methods = ', '.join(sorted(r.methods)) or '?'
+        handler = getattr(r.endpoint, '__name__', None) or r.name or '?'
+        out.append((LiveRoute(methods, r.path, handler, source, lineno), body,
+                    r.dependencies))
+    return out
+
+
+def unguarded_live_admin_routes(app,
+                                prefixes: Iterable[str],
+                                guards: Iterable[str] = (),
+                                allow: Iterable[str] = (),
+                                guard_dependencies: Iterable[Callable] = ()) -> list[LiveRoute]:
+    """Admin-area routes of the running app that nothing gates on the role.
+
+    A route is gated when its handler contains one of `guards` and not every
+    guard it contains is narrowed by an `and` (exactly the source-level rule,
+    `unguarded_admin_routes`), OR when one of `guard_dependencies` runs before
+    it — on the route, its router, or the app. `allow` names handlers that are
+    deliberately reachable by a non-admin.
+    """
+    guards = tuple(guards)
+    deps = tuple(guard_dependencies)
+    allowed = set(allow)
+    if not guards and not deps:
+        raise ValueError('name at least one guard string or guard dependency, '
+                         'or this passes vacuously')
+    bad = []
+    for route, body, calls in live_admin_routes(app, prefixes):
+        if route.handler in allowed:
+            continue
+        if deps and any(any(c is d for d in deps) for c in calls):
+            continue
+        matched = [g for g in guards if g in body]
+        if not matched or all(_guard_is_narrowed(body, g) for g in matched):
+            bad.append(route)
+    return bad
+
+
+def assert_live_admin_routes_are_gated(app, prefixes, guards=(), allow=(),
+                                       guard_dependencies=()) -> None:
+    """Raise AssertionError naming every ungated admin route the app serves.
+
+    The live counterpart of `assert_admin_routes_are_gated`: it takes the
+    FastAPI app, not a file, so a route counts wherever its handler lives.
+    """
+    routes = live_admin_routes(app, prefixes)
+    assert routes, (
+        f'the running app serves no routes under {list(prefixes)} — the prefixes '
+        f'are wrong, or the routes moved. A check that inspects nothing passes '
+        f'vacuously.')
+    bad = unguarded_live_admin_routes(app, prefixes, guards, allow, guard_dependencies)
     assert not bad, (
         'admin-only routes reachable by any logged-in user:\n  '
         + '\n  '.join(str(r) for r in bad)

@@ -48,10 +48,19 @@ def _rel(path: Path, root: Path) -> str:
         return str(path)
 
 
-def _code(app_py: Path | str) -> str:
+def _code(app_py) -> str:
     """app.py with comments stripped — a comment quoting the old message is
-    not a restatement of it."""
-    return re.sub(r"#[^\n]*", "", Path(app_py).read_text(encoding="utf-8"))
+    not a restatement of it.
+
+    `app_py` is one path, or several: a tool that keeps its routes in router
+    modules passes every source file (OrgDesignSim since 4 October 2026,
+    FL-082), so a rule restated in any of them is caught and the policy is
+    found wherever it is called.
+    """
+    paths = [app_py] if isinstance(app_py, (str, Path)) else list(app_py)
+    assert paths, "no source files given — the check would inspect nothing"
+    return "\n".join(re.sub(r"#[^\n]*", "", Path(p).read_text(encoding="utf-8"))
+                     for p in paths)
 
 
 def password_setting_forms(root: Path | str) -> list[Path]:
@@ -94,7 +103,7 @@ def assert_minlength_matches_the_policy(template: Path | str, root: Path | str) 
 
 # ── the server ──────────────────────────────────────────────────────────────
 
-def assert_no_hand_rolled_length_check(app_py: Path | str) -> None:
+def assert_no_hand_rolled_length_check(app_py) -> None:
     src = _code(app_py)
     bad = _HAND_ROLLED_LENGTH.findall(src)
     assert not bad, f"restates the length rule: {bad}"
@@ -102,7 +111,7 @@ def assert_no_hand_rolled_length_check(app_py: Path | str) -> None:
     assert not bad2, f"restates the minimum instead of asking the policy: {bad2}"
 
 
-def assert_no_hand_written_password_message(app_py: Path | str) -> None:
+def assert_no_hand_written_password_message(app_py) -> None:
     src = _code(app_py)
     bad = _HAND_WRITTEN_MESSAGE.findall(src)
     assert not bad, (
@@ -110,7 +119,7 @@ def assert_no_hand_written_password_message(app_py: Path | str) -> None:
         f"failed, so a too-long password gets told it is too short")
 
 
-def assert_the_policy_is_reachable(app_py: Path | str) -> None:
+def assert_the_policy_is_reachable(app_py) -> None:
     """A check that inspects nothing passes vacuously."""
     src = _code(app_py)
     assert "validate_password" in src or "_pw_ok" in src, (

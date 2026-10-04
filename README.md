@@ -33,7 +33,7 @@ imports. One version, everywhere, or the deploy stops.
 | Module | Purpose |
 |---|---|
 | `account` | self-service account management — the parts that must not differ |
-| `adminroutes` | finds admin-only routes that are not gated on the admin role |
+| `adminroutes` | finds admin-only routes that are not gated on the admin role — in `app.py`'s text, or (`assert_live_admin_routes_are_gated`) in the running app, routers included |
 | `lockout` | the fleet account-lockout policy |
 | `passwords` | the fleet password policy (minimum 12, no composition rules) |
 | `provisioning` | the hub → tool account-provisioning contract |

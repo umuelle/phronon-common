@@ -30,6 +30,11 @@ def _read(path: Path) -> str:
     return Path(path).read_text(encoding="utf-8", errors="replace")
 
 
+#: A route decorator: `@app.post(...)` in a tool whose routes are in app.py,
+#: `@router.post(...)` in one that keeps them in APIRouter modules (FL-082).
+_DECORATOR = r"@(?:app|router)\."
+
+
 class AccountPageContract:
     """Config plus the helpers every mixin below shares.
 
@@ -51,6 +56,12 @@ class AccountPageContract:
     STRUCTURAL = (".bo-form-card", ".field", ".bo-account")
     #: What the template reads off the account row, mapped to the column behind it.
     NEEDED = ("totp_enabled", "must_change_password")
+    #: The tool's Python sources, relative to PROJECT_ROOT. Empty means app.py
+    #: alone, which was every tool until 4 October 2026. A tool that keeps its
+    #: routes in router modules names them ALL (OrgDesignSim, FL-082): this
+    #: contract reads handlers by route, and a route in an unlisted file would
+    #: fail as "not wired" — or, for the substring checks, pass on nothing.
+    APP_SOURCES: tuple = ()
 
     # ── the files this contract reads ───────────────────────────────────────
     @property
@@ -58,8 +69,15 @@ class AccountPageContract:
         return Path(self.PROJECT_ROOT) / "templates" / "backoffice"
 
     @property
+    def app_texts(self) -> list:
+        """Each source file's text, kept apart so a handler is never read
+        across a file boundary."""
+        return [_read(Path(self.PROJECT_ROOT) / name)
+                for name in (self.APP_SOURCES or ("app.py",))]
+
+    @property
     def app_src(self) -> str:
-        return _read(Path(self.PROJECT_ROOT) / "app.py")
+        return "\n".join(self.app_texts)
 
     @property
     def account_html(self) -> str:
@@ -78,19 +96,23 @@ class AccountPageContract:
         return _read(self.tpl / "users.html")
 
     def route_src(self, path: str, method: str = "post") -> str:
-        """The body of the handler decorated with `@app.<method>('<path>')`.
+        """The body of the handler decorated with `@app.<method>('<path>')`
+        (or `@router.<method>(...)`), in whichever source file holds it.
 
         Found by ROUTE rather than by function name: the nine tools spell their
         handlers differently, and a test that hunts for a function name goes
         quietly green the day somebody renames one.
         """
         pattern = re.compile(
-            r"@app\.%s\(\s*['\"]%s['\"].*?\n(?:@app\.\w+\([^\n]*\n)*"
-            r"(?:async )?def [^\n]*\n(.*?)(?=\n@app\.|\Z)" % (method, re.escape(path)),
+            r"%s%s\(\s*['\"]%s['\"].*?\n(?:%s\w+\([^\n]*\n)*"
+            r"(?:async )?def [^\n]*\n(.*?)(?=\n%s|\Z)"
+            % (_DECORATOR, method, re.escape(path), _DECORATOR, _DECORATOR),
             re.S)
-        m = pattern.search(self.app_src)
-        assert m, f"no @app.{method} route for {path} — the page is not wired"
-        return m.group(1)
+        for text in self.app_texts:
+            m = pattern.search(text)
+            if m:
+                return m.group(1)
+        raise AssertionError(f"no @app.{method} route for {path} — the page is not wired")
 
 
 class ItIsReachable(AccountPageContract):
@@ -226,7 +248,7 @@ class TheAdminSideReset(AccountPageContract):
     def _reset(self) -> str:
         last = self.TWOFACTOR_RESET_ROUTES[-1]
         for path in self.TWOFACTOR_RESET_ROUTES:
-            if re.search(r"@app\.\w+\(\s*['\"]%s['\"]" % re.escape(path), self.app_src):
+            if re.search(r"%s\w+\(\s*['\"]%s['\"]" % (_DECORATOR, re.escape(path)), self.app_src):
                 return self.route_src(path)
         # None registered: ask for the last one so the failure names a route.
         return self.route_src(last)
@@ -292,7 +314,7 @@ class EveryFormPostsToARouteThatExists(AccountPageContract):
             pattern = r"\{\w+\}".join(re.escape(part)
                                        for part in re.split(r"\{\{.*?\}\}", path))
             assert re.search(
-                r'@app\.(?:post|api_route)\(\s*[\'"]%s[\'"]' % pattern,
+                r'%s(?:post|api_route)\(\s*[\'"]%s[\'"]' % (_DECORATOR, pattern),
                 self.app_src), f"nothing answers POST {path}"
 
 
@@ -354,21 +376,28 @@ class ThePageReadsARowThatHasTheColumns(AccountPageContract):
         pages read a row either directly or through the tool's own session
         helper."""
         src = self.route_src("/backoffice/account", method="get")
-        app_src = self.app_src
+
+        def defined(name):
+            """`def name(...)` and its body, from whichever file defines it."""
+            for text in self.app_texts:
+                m = re.search(r"^(?:async )?def %s\(.*?(?=\n(?:async )?def |\n%s|\Z)"
+                              % (re.escape(name), _DECORATOR), text, re.S | re.M)
+                if m:
+                    return m.group(0)
+            return None
+
         called = set(re.findall(r"\b([a-zA-Z_][\w]*)\s*\(", src))
         bodies = [src]
         for name in called:
-            m = re.search(r"^(?:async )?def %s\(.*?(?=\n(?:async )?def |\n@app\.|\Z)"
-                          % re.escape(name), app_src, re.S | re.M)
-            if m:
-                bodies.append(m.group(0))
+            body = defined(name)
+            if body:
+                bodies.append(body)
         # …and one more hop, for `require_x -> get_admin_by_id -> SELECT`.
         for body in list(bodies):
             for name in set(re.findall(r"\b([a-zA-Z_][\w]*)\s*\(", body)):
-                m = re.search(r"^(?:async )?def %s\(.*?(?=\n(?:async )?def |\n@app\.|\Z)"
-                              % re.escape(name), app_src, re.S | re.M)
-                if m:
-                    bodies.append(m.group(0))
+                found = defined(name)
+                if found:
+                    bodies.append(found)
         joined = "\n".join(bodies)
         return re.findall(r"SELECT\s+(.*?)\s+FROM\s+admins", joined, re.S | re.I)
 

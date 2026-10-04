@@ -92,11 +92,17 @@ class FleetBaseline:
 
     # ── the walk ────────────────────────────────────────────────────────────
     def walkable_get_routes(self, fleet_app) -> list:
-        from fastapi.routing import APIRoute
+        # Every route the app DISPATCHES, routers included (FL-082, 4 October
+        # 2026). Until then this looped over `app.routes` and kept the
+        # APIRoutes — which on FastAPI 0.139 skips every route inside an
+        # included router: the shared legal pages in all nine tools, and every
+        # route of a tool that keeps its routes in router modules. A walk that
+        # cannot see a route cannot notice it answering 500.
+        from phronon_common.adminroutes import app_routes
 
         routes = []
-        for r in fleet_app.app.routes:
-            if not isinstance(r, APIRoute) or "GET" not in r.methods:
+        for r in app_routes(fleet_app.app):
+            if "GET" not in r.methods:
                 continue
             if "{" in r.path:
                 continue  # no guessing IDs against a real database

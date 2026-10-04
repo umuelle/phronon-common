@@ -4,6 +4,40 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.71.0 — 2026-10-04
+
+- **`adminroutes`: the role-gating check can ask the RUNNING app (FL-082).**
+  `assert_live_admin_routes_are_gated(app, prefixes, guards, allow=(),
+  guard_dependencies=())` takes the FastAPI app instead of `app.py`'s text: it
+  walks every route the app dispatches — routers included, prefixes applied —
+  and reads the handler's source wherever it is written. "Gated" means what it
+  meant: a declared guard string in the handler, not narrowed by an `and`; the
+  live check also accepts a declared guard DEPENDENCY on the route, its router
+  or the app. Why: a route that moves out of `app.py` into a router module does
+  not fail the text check, it silently leaves it. OrgDesignSim, which split its
+  `app.py` into router modules the same day, uses the live check; the
+  source-level `assert_admin_routes_are_gated` is unchanged for the other eight.
+  New helpers: `app_routes(app)` (every dispatched APIRoute with its effective
+  path, methods and dependencies), `live_admin_routes`,
+  `unguarded_live_admin_routes`. Tests: `tests/test_adminroutes_live.py`,
+  including the mutation (an ungated route in an included router is refused).
+- **`testing.fleet_baseline` walks included routers.** `walkable_get_routes`
+  looped over `app.routes` and kept the APIRoutes; on FastAPI 0.139
+  `include_router()` adds ONE node holding the router, so every included route
+  was invisible to the walk — the shared legal pages in all nine tools, and
+  every route of a tool whose routes live in routers. It now uses
+  `adminroutes.app_routes`. **Effect on every tool when its pin is bumped:** the
+  "every parameterless GET answers" and "anonymous is kept out" walks now also
+  request the legal pages (`/impressum`, `/legal-notice`, `/privacy`,
+  `/cookies`, `/terms`, `/legal`, `/imprint`, and `/de/privacy`, `/de/cookies`
+  where served).
+- **`testing.manage_account`: `APP_SOURCES`.** A tool may list its source files
+  (default: `app.py` alone, as before); handlers are found by route in
+  whichever listed file holds them, `@router.<verb>(...)` as well as
+  `@app.<verb>(...)`, and never read across a file boundary.
+- **`testing.passwords`:** the three server-side checks accept one path or a
+  list of paths.
+
 ## 1.70.0 — 2026-10-04
 
 - **`testing.run_lock`: one test run per test database at a time (FL-085).**
