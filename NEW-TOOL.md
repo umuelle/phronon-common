@@ -100,6 +100,11 @@ belongs in your tool.
    machine-facing ones come with those features. The stub browser journey
    fails on purpose until the participant flow exists, so CI's journey step
    and deploy step 1d are red until then.
+   A tool that gains its own `static/css/backoffice.css` enrols it for
+   frontend-only releases: `frontend/contract.json`, `frontend_assets.install(app,
+   templates, BASE_DIR)` and `"frontend_bundle": frontend_assets.active_bundle()`
+   in /health (the baseline's `check_the_tools_stylesheet_ships_through_frontend_bundles`
+   refuses less; the scaffold has no such file yet).
 6. **The server, by hand.** The scaffolder prints each of these and installs
    none: the databases `<db>` and `<db>_test` with their users, built from
    `schema.sql` (the `_test` one before the first deploy), the `.env`, the

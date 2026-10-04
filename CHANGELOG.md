@@ -4,6 +4,27 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.74.0 — 2026-10-04
+
+- **`frontend_assets`: every tool's own `backoffice.css` can ship without a
+  full deploy (TO DO FL-078).** The pilot ran in Layoff alone, in a module of
+  its own; the owner did not want one tool shipping its stylesheet
+  differently from the rest. The module moved here unchanged in behaviour:
+  `install(app, templates, BASE_DIR)` wraps the `asset` global (enrolled
+  files come from the active immutable bundle), adds the
+  one-bundle-per-request middleware and the `/frontend/<id>/<path>` route;
+  `active_bundle()` feeds /health. The bundle folder is
+  `/var/www/.phronon-frontend/<registry service>`. A tool without
+  `frontend/contract.json` is unaffected. The web framework loads only inside
+  `install`.
+- **`/frontend/` is public** in `security_headers.PUBLIC_PREFIXES`, so a
+  bundle keeps its year-long immutable caching instead of no-store.
+- **`fleet_baseline.check_the_tools_stylesheet_ships_through_frontend_bundles`:**
+  a tool with its own backoffice.css must enrol it, install the module, link
+  the active bundle on the login page, serve it as immutable and name it in
+  /health. Checked against a scratch bundle folder, so it runs anywhere. The
+  hub has no such file and passes.
+
 ## 1.73.0 — 2026-10-04
 
 - **A malformed passkey is refused, never a 500 (FL-086).** `passkeys.

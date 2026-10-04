@@ -20,6 +20,7 @@ imports. One version, everywhere, or the deploy stops.
 |---|---|
 | `access_log` | keeps bearer tokens out of the access log |
 | `assets` | cache-busting query strings derived from the file, not from a person |
+| `frontend_assets` | a tool's own `backoffice.css` from an immutable bundle: the app's half of the frontend-only release path |
 | `csrf` | `CSRFProtection` + `CSRFMiddleware` |
 | `hosts` | the Host names a tool answers to, derived from its notice |
 | `legal` / `legal_conf` | the shared legal pages: one router, nine tools |
@@ -81,7 +82,7 @@ wrapper, so a tool cannot quietly stop running a check while its CI stays green.
 | `manage_account` | the Manage account page: wiring and the guards that make it safe |
 | `account_kit` | a tool mounting `account_kit` answers each of its routes once, with no stale template copies |
 | `email_delivery` | what the messages say, and whether they actually go out |
-| `fleet_baseline` | routes answer, login round-trips, anonymous visitors stay out |
+| `fleet_baseline` | routes answer, login round-trips, anonymous visitors stay out, the stylesheet ships through bundles |
 | `run_reporting` | an unrecognised skip fails the run where green is a gate |
 | `run_lock` | one test run per test database at a time; a second run waits, then stops red |
 | `undefined_names` | names a module reads but never binds |

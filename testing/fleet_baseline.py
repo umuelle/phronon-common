@@ -186,6 +186,97 @@ class FleetBaseline:
         )
         return None
 
+    def check_the_tools_stylesheet_ships_through_frontend_bundles(self, fleet_app, client):
+        """Fleet-wide since v1.74.0 (owner, 4 October 2026; TO DO FL-078): a
+        tool with its own static/css/backoffice.css enrols it for the
+        frontend-only release path and serves it from the active bundle. The
+        pilot ran in Layoff alone; the owner did not want one tool shipping its
+        stylesheet differently from the rest. The hub has no such file.
+
+        Checked against a scratch bundle folder, so no server is needed: the
+        contract names the file and only tool-owned files, the app installed
+        `phronon_common.frontend_assets` (its middleware is in the stack), the
+        app's own Jinja environment links the active bundle during a request,
+        the bundle URL is cached as immutable (never no-store), and /health
+        names the bundle. Not through a page: most sign-in pages use the
+        participant layout and never load backoffice.css; the real backoffice
+        pages are walked in a browser by server-ops/frontend_check.py.
+        """
+        import json
+        import shutil
+        import tempfile
+
+        from phronon_common import frontend_assets
+        from phronon_common.registry import TOOLS
+        from phronon_common.shared_assets import ASSETS
+
+        base = Path(fleet_app.__file__).resolve().parent
+        css = base / "static" / "css" / "backoffice.css"
+        if not css.is_file():
+            return None
+        contract_file = base / "frontend" / "contract.json"
+        assert contract_file.is_file(), (
+            "static/css/backoffice.css exists but frontend/contract.json does not: "
+            "the stylesheet is not enrolled for frontend-only releases (FL-078)")
+        contract = json.loads(contract_file.read_text(encoding="utf-8"))
+        assert contract.get("tool") in TOOLS, f"contract names an unknown tool {contract.get('tool')!r}"
+        assert "css/backoffice.css" in contract.get("assets", []), "the contract does not enrol css/backoffice.css"
+        shared = {p.removeprefix("static/") for p in ASSETS.values()}
+        assert not set(contract["assets"]) & shared, "a copy of a shared master may never be enrolled (FL-069)"
+        fe = frontend_assets._installed
+        assert fe is not None and fe.base_dir.resolve() == base, (
+            "app.py never called frontend_assets.install(app, templates, BASE_DIR)")
+
+        bid = "0123456789abcdef"
+        scratch = Path(tempfile.mkdtemp(prefix="phronon-frontend-check-"))
+        saved = (fe.root, fe._state)
+        try:
+            for rel in contract["assets"]:
+                target = scratch / "bundles" / bid / rel
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((base / "static" / rel).read_bytes())
+            (scratch / "active.json").write_text(json.dumps(
+                {"schema": 1, "tool": contract["tool"], "bundle": bid,
+                 "files": {rel: "-" for rel in contract["assets"]}}))
+            fe.root, fe._state = scratch, {"stamp": None, "good": None}
+
+            r = client.get(f"/frontend/{bid}/css/backoffice.css")
+            if r.status_code >= 500 and not self.STRICT:
+                return "requires the live server environment (the bundle route answered 5xx)"
+            assert r.status_code == 200 and r.content == css.read_bytes(), (
+                f"/frontend/{bid}/css/backoffice.css answered {r.status_code}: the route "
+                "frontend_assets.install adds is missing or shadowed by another route")
+            assert r.headers.get("content-type", "").startswith("text/css")
+            cache = r.headers.get("cache-control", "")
+            assert "immutable" in cache and "no-store" not in cache, (
+                f"a bundle must be cached as immutable, got {cache!r} "
+                "(is /frontend/ public in security_headers.PUBLIC_PREFIXES?)")
+
+            stack = [getattr(m, "kwargs", None) or getattr(m, "options", None) or {}
+                     for m in fleet_app.app.user_middleware]
+            assert any(getattr(o.get("dispatch"), "__name__", "") == "_frontend_snapshot" for o in stack), (
+                "the one-bundle-per-request middleware is not installed")
+            token = fe.begin_request()
+            try:
+                link = fe.env.from_string("{{ asset('/static/css/backoffice.css') }}").render()
+            finally:
+                fe.end_request(token)
+            assert link == f"/frontend/{bid}/css/backoffice.css", (
+                f"the app's asset() gave {link!r}, not the active bundle: install() must run "
+                "after the asset global is set, on the environment the pages render with")
+
+            health = client.get("/health")
+            if health.status_code == 200:
+                assert health.json().get("frontend_bundle") == bid, (
+                    "/health does not name the active bundle: add "
+                    '"frontend_bundle": frontend_assets.active_bundle()')
+            elif self.STRICT:
+                raise AssertionError(f"/health answered {health.status_code}")
+        finally:
+            fe.root, fe._state = saved
+            shutil.rmtree(scratch, ignore_errors=True)
+        return None
+
     def check_the_entry_addresses_are_the_fleet_ones(self, client):
         """One shape on every teaching tool (owner's decision, 3 October 2026).
 

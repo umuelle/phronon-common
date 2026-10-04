@@ -38,6 +38,9 @@ PUBLIC_EXACT = frozenset({
 PUBLIC_PREFIXES = (
     "/static/", "/legal", "/privacy", "/cookies", "/terms", "/impressum",
     "/legal-notice", "/imprint", "/accessibility", "/about",
+    # Immutable stylesheet bundles (frontend_assets.py, v1.74.0): public like
+    # /static/, and cached for a year; no-store here would undo that.
+    "/frontend/",
 )
 
 
