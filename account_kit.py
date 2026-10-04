@@ -1226,8 +1226,11 @@ def account_gate(kit: AccountKit):
     other address.
 
     An administrator without an authenticator (A1: two-factor is required for
-    admins, offered to educators): everything else redirects to the enrolment
-    page. Educators are never forced; they may enrol from the same page.
+    admins, offered to educators): everything but `ENROLMENT_OPEN` redirects
+    to the enrolment page, the account page included. Educators are never
+    forced; they may enrol from the same page. An administrator who has both
+    a temporary password and no authenticator changes the password first,
+    then enrols.
 
     A failed lookup lets the request through (fail OPEN): a database hiccup
     must not lock the whole backoffice out, and every page checks the session
@@ -1242,14 +1245,21 @@ def account_gate(kit: AccountKit):
 
     async def gate(request: Request, call_next):
         path = request.url.path
-        if path.startswith("/backoffice") and not path.startswith(must_change_open):
+        if path.startswith("/backoffice"):
             try:
                 row = who(request)
             except Exception:  # noqa: BLE001 — fail open, see above
                 row = None
             if row and row.get("must_change_password"):
-                return RedirectResponse(kit.must_change_url, status_code=303)
-            if (row and twofactor.is_required(row.get("role")) and not row.get("totp_enabled")
+                if not path.startswith(must_change_open):
+                    return RedirectResponse(kit.must_change_url, status_code=303)
+            # Asked of every other path, the account page included: until
+            # 4 October 2026 the account page's place on the must-change list
+            # exempted it here too, and an administrator without an
+            # authenticator could change their name and sign-in address
+            # (MM-007, DB-007). The password form is that page's only use
+            # during a temporary password, so that state is decided above.
+            elif (row and twofactor.is_required(row.get("role")) and not row.get("totp_enabled")
                     and not path.startswith(ENROLMENT_OPEN)):
                 return RedirectResponse(TWO_FACTOR_URL, status_code=303)
         return await call_next(request)

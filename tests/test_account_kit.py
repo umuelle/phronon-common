@@ -1225,12 +1225,37 @@ def test_an_administrator_without_an_authenticator_may_only_enrol(world):
     assert w.signed_in(enrolled).get("/backoffice/dashboard").text == "DASHBOARD"
 
 
-def test_the_gate_lets_the_account_page_through_for_an_unenrolled_admin(world):
-    """MM-007 / DB-007, as the tools had it: the account page is on the
-    must-change list, and the enrolment check never ran for it."""
-    w = world()
+def test_the_enrolment_gate_covers_the_account_page(world):
+    """MM-007 / DB-007: the account page was on the must-change list, and the
+    enrolment check never ran for it, so an administrator without an
+    authenticator could change their name and address. Red before the fix."""
+    w = world(legacy_password_path="/backoffice/change-password")
     admin = w.account(role="admin")
-    assert w.signed_in(admin).get("/backoffice/account").status_code == 200
+    c = w.signed_in(admin)
+    for method, path in (("get", "/backoffice/account"), ("get", "/backoffice/change-password"),
+                         ("post", "/backoffice/account/name"),
+                         ("post", "/backoffice/account/email"),
+                         ("post", "/backoffice/account/password"),
+                         ("post", "/backoffice/change-password")):
+        r = getattr(c, method)(path, **({"data": {"csrf_token": _tok(admin),
+                                                  "display_name": "Sneaky"}}
+                                        if method == "post" else {}))
+        assert r.status_code == 303 and r.headers["location"] == "/backoffice/two-factor", path
+    assert w.row(admin["id"])["display_name"] == "Kit Person" and w.audits == []
+    # A temporary password AND no authenticator: the password form first (no
+    # redirect loop between the two gates), then enrolment.
+    both = w.account(role="admin", must_change_password=1)
+    c = w.signed_in(both)
+    assert c.get("/backoffice/account").status_code == 200
+    assert c.get("/backoffice/dashboard").headers["location"] == "/backoffice/account"
+    r = c.post("/backoffice/account/password", data={
+        "csrf_token": _tok(both), "current_password": PASSWORD, "new_password": "N" * 20,
+        "confirm_password": "N" * 20})
+    assert r.status_code == 303 and r.headers["location"] == "/backoffice/dashboard"
+    assert r.cookies.get("kit_session") == f"{both['id']}:1"
+    c.cookies.set("kit_session", f"{both['id']}:1")
+    assert c.get("/backoffice/dashboard").headers["location"] == "/backoffice/two-factor"
+    assert c.get("/backoffice/account").headers["location"] == "/backoffice/two-factor"
 
 
 def test_the_gate_asks_whom_the_tool_says_and_fails_open(world):
