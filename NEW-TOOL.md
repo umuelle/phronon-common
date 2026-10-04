@@ -55,7 +55,9 @@ belongs in your tool.
    `tests/test_fleet_baseline.py`, `tests/test_shared_assets_match.py`,
    `tests/test_identity_matches_the_registry.py`, and the account, mail and
    CSRF ones) and fails a tool that re-implements what the kit owns. Give the
-   tool a disposable `*_test` schema (`.env.test`) before any DB test runs.
+   tool a disposable `*_test` schema (`.env.test`) before any DB test runs,
+   and let its conftest hold that schema for the run
+   (`run_lock.hold_the_test_database(session)` in `pytest_sessionstart`).
 6. **CI and deploy.** Copy a tool's `.github/workflows/ci.yml` (MySQL service,
    schema from migrations, the `phronon_common` pin at the fleet's tag, the
    browser-journey action). Add the line to `server-ops/fleet.conf`, the nginx

@@ -81,6 +81,7 @@ wrapper, so a tool cannot quietly stop running a check while its CI stays green.
 | `email_delivery` | what the messages say, and whether they actually go out |
 | `fleet_baseline` | routes answer, login round-trips, anonymous visitors stay out |
 | `run_reporting` | an unrecognised skip fails the run where green is a gate |
+| `run_lock` | one test run per test database at a time; a second run waits, then stops red |
 | `undefined_names` | names a module reads but never binds |
 
 ## Using it from a tool

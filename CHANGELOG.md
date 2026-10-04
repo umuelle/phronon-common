@@ -4,6 +4,23 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.70.0 — 2026-10-04
+
+- **`testing.run_lock`: one test run per test database at a time (FL-085).**
+  A tool's `<db>_test` schema is written by its suite, and on the owner's Mac
+  also by the candidate matrix, the browser gate, the coverage diagnostic and
+  the mutation probe, from several sessions at once. Two Layoff suites started
+  together failed 9 to 12 tests each, a different set every time, and passed
+  on a rerun. `hold_the_test_database(session)`, called from a conftest's
+  `pytest_sessionstart`, holds the MySQL named lock
+  `phronon-test-run.<DB_NAME>` on a connection of its own until the process
+  ends; a second run waits and says so (`PHRONON_TEST_RUN_WAIT`, default
+  600 s), then stops red before its first test. No DB_NAME or no reachable
+  database: no lock, and the run goes on as before. MySQL drops the lock with
+  the connection, so a killed run leaves nothing behind. No pytest import.
+- Tested against real MySQL, including a real pytest run that is stopped
+  (exit 2, no test ran, the reason printed) and a holder killed with SIGKILL.
+
 ## 1.69.0 — 2026-10-04
 
 - **Each tool owns its legal content.** New `legal_content.py`:
