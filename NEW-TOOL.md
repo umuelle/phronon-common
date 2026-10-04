@@ -67,7 +67,12 @@ belongs in your tool.
    package, so they go out as a release (below). The line the scaffolder
    prints for `server-ops/fleet.conf` lands with it:
    `server-ops/tool_registry_check.py` fails until the registry, `fleet.conf`
-   and the tool's notice agree. The notice lives in the tool,
+   and the tool's notice agree. **Land them when the tool passes the
+   fleet-wide gates of deploy step 1b**: from then on every deploy in the
+   fleet checks the new tool, and a fresh scaffold still fails three of them
+   (retention, participant identity, audit wiring; TO DO FL-087). Until then
+   keep both on the session branch, where the tool's own suite passes; its
+   CI stays red on the identity test until the release. The notice lives in the tool,
    `legal_content/notice.json` (since v1.69.0; `legal_conf.py` is frozen for
    rollbacks and takes no new tool).
 3. **Accounts.** The scaffold signs in with `passwords`' rules, `lockout`,
