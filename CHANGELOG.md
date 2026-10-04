@@ -4,6 +4,52 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+## 1.75.0 — 2026-10-05
+
+- **The account kit serves the rest of the account code (TO DO FL-083).**
+  New routes: `GET/POST /backoffice/login` (password, then the code prompt or
+  a session), `POST /backoffice/logout`, `GET/POST /backoffice/password-reset`
+  (ask for a link, set the password) and `POST
+  /backoffice/users/{user_id}/reset-two-factor` (an administrator clears
+  another account's second factor); every GET answers HEAD. New
+  `account_gate(kit)`: the must-change and forced-enrolment middleware a tool
+  installs where its own was. New `reset_token_hash(raw)`. The sign-in and
+  reset pages stay the tool's own templates (`backoffice/login.html`,
+  `backoffice/password_reset.html`), rendered with a fixed context.
+- **The policies are the fleet's (owner's decision, 4 October 2026):
+  Drawbridge's rule wherever the pilot tools differed.** (a) Every failure
+  (password, code, passkey) counts by `lockout`. (b) A re-shown form answers
+  400. (c) Sign-in: five a minute per address, one budget with the passkey;
+  a locked account refused (429) before its password is read; "Invalid email
+  or password." for an unknown, wrong or deactivated account. (d) Reset: five
+  per five minutes per address; no link for a deactivated account; 400 for a
+  request that is neither step; a completed reset leaves a lockout to run
+  out. (e) Sign-out needs a session and its own token.
+- **The forced-enrolment gate covers the account page (MM-007, DB-007).**
+  Both tools' gates exempted it because it is on the must-change list, so an
+  administrator without an authenticator could change their name and
+  sign-in address.
+- **Adapter changes (breaking for the two kit tools, which move with this
+  release).** Removed: `register_failure`, `error_status`, `login_rate_limit`
+  (decided points). Added: `set_pending_cookie`, `not_an_admin`,
+  `after_two_factor_reset`, `reset_token_hours`; `AccountTables` gained
+  `transaction` (required), `reset_tokens`, `reset_token_owner` and
+  `reset_token_spent` (a flag, or a timestamp when the name ends in `_at`);
+  `last_login_at` is renamed `clock` and also stamps a reset link's expiry.
+  Differences kept as they were, each documented: `csrf_field_required`,
+  `signed_in_redirect_status`, `drop_dead_session_cookie`,
+  `sign_in_page_shows_messages`, `must_change_allows_two_factor`,
+  `gate_account`. The sign-in page renders during a database outage (the
+  session lookup failing counts as signed out there only).
+- **`testing.account_kit`:** the route list includes the new routes;
+  `assert_the_tool_keeps_its_entrance_pages` checks the two templates the kit
+  renders exist, carry `csrf_token` and post to the kit's paths.
+  **`testing.manage_account`** reads the kit's gate lists for a kit tool.
+- Tests: `tests/test_account_kit.py` 45 → 73: the new routes driven, a
+  refusing CSRF hook on every POST, each of (a) to (e), each new field, the
+  gate (lists, hook, fail-open, the account page, must-change before
+  enrolment). Suite: 502 passed.
+
 ## 1.74.0 — 2026-10-04
 
 - **`frontend_assets`: every tool's own `backoffice.css` can ship without a
