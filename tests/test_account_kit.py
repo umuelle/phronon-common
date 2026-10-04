@@ -38,8 +38,8 @@ from phronon_common.testing import (assert_form_asks_for_the_shared_hint,
 PKG = Path(kit_mod.__file__).resolve().parent
 TEMPLATES = sorted(kit_mod.TEMPLATE_DIR.glob("*.html"))
 BASE = "https://testserver"
-SECRET = "kit-test-secret-" + "0" * 32
-PASSWORD = "Kit-test-passphrase-2026"
+SECRET = "kit-test-secret-" + "0" * 32  # pragma: allowlist secret (test value)
+PASSWORD = "Kit-test-passphrase-2026"  # pragma: allowlist secret (test value)
 
 
 # ── static ───────────────────────────────────────────────────────────────────
