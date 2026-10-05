@@ -6,6 +6,17 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## 1.75.0 — 2026-10-05
 
+- **Runs the code that is live (expand, then contract).** An adapter in phase
+  1's shape (it passes `register_failure`: Moral Mirror's and Drawbridge's
+  code before their phase-2 deploys) is served by `account_kit_v1`, a frozen
+  copy of 1.74.0's kit, so moving the fleet to 1.75.0 changes nothing for
+  them until they deploy phase 2. `AccountKit` is keyword-only so phase 2's
+  new fields can be absent in phase 1's shape; a mixture of the two shapes is
+  refused. `testing.account_kit` and `testing.manage_account` read whichever
+  generation a tool mounts (`kit_routes(sign_in=True)` for phase 2). Found by
+  the candidate matrix: the first 1.75.0 commit (07d98b2) made the live code
+  fail at import (`last_login_at`). Delete `account_kit_v1.py` once no tool
+  mounts the kit in phase 1's shape (TO DO FL-083).
 - **Review fixes before release (5 October 2026), each with a test that fails
   without it:** the code prompt refuses a locked account (a right code no
   longer signs it in) and budgets guesses per account; a right password no

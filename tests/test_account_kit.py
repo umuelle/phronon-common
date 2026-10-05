@@ -1470,3 +1470,55 @@ def test_the_gate_opens_exact_paths_and_paths_below_them_only():
     for path in ("/backoffice/accounts", "/backoffice/account-export",
                  "/backoffice/login-as", "/backoffice/verify2"):
         assert not opens(path, open_paths), path
+
+
+# ── phase 1's adapter shape, accepted until the pilot tools run phase 2 ────
+# 1.75.0 must run the code that is LIVE: a tool's phase-1 adapter (1.72.0 to
+# 1.74.0) keeps working, served by the frozen account_kit_v1 (expand, then
+# contract; TO DO FL-083).
+
+def _phase_1_kit(w, **extra):
+    import dataclasses
+    return dataclasses.replace(
+        w.kit, register_failure=lockout.register_failure, error_status=200,
+        login_rate_limit=(10, 60), set_pending_cookie=None, not_an_admin=None,
+        after_two_factor_reset=None,
+        tables=dataclasses.replace(w.kit.tables, transaction=None), **extra)
+
+
+def test_a_phase_1_adapter_is_served_by_the_frozen_code(world):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from phronon_common.testing import account_kit as contract
+    w = world()
+    app = FastAPI()
+    app.include_router(kit_mod.build_account_router(_phase_1_kit(w)))
+    modules = {m for p, _meth, m in contract.effective_routes(app) if p.startswith("/backoffice")}
+    assert modules == {"phronon_common.account_kit_v1"}
+    paths = {(p, meth) for p, meth, _m in contract.effective_routes(app) if meth != "HEAD"}
+    assert ("/backoffice/login", "POST") not in paths     # the tool keeps its sign-in
+    assert set(contract.kit_routes()) <= paths
+    # Phase 1's behaviour: its own re-shown-form status (200 here, MM's).
+    acc = w.account(totp_enabled=1, totp_secret=SECRET32)
+    c = TestClient(app, base_url=BASE, follow_redirects=False)
+    c.cookies.set("kit_pending", str(acc["id"]))
+    r = c.post("/backoffice/verify", data={"csrf_token": "pre", "code": "000000"})
+    assert r.status_code == 200
+
+
+def test_the_two_shapes_are_never_mixed(world):
+    import dataclasses
+    w = world()
+    with pytest.raises(TypeError, match="pick one shape"):
+        kit_mod.build_account_router(dataclasses.replace(
+            w.kit, register_failure=lockout.register_failure))       # phase 2 fields kept
+    with pytest.raises(TypeError, match="without register_failure"):
+        kit_mod.build_account_router(dataclasses.replace(w.kit, error_status=200))
+    with pytest.raises(TypeError, match="missing"):
+        kit_mod.build_account_router(dataclasses.replace(w.kit, not_an_admin=None))
+
+
+def test_a_phase_1_adapter_keeps_its_own_gate(world):
+    w = world()
+    with pytest.raises(TypeError, match="keeps its own gate"):
+        kit_mod.account_gate(_phase_1_kit(w))

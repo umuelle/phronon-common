@@ -47,6 +47,9 @@ _DECORATOR = r"@(?:app|router)\."
 #: The shared account routes and their templates (account_kit.py). Found next
 #: to this package rather than imported: the wheel ships both.
 KIT_PY = Path(__file__).resolve().parents[1] / "account_kit.py"
+#: The frozen 1.74.0 kit, which serves an adapter in phase 1's shape: a tool
+#: whose code predates its phase-2 deploy is read where its routes really live.
+KIT_V1_PY = Path(__file__).resolve().parents[1] / "account_kit_v1.py"
 KIT_TEMPLATES = Path(__file__).resolve().parents[1] / "account_templates"
 #: What an app.py that mounts the kit contains.
 KIT_MOUNT = "account_kit.build_account_router("
@@ -112,8 +115,13 @@ class AccountPageContract:
         return KIT_MOUNT in self.app_src
 
     @property
+    def uses_kit_gate(self) -> bool:
+        """Phase 2 (1.75.0): the kit's gate replaces the tool's own."""
+        return "account_kit.account_gate(" in self.app_src
+
+    @property
     def kit_src(self) -> str:
-        return _read(KIT_PY)
+        return _read(KIT_PY if self.uses_kit_gate else KIT_V1_PY)
 
     def _page(self, name: str) -> Path:
         """The tool's own template, or the kit's when the tool mounts the kit
@@ -195,7 +203,7 @@ class SectionsAreGatedByState(AccountPageContract):
         """An admin who has not enrolled may do exactly one thing. The account
         page is on the must-change list because the password form lives there;
         it must NOT be on the two-factor one."""
-        if self.uses_account_kit:
+        if self.uses_kit_gate:
             # The kit's gate (account_kit.account_gate) holds both lists; its
             # own tests drive it. Here: the lists say what this test says.
             from phronon_common import account_kit
@@ -212,7 +220,7 @@ class SectionsAreGatedByState(AccountPageContract):
     def test_the_account_page_is_allowed_through_the_must_change_gate(self):
         """It carries the password form now, so a locked-out account has to be
         able to reach it — the section gating above is what makes that safe."""
-        if self.uses_account_kit:
+        if self.uses_kit_gate:
             from phronon_common import account_kit
             assert "/backoffice/account" in account_kit.MUST_CHANGE_OPEN
             return
