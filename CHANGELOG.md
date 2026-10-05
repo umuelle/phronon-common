@@ -6,6 +6,19 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## 1.75.0 — 2026-10-05
 
+- **Review fixes before release (5 October 2026), each with a test that fails
+  without it:** the code prompt refuses a locked account (a right code no
+  longer signs it in) and budgets guesses per account; a right password no
+  longer clears the failure count while a code is owed (someone holding the
+  password could re-enter it between code guesses and never reach the lock);
+  failures are counted with one atomic increment (parallel failures counted
+  as one); a reset link is claimed by a conditional UPDATE whose row count
+  decides, and only for an active account; sign-out also clears the pending
+  sign-in and the unconfirmed authenticator secret; the gate opens exact
+  paths and paths below them (a bare prefix let `/backoffice/accounts...`
+  through); an unknown or deactivated address costs a bcrypt check like a
+  wrong password. Phase-1 adapters keep working unchanged: the new routes
+  switch on only for an adapter that declares them.
 - **The account kit serves the rest of the account code (TO DO FL-083).**
   New routes: `GET/POST /backoffice/login` (password, then the code prompt or
   a session), `POST /backoffice/logout`, `GET/POST /backoffice/password-reset`

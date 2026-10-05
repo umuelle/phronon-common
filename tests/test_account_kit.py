@@ -974,14 +974,26 @@ def test_a_right_password_signs_in(world):
 
 
 def test_a_right_password_with_an_authenticator_owes_the_code(world):
+    """The password alone completes nothing: no session, no sign-in stamp, and
+    the failure count stays. Until 5 October 2026 a right password cleared the
+    count, so someone holding the password could re-enter it between code
+    guesses and never reach the lock."""
     w = world()
-    acc = w.account(totp_enabled=1, totp_secret=SECRET32)
+    acc = w.account(totp_enabled=1, totp_secret=SECRET32, failed_logins=3)
     r = _sign_in(w, acc["email"], PASSWORD)
     assert r.status_code == 303 and r.headers["location"] == "/backoffice/verify"
     assert r.headers["set-cookie"].startswith(f"kit_pending={acc['id']}")
     assert "kit_session" not in r.headers["set-cookie"]
     assert w.actions() == []                 # the sign-in is not complete yet
-    assert w.row(acc["id"])["last_login_at"] is not None
+    row = w.row(acc["id"])
+    assert row["last_login_at"] is None and row["failed_logins"] == 3
+    # The right code completes it, and only then is the count cleared.
+    c = _pending_client(w, acc)
+    r = c.post("/backoffice/verify", data={"csrf_token": "pre",
+                                            "code": twofactor.current_code(SECRET32)})
+    assert r.status_code == 303 and r.headers["location"] == "/backoffice/dashboard"
+    row = w.row(acc["id"])
+    assert row["last_login_at"] is not None and row["failed_logins"] == 0
 
 
 def test_a_wrong_password_unknown_address_or_deactivated_account_hear_the_same(world):
@@ -1083,7 +1095,11 @@ def test_signing_out_needs_a_session_and_its_own_token(world):
     assert r.status_code == 400 and "set-cookie" not in r.headers
     r = c.post("/backoffice/logout", data={"csrf_token": _tok(acc)})
     assert r.status_code == 303 and r.headers["location"] == "/backoffice/login"
-    assert 'kit_session=""' in r.headers["set-cookie"]
+    cleared = r.headers.get_list("set-cookie")
+    # The session, and anything the next person at this computer could take
+    # over: a half-finished sign-in and an unconfirmed authenticator secret.
+    for name in ("kit_session", "kit_pending", "kit_pending_totp"):
+        assert any(h.startswith(f'{name}=""') for h in cleared), (name, cleared)
 
 
 # ── the password-reset links ─────────────────────────────────────────────────
@@ -1317,3 +1333,140 @@ def test_only_a_signed_in_administrator_may_reset_two_factor(world):
                                    data={"csrf_token": _tok(educator)})
     assert r.status_code == 403                               # the tool's not_an_admin
     assert w.row(target["id"])["totp_enabled"] == 1 and w.audits == []
+
+
+# ── found in the review of 5 October 2026 ───────────────────────────────────
+
+def test_the_code_prompt_refuses_a_locked_account(world):
+    """(a) holds at the code prompt: a locked account's code is not checked,
+    and the right one does not sign it in."""
+    w = world()
+    acc = w.account(totp_enabled=1, totp_secret=SECRET32, failed_logins=5)
+    w.run(f"UPDATE {w.T} SET locked_until=DATE_ADD(UTC_TIMESTAMP(), INTERVAL 5 MINUTE) "
+          f"WHERE id=%s", (acc["id"],))
+    c = _pending_client(w, acc)
+    r = c.get("/backoffice/verify")
+    assert r.status_code == 429 and "temporarily locked" in r.text
+    r = c.post("/backoffice/verify", data={"csrf_token": "pre",
+                                           "code": twofactor.current_code(SECRET32)})
+    assert r.status_code == 429 and "kit_session" not in r.headers.get("set-cookie", "")
+    assert w.row(acc["id"])["failed_logins"] == 5           # not counted further
+    assert w.actions(acc["id"]) == ["login_locked", "login_locked"]
+
+
+def test_wrong_codes_lock_the_account_and_the_budget_is_per_account(world):
+    """Five wrong codes lock; the guesses are budgeted per ACCOUNT, so somebody
+    else signing in from the same address is not refused."""
+    w = world()
+    a = w.account(totp_enabled=1, totp_secret=SECRET32)
+    b = w.account(totp_enabled=1, totp_secret=SECRET32)
+    ca = _pending_client(w, a)
+    codes = [ca.post("/backoffice/verify", data={"csrf_token": "pre", "code": "000000"}).status_code
+             for _ in range(6)]
+    assert codes == [400] * 5 + [429]
+    assert w.row(a["id"])["locked_until"] is not None
+    r = _pending_client(w, b).post("/backoffice/verify", data={
+        "csrf_token": "pre", "code": twofactor.current_code(SECRET32)})
+    assert r.status_code == 303 and r.headers["location"] == "/backoffice/dashboard"
+
+
+def test_failures_sent_at_once_each_count(world):
+    """One atomic increment per failure. Read, add one and write back let
+    parallel failures all read the same count, so a batch counted as one."""
+    import threading
+    w = world()
+    acc = w.account()
+    n = 4                                  # under the sign-in budget of 5 a minute
+    gate = threading.Barrier(n)
+    codes = []
+
+    def attempt():
+        c = w.client()
+        gate.wait()
+        codes.append(_sign_in(w, acc["email"], "wrong-password", c=c).status_code)
+
+    threads = [threading.Thread(target=attempt) for _ in range(n)]
+    for th in threads:
+        th.start()
+    for th in threads:
+        th.join()
+    assert codes == [200] * n
+    assert w.row(acc["id"])["failed_logins"] == n
+
+
+def test_an_unknown_address_costs_a_bcrypt_check_like_a_wrong_password(world):
+    """(c) says the same thing to both; the time it takes must not differ by a
+    whole bcrypt round either."""
+    checks = []
+
+    class CountingBcrypt:
+        gensalt = staticmethod(bcrypt.gensalt)
+        hashpw = staticmethod(bcrypt.hashpw)
+
+        @staticmethod
+        def checkpw(pw, hashed):
+            checks.append(1)
+            return bcrypt.checkpw(pw, hashed)
+
+    w = world(bcrypt=CountingBcrypt)
+    gone = w.account(is_active=0)
+    for email in ("nobody@example.invalid", gone["email"]):
+        r = _sign_in(w, email, "whatever-password")
+        assert r.status_code == 200 and "Invalid email or password." in r.text
+    assert len(checks) == 2
+
+
+def test_a_reset_link_spent_while_its_password_was_hashed_sets_nothing(world):
+    """Two requests with the same link both pass the first look-up; the
+    conditional UPDATE that spends the link decides which one sets a password.
+    Here the other request wins while this one is hashing."""
+    spy = {}
+
+    class RacingBcrypt:
+        gensalt = staticmethod(bcrypt.gensalt)
+        checkpw = staticmethod(bcrypt.checkpw)
+
+        @staticmethod
+        def hashpw(pw, salt):
+            spy["on_hash"]()
+            return bcrypt.hashpw(pw, salt)
+
+    w = world(bcrypt=RacingBcrypt)
+    acc = w.account()
+    before = w.row(acc["id"])["password_hash"]
+    raw = "raced-token"
+    w.run(f"INSERT INTO {w.RT} (holder_id, token_hash, expires_at) "
+          f"VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL 60 MINUTE))",
+          (acc["id"], kit_mod.reset_token_hash(raw)))
+    spent = f"{w.spent}=NOW()" if w.spent.endswith("_at") else f"{w.spent}=1"
+    spy["on_hash"] = lambda: w.run(f"UPDATE {w.RT} SET {spent} WHERE holder_id=%s", (acc["id"],))
+    r = _reset(w, token=raw, new_password="A-brand-new-passphrase-1")
+    assert "ERROR[Token is invalid or expired.]" in r.text
+    assert w.row(acc["id"])["password_hash"] == before
+    assert "password_reset_completed" not in w.actions()
+
+
+def test_a_link_mailed_before_deactivation_sets_nothing(world):
+    """(d) An account deactivated after its link was mailed gets no password."""
+    w = world()
+    acc = w.account()
+    before = w.row(acc["id"])["password_hash"]
+    raw = "before-deactivation"
+    w.run(f"INSERT INTO {w.RT} (holder_id, token_hash, expires_at) "
+          f"VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL 60 MINUTE))",
+          (acc["id"], kit_mod.reset_token_hash(raw)))
+    w.run(f"UPDATE {w.T} SET is_active=0 WHERE id=%s", (acc["id"],))
+    r = _reset(w, token=raw, new_password="A-brand-new-passphrase-1")
+    assert "ERROR[Token is invalid or expired.]" in r.text
+    assert w.row(acc["id"])["password_hash"] == before
+
+
+def test_the_gate_opens_exact_paths_and_paths_below_them_only():
+    opens = kit_mod._opens
+    open_paths = kit_mod.MUST_CHANGE_OPEN
+    assert opens("/backoffice/account", open_paths)
+    assert opens("/backoffice/account/password", open_paths)
+    assert opens("/backoffice/login/passkey", open_paths)
+    for path in ("/backoffice/accounts", "/backoffice/account-export",
+                 "/backoffice/login-as", "/backoffice/verify2"):
+        assert not opens(path, open_paths), path

@@ -91,6 +91,7 @@ from starlette.background import BackgroundTask
 
 from . import account as account_mod
 from . import lockout
+from . import once as _once
 from . import passkeys
 from . import passwords as pw_policy
 from . import twofactor
@@ -141,6 +142,13 @@ MUST_CHANGE_OPEN = (ACCOUNT_URL, LOGOUT_URL, LOGIN_URL, RESET_URL, VERIFY_URL)
 #: Paths an administrator without an authenticator may still reach. Enrolling
 #: is the one thing such an account may do.
 ENROLMENT_OPEN = (TWO_FACTOR_URL, LOGOUT_URL, LOGIN_URL, RESET_URL, VERIFY_URL)
+
+def _opens(path: str, open_paths: tuple) -> bool:
+    """Is `path` one of `open_paths` or below one? A bare prefix test let any
+    future `/backoffice/accounts...` or `/backoffice/login-as` through
+    (review, 5 October 2026)."""
+    return any(path == p or path.startswith(p + "/") for p in open_paths)
+
 
 #: Fixed texts, addressed by key. The redirect after a POST carries `?msg=` /
 #: `?err=`, and the KEY is looked up here: a page that prints back whatever the
@@ -477,6 +485,14 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return BackgroundTask(mail("send_two_factor_confirmation"), account["email"],
                               f"{kit.base_url()}{ACCOUNT_URL}", event)
 
+    dummy: list = []
+
+    def dummy_hash() -> bytes:
+        """A bcrypt hash of nothing anybody knows, made once per router."""
+        if not dummy:
+            dummy.append(kit.bcrypt.hashpw(secrets.token_bytes(16), kit.bcrypt.gensalt()))
+        return dummy[0]
+
     def backup_hashes(row) -> list:
         raw = (row or {}).get("totp_backup_codes")
         if not raw:
@@ -489,10 +505,17 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     def count_failure(row: dict) -> None:
         """A wrong code or a refused passkey counts towards the same lockout as
         a wrong password — otherwise the second factor could be guessed
-        without limit."""
-        fails, until = lockout.register_failure(row.get("failed_logins") or 0)
-        run(f"UPDATE {T} SET failed_logins=%s, locked_until=%s WHERE id=%s",
-            (fails, until, row["id"]))
+        without limit.
+
+        One atomic increment, then the lock for the count it produced. Read,
+        add one and write back (until 5 October 2026) let failures sent in
+        parallel all read the same count, so a batch counted as one."""
+        run(f"UPDATE {T} SET failed_logins=COALESCE(failed_logins, 0)+1 WHERE id=%s",
+            (row["id"],))
+        fresh = q1(f"SELECT failed_logins FROM {T} WHERE id=%s", (row["id"],)) or {}
+        _fails, until = lockout.register_failure((fresh.get("failed_logins") or 1) - 1)
+        if until is not None:
+            run(f"UPDATE {T} SET locked_until=%s WHERE id=%s", (until, row["id"]))
 
     def record_sign_in(row: dict) -> None:
         if kit.tables.clock is None:
@@ -585,21 +608,26 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                       admin_email=row["email"])
             return sign_in_page(request, error=lockout.LOCKED_MESSAGE, status_code=429)
         # bcrypt reads only the first 72 bytes and bcrypt >= 4.1 raises on
-        # longer input, so every call site truncates (audit item G1).
-        if not row or not kit.bcrypt.checkpw(password.encode()[:72],
-                                             row["password_hash"].encode()):
+        # longer input, so every call site truncates (audit item G1). An
+        # unknown or deactivated address is checked against a throwaway hash,
+        # so its answer takes as long as a wrong password's.
+        stored = row["password_hash"].encode() if row else dummy_hash()
+        if not kit.bcrypt.checkpw(password.encode()[:72], stored) or not row:
             if row:
                 count_failure(row)                       # (a) the fleet's lockout
                 kit.audit("login_failed", request=request, admin_id=row["id"],
                           admin_email=row["email"])
             return sign_in_page(request, error=SIGN_IN_REFUSED)
-        record_sign_in(row)
         # A1: the password was right, but no session is granted yet while a
-        # code is owed: a pending cookie that no guarded page accepts.
+        # code is owed: a pending cookie that no guarded page accepts. The
+        # failure count is NOT cleared here, only by a right code: clearing it
+        # on the password let someone holding the password re-enter it
+        # between code guesses and never reach the lock (review, 5 October 2026).
         if row.get("totp_enabled"):
             resp = redirect(VERIFY_URL)
             kit.set_pending_cookie(resp, row["id"])
             return resp
+        record_sign_in(row)
         kit.audit("login_success", request=request, admin_id=row["id"], admin_email=row["email"])
         resp = redirect(landing(row))
         kit.set_session_cookie(resp, row["id"])
@@ -616,6 +644,11 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             raise bad_csrf()
         resp = redirect(LOGIN_URL)
         resp.delete_cookie(kit.session_cookie)
+        # The next person at this computer must not inherit a half-finished
+        # sign-in or an unconfirmed authenticator secret (the enrolment cookie
+        # is not bound to an account; review, 5 October 2026).
+        resp.delete_cookie(kit.pending_cookie)
+        resp.delete_cookie(kit.enrolment_cookie)
         return resp
 
     # ── the password-reset links ─────────────────────────────────────────────
@@ -669,8 +702,10 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             return reset_page(request, success=True, message=RESET_SENT)
         if token and new_password:
             # Step 2: set the new password.
-            row = q1(f"SELECT * FROM {RT} WHERE token_hash=%s AND {UNSPENT} "
-                     f"AND expires_at > NOW()", (reset_token_hash(token),))
+            # (d) A link mailed before the account was deactivated sets nothing.
+            row = q1(f"SELECT r.{RT_OWNER} FROM {RT} r JOIN {T} a ON a.id = r.{RT_OWNER} "
+                     f"WHERE r.token_hash=%s AND r.{UNSPENT} AND r.expires_at > NOW() "
+                     f"AND a.is_active=1", (reset_token_hash(token),))
             if not row:
                 return reset_page(request, token=token, error=RESET_DEAD)
             ok, why = pw_policy.validate_password(new_password)
@@ -678,6 +713,14 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                 return reset_page(request, token=token, error=why)
             owner = row[RT_OWNER]
             pw_hash = kit.bcrypt.hashpw(new_password.encode()[:72], kit.bcrypt.gensalt()).decode()
+            # The link is claimed by one conditional UPDATE whose row count
+            # decides: two requests with the same link both passed the SELECT
+            # above, and only one may set a password (review, 5 October 2026).
+            claimed = _once._run(kit.tables.get_conn,
+                                 f"UPDATE {RT} SET {SPEND} WHERE token_hash=%s AND {UNSPENT} "
+                                 f"AND expires_at > NOW()", [reset_token_hash(token)])
+            if claimed != 1:
+                return reset_page(request, token=token, error=RESET_DEAD)
             # session_epoch+1: a reset ends every session opened before it (A2).
             # Every outstanding link for the account is spent, this one and any
             # other. (d) A lockout stays: it runs out on its own.
@@ -692,10 +735,21 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     # ── the code prompt after a right password ───────────────────────────────
 
+    def code_prompt_locked(request, row):
+        """(a) The lock holds at the code prompt too: a locked account's code is
+        not checked, and a right one does not sign it in."""
+        kit.audit("login_locked", request=request, admin_id=row["id"],
+                  admin_email=row.get("email"), details={"second_factor": True})
+        return page(request, "two_factor_verify.html", preauth=True, status_code=429,
+                    error=lockout.LOCKED_MESSAGE)
+
     @router.get("/backoffice/verify")
     def two_factor_verify_page(request: Request):
-        if not kit.pending_account(request):
+        row = kit.pending_account(request)
+        if not row:
             return redirect(LOGIN_URL)
+        if lockout.is_locked(row.get("locked_until")):
+            return code_prompt_locked(request, row)
         return page(request, "two_factor_verify.html", preauth=True, error=None)
 
     @router.post("/backoffice/verify")
@@ -706,6 +760,13 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         row = kit.pending_account(request)
         if not row:
             return redirect(LOGIN_URL)
+        if lockout.is_locked(row.get("locked_until")):
+            return code_prompt_locked(request, row)
+        # Guesses per ACCOUNT, so a school's shared address does not spend the
+        # budget of the people signing in beside the guesser.
+        limit, window = SIGN_IN_LIMIT
+        if not is_allowed(f"verify:{row['id']}", max_requests=limit, window_seconds=window):
+            raise HTTPException(429, "Too many attempts")
         ok, remaining = twofactor.check_code(row.get("totp_secret"), code,
                                              backup_hashes(row), kit.bcrypt)
         if not ok:
@@ -1251,7 +1312,7 @@ def account_gate(kit: AccountKit):
             except Exception:  # noqa: BLE001 — fail open, see above
                 row = None
             if row and row.get("must_change_password"):
-                if not path.startswith(must_change_open):
+                if not _opens(path, must_change_open):
                     return RedirectResponse(kit.must_change_url, status_code=303)
             # Asked of every other path, the account page included: until
             # 4 October 2026 the account page's place on the must-change list
@@ -1260,7 +1321,7 @@ def account_gate(kit: AccountKit):
             # (MM-007, DB-007). The password form is that page's only use
             # during a temporary password, so that state is decided above.
             elif (row and twofactor.is_required(row.get("role")) and not row.get("totp_enabled")
-                    and not path.startswith(ENROLMENT_OPEN)):
+                    and not _opens(path, ENROLMENT_OPEN)):
                 return RedirectResponse(TWO_FACTOR_URL, status_code=303)
         return await call_next(request)
 
