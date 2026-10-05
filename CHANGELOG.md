@@ -4,6 +4,28 @@ Shared package for the Phronon teaching tools. Consumers pin a **git tag** (see
 each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reaches a
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
+
+## 1.76.0 — 2026-10-05
+
+- **`routing.answer_head(router_or_app, unsafe_paths=...)`:** one rule for HEAD
+  in every tool. Read-only GET routes answer HEAD, so corporate link scanners
+  (SafeLinks, Zscaler, FortiGate) do not see 405; the GETs that write are named
+  and keep GET only, because a HEAD probe runs the handler and would perform
+  the write (Whiteout's resume-link bug). Eight tools carried their own loop,
+  and a loop over `app.routes` stops reaching routes once they move into an
+  included router: apply this to each router before `include_router`. Prepares
+  the fleet-wide `app.py` split (FL-082).
+- **`testing.head_safety`:** Whiteout's guard for the whole fleet.
+  `problems(app, tool_root)` reads the routes from the RUNNING app (included
+  routers too) and a call graph over the tool's runtime modules and this
+  package: a GET that writes and answers HEAD, or a read-only GET that does
+  not, is a problem. A write is a write helper called by name, with literal
+  SQL decided by its first word, hidden SQL counted as a write unless the
+  function fetches rows, the tool's `db.py` judged at the call site, and only
+  the branches a GET request can take. Calibrated on the fleet: Whiteout's
+  hand-kept list reproduced exactly; Polarity Profiler, Inequality and the hub
+  clean; 13 writing GETs in five tools to be named or fixed as each adopts it.
+
 ## 1.75.0 — 2026-10-05
 
 - **Runs the code that is live (expand, then contract).** An adapter in phase

@@ -26,6 +26,7 @@ imports. One version, everywhere, or the deploy stops.
 | `legal` / `legal_conf` | the shared legal pages: one router, nine tools |
 | `rate_limit` | in-app sliding-window rate limiting |
 | `security_headers` | `SecurityHeadersMiddleware` (the `csp=` argument is required) |
+| `routing` | `answer_head`: read-only GET routes answer HEAD (link scanners), writing GETs never do |
 | `sessions` | instantly revocable admin sessions (`session_epoch`) |
 | `signing` | signed-cookie helpers (itsdangerous) |
 
@@ -84,6 +85,7 @@ wrapper, so a tool cannot quietly stop running a check while its CI stays green.
 | `email_delivery` | what the messages say, and whether they actually go out |
 | `fleet_baseline` | routes answer, login round-trips, anonymous visitors stay out, the stylesheet ships through bundles |
 | `run_reporting` | an unrecognised skip fails the run where green is a gate |
+| `head_safety` | no GET route that writes answers HEAD, every read-only GET route does |
 | `run_lock` | one test run per test database at a time; a second run waits, then stops red |
 | `undefined_names` | names a module reads but never binds |
 
