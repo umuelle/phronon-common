@@ -89,9 +89,38 @@ def test_only_branches_a_get_can_take_are_followed(tmp_path):
             if request.method != "POST":
                 return 1
             db.execute("UPDATE t SET x=1")
+        def round2_door(request):                    # Layoff's /round2/enter, in miniature
+            if request.method == "GET":
+                if request.cookies.get("p"):
+                    return 2
+                return 1
+            db.execute("UPDATE t SET admitted=1")
+        def falls_through(request):
+            if request.method == "GET":
+                x = 1
+            db.execute("UPDATE t SET x=1")
     """})
     assert not g.writes(("m", "both")) and not g.writes(("m", "get_branch"))
-    assert g.writes(("m", "not_post")), "code after the branch runs for GET too"
+    assert not g.writes(("m", "not_post")), "a GET returns before the write"
+    assert not g.writes(("m", "round2_door")), "every GET path returns before the write"
+    assert g.writes(("m", "falls_through")), "a GET branch that does not return falls through to the write"
+
+
+def test_a_helper_defined_inside_runs_only_when_called(tmp_path):
+    g = _graph(tmp_path, {"m": """
+        def reset(request):                          # Controversy Generator's reset handler, in miniature
+            def _mark_used(token):
+                db.execute("UPDATE tokens SET used=1 WHERE t=%s", (token,))
+            if request.method == "GET":
+                return 1
+            _mark_used(request.form["t"])
+        def get_calls_it(request):
+            def _mark_used(token):
+                db.execute("UPDATE tokens SET used=1 WHERE t=%s", (token,))
+            _mark_used(1)
+    """})
+    assert not g.writes(("m", "reset")), "the write is only reached on POST"
+    assert g.writes(("m", "get_calls_it")), "a defined helper that IS called on GET still counts"
 
 
 def test_the_tools_db_layer_is_judged_by_name(tmp_path):
@@ -134,6 +163,17 @@ def test_problems_on_a_split_app(tmp_path, monkeypatch):
     assert len(leaked) == 1 and "/init" in leaked[0] and "writes and answers HEAD" in leaked[0]
     needless = hs.problems(build({"/init", "/read"}), tmp_path)
     assert len(needless) == 1 and "/read" in needless[0] and "does not answer HEAD" in needless[0]
+
+    # cookie-gated: the write needs a sign-in, scanners see the link, it keeps HEAD
+    gated = {"/init": "writes only after require_educator; a scanner is not signed in"}
+    assert hs.problems(build(set()), tmp_path, cookie_gated=gated) == []
+    stale = hs.problems(build(set()), tmp_path, cookie_gated={**gated, "/read": "x", "/gone": "y"})
+    assert any("/read" in s and "does not write" in s for s in stale), stale
+    assert any("/gone" in s and "no GET route" in s for s in stale), stale
+    both = hs.problems(build({"/init"}), tmp_path, cookie_gated=gated)
+    assert len(both) == 1 and "take it out of unsafe_paths" in both[0], both
+    unexplained = hs.problems(build(set()), tmp_path, cookie_gated={"/init": " "})
+    assert len(unexplained) == 1 and "without a reason" in unexplained[0], unexplained
     sys.modules.pop("routes_area", None)
 
 

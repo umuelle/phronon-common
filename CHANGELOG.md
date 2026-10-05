@@ -5,6 +5,36 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.77.0 — 2026-10-05
+
+- **`testing.split_app`:** a tool's tests after its `app.py` is split into the
+  standard layout (FL-089). `view(app, root)` is one namespace over the split
+  modules: reading a name finds the module that defines it, and a patch
+  (`monkeypatch.setattr(app, "send", fake)`) reaches every module bound to the
+  same object, so a test can never silently stop faking because the caller now
+  looks the name up elsewhere. `install()` puts the view in place of `app` for
+  suites that `import app` at the top; `install_on_import()` does it on the
+  first import, for a conftest that must not import the app. The view refuses
+  reads from the tool's own runtime code: Whiteout's retention.py reached
+  `app._exercise` through a lazy `import app`, which the split would have
+  broken in production while every test passed. `runtime_source(root)` /
+  `runtime_files(root)` are every runtime module, app.py first, for source
+  checks.
+- **`testing.head_safety`:** a GET branch that always returns ends what a GET
+  can reach (Layoff's round-2 door renders on GET; only its POST admits), and
+  a function defined inside a handler is reached through its calls, not
+  walked (Controversy Generator's reset handler defines `_mark_used` and calls
+  it on POST only). `problems(..., cookie_gated={path: reason})` lets a GET
+  that writes keep HEAD when the write needs a sign-in or a participant's
+  cookie, which a scanner never sends, and the link is one scanners see (the
+  fleet's dashboard address, OrgDesignSim's identity page); a declared path
+  that stops writing, or is no GET route, is a problem, and a reason is
+  required.
+- **`testing.csrf_fetch.app_source` and `testing.manage_account`** read every
+  runtime module (app.py first) where they read app.py alone: after a split
+  the CSRF check and the account handlers live in core.py and
+  routes_accounts.py.
+
 ## 1.76.0 — 2026-10-05
 
 - **`routing.answer_head(router_or_app, unsafe_paths=...)`:** one rule for HEAD

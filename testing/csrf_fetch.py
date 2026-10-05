@@ -46,8 +46,11 @@ _WINDOW_BEFORE, _WINDOW_AFTER = 800, 500
 
 
 def app_source(project_root: Path | str) -> str:
-    """The tool's own app.py — for tools whose CSRF check lives there."""
-    return (Path(project_root) / "app.py").read_text(encoding="utf-8", errors="ignore")
+    """The tool's own code — for tools whose CSRF check lives there. Every
+    runtime module, app.py first: since the split (TO DO FL-089) the check
+    may sit in core.py, and app.py alone would not mention it."""
+    from .split_app import runtime_source
+    return runtime_source(project_root)
 
 
 def shared_middleware_source() -> str:

@@ -102,8 +102,9 @@ class AccountPageContract:
     def app_texts(self) -> list:
         """Each source file's text, kept apart so a handler is never read
         across a file boundary."""
-        return [_read(Path(self.PROJECT_ROOT) / name)
-                for name in (self.APP_SOURCES or ("app.py",))]
+        from .split_app import runtime_files       # default: every runtime module (FL-089)
+        names = self.APP_SOURCES or tuple(p.name for p in runtime_files(self.PROJECT_ROOT))
+        return [_read(Path(self.PROJECT_ROOT) / name) for name in names]
 
     @property
     def app_src(self) -> str:

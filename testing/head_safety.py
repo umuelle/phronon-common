@@ -23,7 +23,9 @@ working when a tool's routes move out of `app.py` into router modules:
   `db_execute`, ...) is a write helper whatever it fetches.
 * only the branches a GET request can take: a handler that serves GET and
   POST from one function (`if request.method == "POST": ...`) writes in a
-  branch a HEAD probe never reaches, so that branch is not followed;
+  branch a HEAD probe never reaches, so that branch is not followed; nor is
+  anything after `if request.method == "GET": ... return` (Layoff's round-2
+  door renders on GET and returns; only the POST below it admits anyone);
 * the tool's `db.py` is a closed box: its read helpers run `cursor.execute`
   too, so reading inside it would make every read a write. Its helpers are
   judged by name at the call site, as Whiteout's own test always did.
@@ -32,6 +34,20 @@ working when a tool's routes move out of `app.py` into router modules:
 HEAD (the resume-link bug), and a read-only GET that does not (a scanner sees
 405 and may flag an e-mailed link as broken). `phronon_common.routing.
 answer_head(router, unsafe_paths=...)` is how a tool gets both right.
+
+A writing GET has two right answers, and the tool chooses with a reason:
+
+* GET only (`unsafe_paths`), when nobody would scan the link: in-app
+  navigation (Whiteout's first-view GETs, Layoff's thank-you page) loses
+  nothing by answering 405 to HEAD.
+* HEAD anyway (`problems(..., cookie_gated={path: reason})`), when the write
+  runs only for a request that carries a cookie (a signed-in educator, a
+  participant's own pass) AND the link is one a scanner sees: the dashboard a
+  retention mail links to, the identity page a join link redirects to. A
+  scanner sends no cookies, so it reaches the read-only path; taking HEAD away
+  would bring back the 405 HEAD support exists to prevent. The reason names
+  the guard. A declared path that no longer writes, or is no GET route, is a
+  problem too, so the list cannot go stale.
 
 Deliberately NOT followed: FastAPI dependencies and middleware (they run for
 every method alike), and calls through objects other than modules (`self.x()`).
@@ -70,21 +86,53 @@ def _method_test(test) -> str | None:
     return None
 
 
+def _terminates(stmts) -> bool:
+    """True when the block always leaves the function (return or raise)."""
+    if not stmts:
+        return False
+    last = stmts[-1]
+    if isinstance(last, (ast.Return, ast.Raise)):
+        return True
+    return isinstance(last, ast.If) and _terminates(last.body) and _terminates(last.orelse)
+
+
+def _get_reachable(stmts) -> list:
+    """The statements a GET request can reach: none after a GET-only branch
+    that always returns."""
+    out = []
+    for s in stmts:
+        out.append(s)
+        if isinstance(s, ast.If) and _method_test(s.test) == "get" and _terminates(s.body):
+            break
+    return out
+
+
 def walk_get(node):
-    """ast.walk, minus the branches a GET (or HEAD) request cannot take."""
+    """ast.walk, minus the branches a GET (or HEAD) request cannot take, and
+    minus the bodies of functions DEFINED inside: they run only when called,
+    and a call is followed like any other (Controversy Generator's reset
+    handler defines _mark_used, which writes, and calls it only on POST)."""
     todo = [node]
     while todo:
         n = todo.pop()
         yield n
+        if n is not node and isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+            continue
         if isinstance(n, ast.If):
             branch = _method_test(n.test)
             if branch == "post":
-                todo.extend([n.test, *n.orelse])
+                todo.extend([n.test, *_get_reachable(n.orelse)])
                 continue
             if branch == "get":
-                todo.extend([n.test, *n.body])
+                todo.extend([n.test, *_get_reachable(n.body)])
                 continue
-        todo.extend(ast.iter_child_nodes(n))
+        for _field, value in ast.iter_fields(n):
+            if isinstance(value, list):
+                if value and all(isinstance(v, ast.stmt) for v in value):
+                    value = _get_reachable(value)
+                todo.extend(v for v in value if isinstance(v, ast.AST))
+            elif isinstance(value, ast.AST):
+                todo.append(value)
 
 
 def runtime_files(tool_root: Path) -> dict[str, Path]:
@@ -216,12 +264,19 @@ def _key(endpoint) -> tuple:
     return (getattr(fn, "__module__", ""), getattr(fn, "__name__", ""))
 
 
-def problems(app, tool_root, graph: CallGraph | None = None) -> list[str]:
-    """Every GET route whose HEAD does not match whether it writes."""
+def problems(app, tool_root, graph: CallGraph | None = None, cookie_gated=None) -> list[str]:
+    """Every GET route whose HEAD does not match whether it writes.
+
+    `cookie_gated`: {path: reason} for writing GETs that keep HEAD because the
+    write needs a cookie a scanner never sends (see the module docstring)."""
     from phronon_common.adminroutes import app_routes
 
     graph = graph or graph_for(tool_root)
-    found, seen = [], 0
+    declared = dict(cookie_gated or {})
+    found, seen, matched = [], 0, set()
+    for path, reason in declared.items():
+        if not (isinstance(reason, str) and reason.strip()):
+            found.append(f"{path}: declared cookie-gated without a reason; name the guard")
     for r in app_routes(app):
         if "GET" not in r.methods:
             continue
@@ -230,12 +285,25 @@ def problems(app, tool_root, graph: CallGraph | None = None) -> list[str]:
             continue                                  # not code this graph can read (a mount, a lambda)
         seen += 1
         writes, head = graph.writes(key), "HEAD" in r.methods
+        if r.path in declared:
+            matched.add(r.path)
+            if not writes:
+                found.append(f"{r.path} ({key[0]}.{key[1]}) is declared cookie-gated but does not "
+                             f"write: take it off the list")
+            elif not head:
+                found.append(f"{r.path} ({key[0]}.{key[1]}) is declared cookie-gated, so it keeps "
+                             f"HEAD, but it does not answer HEAD: take it out of unsafe_paths")
+            continue
         if writes and head:
             found.append(f"{r.path} ({key[0]}.{key[1]}) writes and answers HEAD: a scanner's probe "
-                         f"would perform the write; name it in answer_head(..., unsafe_paths=)")
+                         f"would perform the write; name it in answer_head(..., unsafe_paths=), or, "
+                         f"when the write needs a sign-in or a participant's cookie and scanners see "
+                         f"the link, declare it cookie-gated with the guard as the reason")
         elif not writes and not head:
             found.append(f"{r.path} ({key[0]}.{key[1]}) is read-only and does not answer HEAD: a "
                          f"scanner gets 405; apply answer_head to its router")
+    for path in sorted(set(declared) - matched):
+        found.append(f"{path} is declared cookie-gated but is no GET route this check can read")
     if not seen:
         found.append("no GET route could be matched to its code: the check sees nothing")
     if not graph.direct:
