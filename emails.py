@@ -569,12 +569,17 @@ def withdrawal_link_bodies(tool_name: str, withdraw_url: str, deadline: str = ""
 
 def send_withdrawal_link(tool_name: str, default_from: str, to_email: str,
                          withdraw_url: str, deadline: str = "",
-                         subject_prefix: str = "") -> None:
+                         subject_prefix: str = "") -> bool:
+    """True once the mail was handed to the mail server; False when it could
+    not be sent (no SMTP configured). The withdrawal kit stores the link's new
+    token only after a True, so a mail that never left keeps the old link
+    working (6 October 2026). A refused SMTP conversation raises."""
     if not os.getenv("SMTP_PASSWORD"):
         _unsendable("withdrawal link", to_email, withdraw_url)
-        return
+        return False
     sender = _sender_address(default_from)
     text, html = withdrawal_link_bodies(tool_name, withdraw_url, deadline)
     msg = _multipart(f"{subject_prefix}{tool_name} — your deletion link", sender, to_email,
                      text, branded_html(tool_name, html))
     _smtp_send(sender, to_email, msg)
+    return True

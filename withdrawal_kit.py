@@ -149,6 +149,19 @@ def _withdraw_page(kit, request, lang, state, *, token="", row=None, error=None,
     return kit.render(request, kit.pages["withdraw"], ctx, lang, status)
 
 
+def token_from(value: str) -> str:
+    """The token itself, also out of a pasted link (`.../withdraw?token=...`):
+    the ask page invites pasting the link from the mail."""
+    value = (value or "").strip()
+    if "token=" in value:
+        from urllib.parse import parse_qs, urlsplit
+        query = urlsplit(value).query or value.split("?", 1)[-1]
+        found = parse_qs(query).get("token")
+        if found:
+            return found[0].strip()
+    return value
+
+
 def _find(kit: WithdrawalKit, token: str) -> Optional[dict]:
     if not _participant.plausible_token(token):
         return None
@@ -163,7 +176,7 @@ def build_withdrawal_router(kit: WithdrawalKit):
 
     @router.get("/withdraw", response_class=HTMLResponse)
     def withdraw_page(request: Request, token: str = "", lang: str = "en"):
-        token = token.strip()
+        token = token_from(token)
         if not token:
             return _withdraw_page(kit, request, lang, "ask")
         if not _allowed(kit, request, "withdraw", WITHDRAW_LIMIT):
@@ -176,7 +189,7 @@ def build_withdrawal_router(kit: WithdrawalKit):
     @router.post("/withdraw", response_class=HTMLResponse)
     async def withdraw_submit(request: Request, lang: str = "en"):
         form = await request.form()
-        token = (form.get("token") or "").strip()
+        token = token_from(form.get("token") or "")
         if not kit.csrf_ok(request, form.get("csrf_token") or ""):
             return _withdraw_page(kit, request, lang, "csrf", token=token, status=400)
         if not _allowed(kit, request, "withdraw", WITHDRAW_LIMIT):

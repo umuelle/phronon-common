@@ -171,3 +171,12 @@ def test_recovery_needs_all_four_parts():
         withdrawal_kit.WithdrawalKit(lookup=lambda h: None, kind=lambda r: "", delete=lambda r: 0,
                                      render=lambda *a: None, link_rows=lambda c, e: [])
     assert tool
+
+
+def test_a_pasted_link_finds_its_token():
+    tool = _Tool()
+    c = _client(tool)
+    link = f"https://tool.example/withdraw?token={tool.raw}&lang=en"
+    assert _page(c.get("/withdraw", params={"token": link}))["state"] == "confirm"
+    assert withdrawal_kit.token_from(f"  {tool.raw} ") == tool.raw
+    assert withdrawal_kit.token_from("withdraw?token=abc") == "abc"

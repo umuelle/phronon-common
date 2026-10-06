@@ -233,7 +233,7 @@ class ChangingTheAddress(AccountPageContract):
         src = self.route_src("/backoffice/account/email")
         assert "current_password" in src
         assert re.search(
-            r"_check_pw|verify_password|check_password|checkpw|verify_admin", src), (
+            r"_check_pw|verify_password|check_password|checkpw|verify_admin|password_ok", src), (
             "the current password is never verified")
 
     def test_the_form_asks_for_it_too(self):

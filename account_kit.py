@@ -1269,8 +1269,11 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         account = kit.current_account(request)
         if not account:
             return kit.signed_out(request)
-        # Any case (FL-083 (f)): four adopters spell the role ADMIN.
-        if str(account.get("role") or "").lower() != "admin":
+        # Any case (FL-083 (f)): four adopters spell the role ADMIN. The first
+        # comparison is the text Moral Mirror's and Drawbridge's LIVE role-gate
+        # tests look for (their KIT_GUARDS); it goes once their tests name the
+        # second (expand, then contract: README §11, account kit rule 8).
+        if account.get("role") != "admin" and str(account.get("role") or "").lower() != "admin":
             return kit.not_an_admin(request)
         if not kit.csrf_ok(request, csrf_token, account):
             raise bad_csrf()
