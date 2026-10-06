@@ -36,6 +36,7 @@ WEB_MODULES = {
     "legal",             # the legal-pages router
     "rate_limit",        # a middleware
     "security_headers",  # a middleware
+    "withdrawal_kit",    # the participant's /withdraw routes: a router (6 Oct 2026)
 }
 
 _PROBE = r"""

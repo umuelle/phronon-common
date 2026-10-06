@@ -226,10 +226,16 @@ class AccountTables:
     #: what it meant; the two agree only where the MySQL session clock is UTC.
     #: An expiry is CHECKED against the database's NOW() in both tools.
     clock: Optional[Callable[[], Any]] = None
+    #: The account table's password-hash column (Whiteout's is `pw_hash`).
+    password_column: str = "password_hash"
+    #: The account table's display-name column (Polarity Profiler's is `name`).
+    #: The kit's pages read the value as `account.display_name` whatever it is.
+    name_column: str = "display_name"
 
     def __post_init__(self):
         for name in (self.accounts, self.passkeys, self.passkey_owner, self.reset_tokens,
-                     self.reset_token_owner, self.reset_token_spent):
+                     self.reset_token_owner, self.reset_token_spent, self.password_column,
+                     self.name_column):
             _ident(name)
 
 
@@ -396,6 +402,19 @@ class AccountKit:
     #: force (Drawbridge). Moral Mirror sends such an account to the password
     #: form first.
     must_change_allows_two_factor: bool = False
+    # ── data the 6 October 2026 adopters hold differently ─────────────────────
+    #: (password, stored hash) -> does it match? None: bcrypt (the fleet's
+    #: hash). Layoff still holds a few werkzeug pbkdf2 hashes from its Flask
+    #: days; its function knows both. New hashes are always bcrypt.
+    verify_password: Optional[Callable[[str, str], bool]] = None
+    #: Strip surrounding blanks from every password before checking or
+    #: hashing it. Controversy Generator stored its hashes that way, so an
+    #: account whose password ended in a blank still signs in with it.
+    strip_passwords: bool = False
+    #: Path prefixes the gate guards (must-change, forced enrolment). Layoff's
+    #: administrators also work under /admin.
+    gated_prefixes: tuple = ("/backoffice",)
+
     #: request -> the row the gate judges (needs must_change_password, role,
     #: totp_enabled), or None. None here means `current_account`. Drawbridge's
     #: gate read the session cookie's account id WITHOUT checking the session
@@ -487,6 +506,54 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             dummy.append(kit.bcrypt.hashpw(secrets.token_bytes(16), kit.bcrypt.gensalt()))
         return dummy[0]
 
+    PW, NAME = kit.tables.password_column, kit.tables.name_column
+
+    def clean(password: str) -> str:
+        return (password or "").strip() if kit.strip_passwords else (password or "")
+
+    def password_ok(password: str, row) -> bool:
+        """The password against the row's hash. No row: a throwaway bcrypt
+        check, so an unknown address takes as long as a wrong password."""
+        if not row:
+            kit.bcrypt.checkpw(clean(password).encode()[:72], dummy_hash())
+            return False
+        stored = row.get(PW) or ""
+        if kit.verify_password is not None:
+            return bool(kit.verify_password(clean(password), stored))
+        try:
+            return kit.bcrypt.checkpw(clean(password).encode()[:72], stored.encode())
+        except ValueError:      # not a bcrypt hash: no match, never a 500
+            return False
+
+    def new_hash(password: str) -> str:
+        return kit.bcrypt.hashpw(clean(password).encode()[:72], kit.bcrypt.gensalt()).decode()
+
+    def named(account: dict) -> dict:
+        """The row with its name where the kit's pages read it."""
+        if NAME == "display_name" or not account:
+            return account
+        return {**account, "display_name": account.get(NAME)}
+
+    def later(response, func: Callable, *args):
+        """Run func(*args) after the response is sent (FL-083 (e): an answer
+        that waits for the mail server tells an observer that the address
+        exists). Never raises into the request; failures are logged."""
+        def safe():
+            try:
+                func(*args)
+            except Exception:  # noqa: BLE001
+                kit.logger.exception("account mail could not be sent")
+        task = BackgroundTask(safe)
+        if response.background is None:
+            response.background = task
+        else:
+            from starlette.background import BackgroundTasks
+            both = BackgroundTasks()
+            both.add_task(response.background)
+            both.add_task(task)
+            response.background = both
+        return response
+
     def backup_hashes(row) -> list:
         raw = (row or {}).get("totp_backup_codes")
         if not raw:
@@ -532,7 +599,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         if error is None:
             error = ACCOUNT_ERRORS.get(request.query_params.get("err", ""))
         return page(request, "account.html", status_code=status_code, csrf_for=account,
-                    account=account,
+                    account=named(account),
                     must_change=bool(account.get("must_change_password")),
                     totp_enabled=bool(account.get("totp_enabled")),
                     totp_required=twofactor.is_required(account.get("role")),
@@ -603,8 +670,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         # longer input, so every call site truncates (audit item G1). An
         # unknown or deactivated address is checked against a throwaway hash,
         # so its answer takes as long as a wrong password's.
-        stored = row["password_hash"].encode() if row else dummy_hash()
-        if not kit.bcrypt.checkpw(password.encode()[:72], stored) or not row:
+        if not password_ok(password, row):
             if row:
                 count_failure(row)                       # (a) the fleet's lockout
                 kit.audit("login_failed", request=request, admin_id=row["id"],
@@ -684,40 +750,43 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             # gets no link.
             address = email.strip().lower()
             row = q1(f"SELECT id FROM {T} WHERE email=%s AND is_active=1", (address,))
+            resp = reset_page(request, success=True, message=RESET_SENT)
             if row:
                 raw = issue_reset_token(row["id"])
-                try:
-                    mail("send_password_reset")(address, f"{kit.base_url()}{RESET_URL}?token={raw}")
-                    kit.audit("password_reset_requested", request=request, admin_email=address)
-                except Exception:  # noqa: BLE001 — never reveal whether the address exists
-                    pass
-            return reset_page(request, success=True, message=RESET_SENT)
+                # (d) every request for an account is recorded, its mail sent
+                # or not, as the administrator's button records it; (e) the
+                # mail goes after the answer, which is the same either way.
+                kit.audit("password_reset_requested", request=request, admin_email=address)
+                later(resp, mail("send_password_reset"), address,
+                      f"{kit.base_url()}{RESET_URL}?token={raw}")
+            return resp
         if token and new_password:
             # Step 2: set the new password.
             # (d) A link mailed before the account was deactivated sets nothing.
             row = q1(f"SELECT r.{RT_OWNER} FROM {RT} r JOIN {T} a ON a.id = r.{RT_OWNER} "
-                     f"WHERE r.token_hash=%s AND r.{UNSPENT} AND r.expires_at > NOW() "
-                     f"AND a.is_active=1", (reset_token_hash(token),))
+                     f"WHERE r.token_hash IN (%s, %s) AND r.{UNSPENT} AND r.expires_at > NOW() "
+                     f"AND a.is_active=1", reset_token_hashes(token))
             if not row:
                 return reset_page(request, token=token, error=RESET_DEAD)
             ok, why = pw_policy.validate_password(new_password)
             if not ok:
                 return reset_page(request, token=token, error=why)
             owner = row[RT_OWNER]
-            pw_hash = kit.bcrypt.hashpw(new_password.encode()[:72], kit.bcrypt.gensalt()).decode()
+            pw_hash = new_hash(new_password)
             # The link is claimed by one conditional UPDATE whose row count
             # decides: two requests with the same link both passed the SELECT
             # above, and only one may set a password (review, 5 October 2026).
             claimed = _once._run(kit.tables.get_conn,
-                                 f"UPDATE {RT} SET {SPEND} WHERE token_hash=%s AND {UNSPENT} "
-                                 f"AND expires_at > NOW()", [reset_token_hash(token)])
+                                 f"UPDATE {RT} SET {SPEND} WHERE token_hash IN (%s, %s) "
+                                 f"AND {UNSPENT} AND expires_at > NOW()",
+                                 list(reset_token_hashes(token)))
             if claimed != 1:
                 return reset_page(request, token=token, error=RESET_DEAD)
             # session_epoch+1: a reset ends every session opened before it (A2).
             # Every outstanding link for the account is spent, this one and any
             # other. (d) A lockout stays: it runs out on its own.
             kit.tables.transaction([
-                (f"UPDATE {T} SET password_hash=%s, must_change_password=0, "
+                (f"UPDATE {T} SET {PW}=%s, must_change_password=0, "
                  f"session_epoch=session_epoch+1 WHERE id=%s", (pw_hash, owner)),
                 (f"UPDATE {RT} SET {SPEND} WHERE {RT_OWNER}=%s AND {UNSPENT}", (owner,)),
             ])
@@ -1038,8 +1107,8 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         cleaned, error = account_mod.validate_name(display_name)
         if error:
             return account_page(request, account, error=error, status_code=RESHOWN)
-        if cleaned != (account.get("display_name") or ""):
-            run(f"UPDATE {T} SET display_name=%s WHERE id=%s", (cleaned, account["id"]))
+        if cleaned != (account.get(NAME) or ""):
+            run(f"UPDATE {T} SET {NAME}=%s WHERE id=%s", (cleaned, account["id"]))
             kit.audit("account_name_changed", request=request, admin_id=account["id"],
                       admin_email=account.get("email"), subject=str(account["id"]))
         return redirect(f"{ACCOUNT_URL}?msg=name_saved")
@@ -1064,8 +1133,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         # The password, every time: a borrowed session would otherwise be enough
         # to point somebody else's account at your own mailbox and then reset the
         # password to match.
-        if not kit.bcrypt.checkpw(current_password.encode()[:72],
-                                  account["password_hash"].encode()):
+        if not password_ok(current_password, account):
             kit.audit("email_change_refused", request=request, admin_id=account["id"],
                       admin_email=account.get("email"), subject=str(account["id"]),
                       details={"reason": "wrong_password"})
@@ -1084,14 +1152,12 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         kit.audit("email_change_requested", request=request, admin_id=account["id"],
                   admin_email=account.get("email"), subject=str(account["id"]),
                   details={"new_email": email})
-        try:
-            mail("send_email_change_confirm")(email, confirm_url)
-            # ...and the current address hears about it now, while the link is
-            # still unused. If this was not them, that is when they can act.
-            mail("send_email_change_notice")(account["email"], email)
-        except Exception:  # noqa: BLE001 — a mail outage must not eat the request
-            kit.logger.exception("e-mail change mails could not be sent")
-        return redirect(f"{ACCOUNT_URL}?msg=email_sent")
+        resp = redirect(f"{ACCOUNT_URL}?msg=email_sent")
+        later(resp, mail("send_email_change_confirm"), email, confirm_url)
+        # ...and the current address hears about it now, while the link is
+        # still unused. If this was not them, that is when they can act.
+        later(resp, mail("send_email_change_notice"), account["email"], email)
+        return resp
 
     def read_email_change(token: str):
         """(payload, row, error) for a confirmation link, checked against the row."""
@@ -1126,8 +1192,20 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                         error=error, payload=None, token="")
         # The epoch bump is not bookkeeping: the address IS the login, so every
         # session opened under the old one ends here, on every device.
-        run(f"UPDATE {T} SET email=%s, session_epoch=session_epoch+1 WHERE id=%s",
-            (payload["new"], row["id"]))
+        # One conditional UPDATE decides: the link names the OLD address, so a
+        # second click (or a second tab) finds it changed and is refused like a
+        # spent link instead of answering 500 (Polarity Profiler's guard).
+        try:
+            changed = _once._run(kit.tables.get_conn,
+                                 f"UPDATE {T} SET email=%s, session_epoch=session_epoch+1 "
+                                 f"WHERE id=%s AND email=%s", [payload["new"], row["id"], payload["old"]])
+        except Exception:  # noqa: BLE001 — e.g. the address was taken meanwhile
+            kit.logger.exception("e-mail change could not be applied")
+            changed = 0
+        if changed != 1:
+            return page(request, "account_confirm_email.html", status_code=RESHOWN,
+                        error="That link has expired or has already been used. Request the change again.",
+                        payload=None, token="")
         kit.audit("email_changed", request=request, admin_id=row["id"],
                   admin_email=payload["new"], subject=str(row["id"]),
                   details={"from": payload["old"]})
@@ -1150,21 +1228,20 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             return kit.signed_out(request)
         if not kit.csrf_ok(request, csrf_token, account):
             raise bad_csrf()
-        if not kit.bcrypt.checkpw(current_password.encode()[:72],
-                                  account["password_hash"].encode()):
+        if not password_ok(current_password, account):
             return account_page(request, account, error="Current password is incorrect.")
         ok, why = pw_policy.validate_password(new_password)
         if not ok:
             return account_page(request, account, error=why)
         if new_password != confirm_password:
             return account_page(request, account, error="New passwords do not match.")
-        if kit.bcrypt.checkpw(new_password.encode()[:72], account["password_hash"].encode()):
+        if password_ok(new_password, account):
             return account_page(request, account,
                                 error="The new password must differ from the current one.")
-        pw_hash = kit.bcrypt.hashpw(new_password.encode()[:72], kit.bcrypt.gensalt()).decode()
+        pw_hash = new_hash(new_password)
         # session_epoch+1: a password change must end every session that was
         # already open elsewhere — that is the point of changing it (A2).
-        run(f"UPDATE {T} SET password_hash=%s, must_change_password=0, "
+        run(f"UPDATE {T} SET {PW}=%s, must_change_password=0, "
             f"session_epoch=session_epoch+1 WHERE id=%s", (pw_hash, account["id"]))
         kit.audit("password_changed", request=request, admin_id=account["id"],
                   admin_email=account.get("email"))
@@ -1192,7 +1269,8 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         account = kit.current_account(request)
         if not account:
             return kit.signed_out(request)
-        if account.get("role") != "admin":
+        # Any case (FL-083 (f)): four adopters spell the role ADMIN.
+        if str(account.get("role") or "").lower() != "admin":
             return kit.not_an_admin(request)
         if not kit.csrf_ok(request, csrf_token, account):
             raise bad_csrf()
@@ -1206,11 +1284,9 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         kit.audit("two_factor_reset_by_admin", request=request, admin_id=account["id"],
                   admin_email=account.get("email"), subject=str(user_id),
                   details={"email": target.get("email")})
-        try:
-            mail("send_two_factor_reset_notice")(target["email"], f"{kit.base_url()}{ACCOUNT_URL}")
-        except Exception:  # noqa: BLE001 — a mail outage must not eat the reset
-            kit.logger.exception("two-factor reset notice could not be sent")
-        return kit.after_two_factor_reset(request, account)
+        return later(kit.after_two_factor_reset(request, account),
+                     mail("send_two_factor_reset_notice"), target["email"],
+                     f"{kit.base_url()}{ACCOUNT_URL}")
 
     if kit.legacy_password_path:
         def legacy_password_page():
@@ -1263,6 +1339,15 @@ def reset_token_hash(raw: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
 
+def reset_token_hashes(raw: str) -> tuple:
+    """Both shapes a stored reset token can have: the kit's 32 digits, and
+    the full SHA-256 that Layoff, Polarity Profiler and Controversy
+    Generator stored before adopting the kit, so their links mailed before
+    the switch still work for the two hours they live."""
+    full = hashlib.sha256(raw.encode()).hexdigest()
+    return full[:32], full
+
+
 # ── the gate ─────────────────────────────────────────────────────────────────
 
 def account_gate(kit: AccountKit):
@@ -1297,7 +1382,7 @@ def account_gate(kit: AccountKit):
 
     async def gate(request: Request, call_next):
         path = request.url.path
-        if path.startswith("/backoffice"):
+        if path.startswith(kit.gated_prefixes):
             try:
                 row = who(request)
             except Exception:  # noqa: BLE001 — fail open, see above

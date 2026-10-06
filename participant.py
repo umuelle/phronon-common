@@ -55,8 +55,13 @@ TOKEN_MAX_LENGTH = 128
 
 # The typed confirmation word. Polarity Profiler accepts every locale's word,
 # which is the better rule: a German reader should not have to know that the
-# English page says DELETE. Tools extend this with their own translations.
-WITHDRAW_CONFIRM_WORDS = frozenset({"DELETE", "LÖSCHEN", "LOESCHEN"})
+# English page says DELETE. Since 6 October 2026 the set holds every word a
+# fleet page shows (Layoff's ten languages, Polarity Profiler's WITHDRAWAL /
+# WIDERRUF), so any tool accepts any of them (withdrawal_kit).
+WITHDRAW_CONFIRM_WORDS = frozenset({
+    "DELETE", "LÖSCHEN", "LOESCHEN", "WITHDRAWAL", "WIDERRUF",
+    "SUPPRIMER", "ELIMINAR", "ELIMINA", "EXCLUIR", "УДАЛИТЬ", "删除", "حذف", "हटाएँ",
+})
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_-]+")
 

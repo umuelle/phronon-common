@@ -144,7 +144,8 @@ def test_install_templates_keeps_the_tools_loader_first_and_runs_once(tmp_path):
 class World:
     """The app, its tables and what it recorded. Built per test."""
 
-    def __init__(self, get_db, tmp_path, clock=None, spent="used", gate=True, **adapter):
+    def __init__(self, get_db, tmp_path, clock=None, spent="used", gate=True,
+                 pw_col="password_hash", name_col="display_name", **adapter):
         from fastapi import FastAPI, HTTPException
         from fastapi.responses import PlainTextResponse, RedirectResponse
         from fastapi.templating import Jinja2Templates
@@ -156,8 +157,8 @@ class World:
         self.RT = f"kit_resets_{tag}"
         self.run(f"""CREATE TABLE {self.T} (
             id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(255) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL,
-            display_name VARCHAR(255) DEFAULT NULL,
+            email VARCHAR(255) NOT NULL UNIQUE, {pw_col} VARCHAR(255) NOT NULL,
+            {name_col} VARCHAR(255) DEFAULT NULL,
             role VARCHAR(20) NOT NULL DEFAULT 'educator',
             is_active TINYINT(1) NOT NULL DEFAULT 1, failed_logins INT NOT NULL DEFAULT 0,
             locked_until DATETIME NULL DEFAULT NULL, last_login_at DATETIME NULL DEFAULT NULL,
@@ -175,6 +176,7 @@ class World:
         spent_col = (f"{spent} DATETIME NULL DEFAULT NULL" if spent.endswith("_at")
                      else f"{spent} TINYINT(1) NOT NULL DEFAULT 0")
         self.spent = spent
+        self.pw_col, self.name_col = pw_col, name_col
         self.run(f"""CREATE TABLE {self.RT} (
             id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, holder_id INT NOT NULL,
             token_hash VARCHAR(255) NOT NULL, expires_at DATETIME NOT NULL, {spent_col})""")
@@ -270,7 +272,8 @@ class World:
                                          accounts=self.T, passkeys=self.PK,
                                          passkey_owner="owner_id", reset_tokens=self.RT,
                                          reset_token_owner="holder_id",
-                                         reset_token_spent=spent, clock=clock),
+                                         reset_token_spent=spent, clock=clock,
+                                         password_column=pw_col, name_column=name_col),
             current_account=current,
             signed_out=lambda request: RedirectResponse("/backoffice/login", status_code=303),
             pending_account=pending, pending_cookie="kit_pending",
@@ -344,7 +347,7 @@ class World:
 
     def account(self, role="educator", **cols):
         email = f"kit-{secrets.token_hex(4)}@example.invalid"
-        aid = self.run(f"INSERT INTO {self.T} (email, password_hash, role, display_name) "
+        aid = self.run(f"INSERT INTO {self.T} (email, {self.pw_col}, role, {self.name_col}) "
                        f"VALUES (%s, %s, %s, 'Kit Person')",
                        (email, bcrypt.hashpw(PASSWORD.encode(), bcrypt.gensalt(4)).decode(), role))
         for k, v in cols.items():
@@ -1487,3 +1490,90 @@ def test_the_route_list_is_the_whole_kit():
     assert ("/backoffice/login", "POST") in contract.kit_routes()
     with pytest.raises(ValueError, match="account_kit_v1"):
         contract.kit_routes(sign_in=False)
+
+
+# ── the 6 October 2026 adopters' data (FL-083 (a)) ───────────────────────────
+
+def test_the_password_and_name_columns_are_the_tools(world):
+    w = world(pw_col="pw_hash", name_col="name")
+    acc = w.account()
+    r = _sign_in(w, acc["email"], PASSWORD)
+    assert r.status_code == 303
+    c = w.signed_in(acc)
+    assert "Kit Person" in c.get("/backoffice/account").text
+    c.post("/backoffice/account/name", data={"csrf_token": _tok(acc), "display_name": "Renamed"})
+    assert w.row(acc["id"])["name"] == "Renamed"
+    before = w.row(acc["id"])["pw_hash"]
+    new = "Another-passphrase-2026!"
+    r = c.post("/backoffice/account/password", data={
+        "csrf_token": _tok(acc), "current_password": PASSWORD,
+        "new_password": new, "confirm_password": new})
+    assert r.status_code == 303 and w.row(acc["id"])["pw_hash"] != before
+
+
+def test_a_hash_the_kit_cannot_read_is_a_refusal_and_the_tool_may_read_it(world):
+    w = world()
+    acc = w.account()
+    w.run(f"UPDATE {w.T} SET password_hash=%s WHERE id=%s", ("pbkdf2:sha256:600000$x$y", acc["id"]))
+    r = _sign_in(w, acc["email"], PASSWORD)
+    assert r.status_code == 200 and "ERROR[" in r.text, "a refusal, never a 500"
+    w2 = world(verify_password=lambda pw, stored: stored == "legacy:" + pw)
+    acc2 = w2.account()
+    w2.run(f"UPDATE {w2.T} SET password_hash=%s WHERE id=%s", ("legacy:" + PASSWORD, acc2["id"]))
+    assert _sign_in(w2, acc2["email"], PASSWORD).status_code == 303
+
+
+def test_stripped_passwords_still_sign_in_with_the_blank(world):
+    w = world(strip_passwords=True)
+    acc = w.account()
+    assert _sign_in(w, acc["email"], PASSWORD + "  ").status_code == 303
+    assert _sign_in(world(), acc["email"], PASSWORD + "  ").status_code == 200
+
+
+def test_an_admin_role_in_capitals_may_reset_another_accounts_two_factor(world):
+    w = world()
+    admin = w.account(role="ADMIN", totp_enabled=1, totp_secret=SECRET32)
+    target = w.account(totp_enabled=1, totp_secret=SECRET32)
+    c = w.signed_in(admin)
+    r = c.post(f"/backoffice/users/{target['id']}/reset-two-factor", data={"csrf_token": _tok(admin)})
+    assert r.status_code == 200 and r.text.startswith("USERS PAGE")
+    assert not w.row(target["id"])["totp_enabled"]
+    assert w.mails[-1][0] == "send_two_factor_reset_notice" and w.mails[-1][1] == target["email"]
+
+
+def test_the_gate_guards_the_tools_own_prefixes(world):
+    w = world()
+    acc = w.account(must_change_password=1)
+    assert w.signed_in(acc).get("/outside").status_code == 200
+    w2 = world(gated_prefixes=("/backoffice", "/outside"))
+    acc2 = w2.account(must_change_password=1)
+    r = w2.signed_in(acc2).get("/outside")
+    assert r.status_code == 303 and r.headers["location"] == "/backoffice/account"
+
+
+def test_a_reset_link_stored_as_the_full_hash_still_works(world):
+    import hashlib
+    w = world()
+    acc = w.account()
+    raw = secrets.token_urlsafe(32)
+    w.run(f"INSERT INTO {w.RT} (holder_id, token_hash, expires_at) "
+          f"VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL 1 HOUR))",
+          (acc["id"], hashlib.sha256(raw.encode()).hexdigest()))
+    new = "Fresh-passphrase-2026!"
+    r = _reset(w, token=raw, new_password=new)
+    assert "DONE[" in r.text, r.text
+    assert bcrypt.checkpw(new.encode(), w.row(acc["id"])["password_hash"].encode())
+
+
+def test_a_reset_mail_that_fails_still_records_the_request_and_answers_the_same(world):
+    w = world()
+    acc = w.account()
+
+    def boom(*a):
+        raise RuntimeError("mail server down")
+
+    setattr(sys.modules[w._mail_name], "send_password_reset", boom)
+    known = _reset(w, email=acc["email"])
+    unknown = _reset(w, email="nobody@example.invalid")
+    assert known.status_code == unknown.status_code == 200 and known.text == unknown.text
+    assert "password_reset_requested" in w.actions()
