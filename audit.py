@@ -62,15 +62,29 @@ CREATE TABLE IF NOT EXISTS `audit_log` (
 
 # The events worth a row. Keeping the vocabulary in one place is what makes the
 # nine trails comparable — "login_failed" must not be "failed_login" elsewhere.
+#
+# COMPLETE since 6 October 2026 (TO DO FL-089): every name a tool or the account
+# kit writes is listed here, and server-ops/audit_wiring_scan.py (deploy step
+# 1b) refuses a tool that writes a name this list does not have. Until then the
+# list held 18 names while the fleet wrote about 60; nothing compared the two.
+# A new event needs its name added here first, in the group it belongs to.
 ACTIONS = (
-    "login_success", "login_failed", "login_locked",
+    # Signing in and the account's own security (account kit and the tools'
+    # own account pages).
+    "login_success", "login_failed", "login_locked", "2fa_failed",
     "password_changed", "password_reset_requested", "password_reset_completed",
-    "two_factor_enrolled", "two_factor_disabled",
+    "two_factor_enrolled", "two_factor_enabled", "two_factor_replaced",
+    "two_factor_disabled", "two_factor_codes_regenerated", "two_factor_reset_by_admin",
+    "passkey_added", "passkey_removed",
+    "account_name_changed", "email_change_requested", "email_change_refused",
+    "email_changed",
+    # Accounts administered by an admin.
     "admin_created", "admin_deleted", "admin_role_changed",
-    "class_deleted", "class_anonymised", "class_archived", "responses_deleted",
-    "data_exported",
-    # Added 16 August 2026, after an external review found each of them already
-    # happening in a tool with no row to show for it.
+    "admin_edited", "admin_activated", "admin_deactivated",
+    "admin_password_set", "admin_password_reset_sent",
+    "educator_created", "bulk_delete_educators",
+    # Sessions and their data. Added 16 August 2026, after an external review
+    # found each of them already happening in a tool with no row to show for it.
     #
     # The `class_*` action names are IDENTIFIERS and keep their historic prefix:
     # the fleet vocabulary is "session" (README §9, 2 September 2026), but a
@@ -81,12 +95,55 @@ ACTIONS = (
     # code, date, mode, and the items it asks. Editing those after responses
     # exist changes what the collected answers mean, so "who changed the
     # questions" is exactly the sort of question the trail is for.
+    "class_deleted", "class_anonymised", "class_archived", "responses_deleted",
+    "class_edited",
+    "class_closed", "class_reopened", "class_unarchived",
+    "class_gr2_enabled", "class_gr2_disabled",
+    "bulk_archive_classes", "bulk_unarchive_classes", "bulk_delete_classes",
+    "auto_archive", "auto_anonymize", "retention_postponed",
+    "session_code_changed",
+    "scenario_create", "scenario_copy",
+    # Synonyms one tool wrote before this list was complete (SYNONYMS below).
+    "class_anonymized", "session_deleted", "session_edited",
+    "scenario_edit", "scenario_close", "scenario_archive", "scenario_unarchive",
+    "scenario_delete",
+    # One participant's data, changed or entered by the educator.
     #
     # `participant_email_corrected` was already being written verbatim by
     # Layoff; naming it here is what stops the second tool to need it from
     # inventing "participant_email_fixed".
-    "class_edited", "participant_email_corrected",
+    "participant_email_corrected", "participant_identity_corrected",
+    "participant_deleted", "participant_added_by_hand",
+    "participant_group_changed", "participant_rejoined_in_class",
+    "participant_away", "participant_back", "round2_door_entry",
+    "response_added_by_hand", "response_repaired", "response_hidden",
+    "ranking_entered_by_hand", "ranking_reset_by_educator",
+    "manual_ranking_entered", "manual_ranking_corrected",
+    "group_added", "group_renamed", "group_reopened", "groups_reallocated",
+    "group_ranking_entered_by_hand", "group_ranking2_entered_by_hand",
+    # Data leaving the tool.
+    "data_exported",
 )
+
+#: A name one tool wrote for an event the vocabulary names otherwise, and the
+#: name to use. Both stay in ACTIONS: stored rows keep the name they were
+#: written with, and renaming them would rewrite what a trail says happened.
+#: server-ops/audit_wiring_scan.py lets only the tools that already write a
+#: synonym keep writing it; any other tool must write the name on the right.
+SYNONYMS = {
+    "class_anonymized": "class_anonymised",       # Layoff
+    "session_deleted": "class_deleted",           # Layoff
+    "educator_created": "admin_created",          # Layoff
+    "session_edited": "class_edited",             # Moral Mirror
+    "scenario_edit": "class_edited",              # OrgDesignSim
+    "scenario_delete": "class_deleted",           # OrgDesignSim
+    "scenario_close": "class_closed",             # OrgDesignSim
+    "scenario_archive": "class_archived",         # OrgDesignSim
+    "scenario_unarchive": "class_unarchived",     # OrgDesignSim
+    # Listed in 2026 and never written: every tool and the account kit write
+    # `two_factor_enabled` when an authenticator is first set up.
+    "two_factor_enrolled": "two_factor_enabled",
+}
 
 
 # The trail prunes itself: at most once per process per day, a write also

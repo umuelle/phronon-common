@@ -106,3 +106,45 @@ def test_vocabulary_covers_what_the_notice_claims():
                    "admin_created", "admin_deleted", "class_deleted",
                    "class_anonymised"):
         assert needed in audit.ACTIONS
+
+
+# ── The vocabulary is complete (FL-089, 6 October 2026) ─────────────────────
+
+def test_the_vocabulary_lists_each_name_once():
+    assert len(set(audit.ACTIONS)) == len(audit.ACTIONS)
+
+
+def test_every_synonym_points_at_a_listed_name_that_is_no_synonym():
+    for old, new in audit.SYNONYMS.items():
+        assert old in audit.ACTIONS, f"{old}: stored rows carry it, so it stays listed"
+        assert new in audit.ACTIONS, f"{old} -> {new}: the name to use must be listed"
+        assert new not in audit.SYNONYMS, f"{old} -> {new}: points at another synonym"
+
+
+def _literal_names(node) -> set:
+    """The names an action argument can take: a string, or either branch of
+    `a if c else b`. Anything else is not checkable and is returned as None."""
+    import ast
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return {node.value}
+    if isinstance(node, ast.IfExp):
+        a, b = _literal_names(node.body), _literal_names(node.orelse)
+        return None if a is None or b is None else a | b
+    return None
+
+
+def test_every_name_the_account_kit_writes_is_listed():
+    """Drawbridge and Moral Mirror sign in through the kit, so its names reach
+    their trails without passing any tool's own code."""
+    import ast
+    src = (Path(audit.__file__).resolve().parent / "account_kit.py").read_text(encoding="utf-8")
+    written = set()
+    for node in ast.walk(ast.parse(src)):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "audit" and node.args):
+            names = _literal_names(node.args[0])
+            assert names is not None, f"line {node.lineno}: an action name the test cannot read"
+            written |= names
+    assert len(written) >= 15, f"found only {sorted(written)}: the kit's calls moved"
+    assert not written - set(audit.ACTIONS), sorted(written - set(audit.ACTIONS))
+    assert not written & set(audit.SYNONYMS), "the kit writes a synonym"

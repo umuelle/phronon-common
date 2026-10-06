@@ -5,6 +5,17 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## Unreleased
+
+- **`audit.ACTIONS` is complete** (TO DO FL-089): every action name a tool or
+  the account kit writes, 79 in all, grouped by topic. It held 18 while the
+  fleet wrote about 60. New: `audit.SYNONYMS`, the names one tool wrote for an
+  event the vocabulary names otherwise (`class_anonymized`, `session_deleted`,
+  OrgDesignSim's `scenario_*`, ...) with the name to use; both stay listed,
+  because stored rows keep the name they were written with. Nothing at runtime
+  reads either; server-ops/audit_wiring_scan.py (deploy step 1b) refuses a tool
+  that writes an unlisted name, or a synonym it did not already write.
+
 ## 1.77.0 — 2026-10-05
 
 - **`testing.split_app`:** a tool's tests after its `app.py` is split into the
