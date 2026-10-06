@@ -5,7 +5,7 @@ Written 3 October 2026 as the last step of the commons review; since
 FL-081). The worked example is `examples/minimal_tool/app.py`;
 `tests/test_minimal_tool.py` runs it on every change to this package, so the
 example cannot quietly go stale, and the scaffolder builds a new tool's
-`app.py` from it.
+code from it, cut into the fleet's standard layout (server-ops README §9).
 
 ## The rule in one sentence
 
@@ -46,9 +46,11 @@ belongs in your tool.
 
    It refuses a folder that exists and any name, domain or port the fleet
    already uses; `--dry-run` lists what it would write. It creates
-   `<Folder>/` as a git repository with one commit: `app.py` built from the
+   `<Folder>/` as a git repository with one commit: the code built from the
    example (the tool's key, its own `legal_content/notice.json`, `db.py`,
-   templates and a backoffice sign-in at the fleet addresses), `schema.sql`
+   templates and a backoffice sign-in at the fleet addresses) in the standard
+   layout, `app.py` building the app, `config.py`, `core.py`, a stub
+   `retention.py` and the seven `routes_*.py`, `schema.sql`
    and `migrations/001`, `ops/tool.json` (the facts server-ops reads, see
    below), a stub `ops/browser_journey.py`, the test kit's wrappers and the
    tool's own tests, `.github/workflows/ci.yml` on the two central actions,
@@ -83,9 +85,9 @@ belongs in your tool.
    codes, passkeys, the Manage account page, the administrator's two-factor
    reset and the gate for a temporary password or an un-enrolled
    administrator, with the fleet's lockout, rate limits and messages: build
-   an `AccountKit` adapter (Moral Mirror's and Drawbridge's app.py are the
-   two worked examples, one with an app-wide CSRF dependency, one with
-   per-form checks), mount `build_account_router(...)` and install
+   an `AccountKit` adapter (Moral Mirror's and Drawbridge's
+   `routes_accounts.py` are the two worked examples, one with an app-wide
+   CSRF dependency, one with per-form checks), mount `build_account_router(...)` and install
    `account_gate(...)` as middleware. The tool keeps its own
    `backoffice/login.html` and `backoffice/password_reset.html`. Admins must
    use two-factor.
