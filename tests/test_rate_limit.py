@@ -101,8 +101,15 @@ def test_empty_trusted_list_falls_back_to_the_default_not_to_trust_nobody():
     ("198.51.100.7", "203.0.113.9", ["127.0.0.1"], "198.51.100.7"),
     # No header at all.
     ("198.51.100.7", None, ["127.0.0.1"], "198.51.100.7"),
-    # Several hops: the original client is the first entry.
-    ("127.0.0.1", "203.0.113.9, 70.41.3.18", ["127.0.0.1"], "203.0.113.9"),
+    # nginx appends the address it saw: the LAST entry is nginx's, every entry
+    # left of it is whatever the client sent (1.78.1; the first entry was
+    # believed until then, so a client chose its own rate-limit bucket).
+    ("127.0.0.1", "203.0.113.9, 70.41.3.18", ["127.0.0.1"], "70.41.3.18"),
+    ("127.0.0.1", "6.6.6.6, 198.51.100.7", ["127.0.0.1"], "198.51.100.7"),
+    # A chain of our own proxies ends at the address the outermost one saw.
+    ("127.0.0.1", "198.51.100.7, 127.0.0.1", ["127.0.0.1"], "198.51.100.7"),
+    # Only proxies in the header: the leftmost one.
+    ("127.0.0.1", "127.0.0.1", ["127.0.0.1"], "127.0.0.1"),
 ])
 def test_forwarded_header_is_trusted_only_behind_a_known_proxy(peer, forwarded, trusted, expected):
     from phronon_common.rate_limit import client_ip

@@ -34,11 +34,23 @@ def client_ip(request: "Request", trusted_proxies: Optional[Sequence[str]] = Non
     left TRUSTED_PROXIES unset/empty while their limiter defaulted to trusting
     localhost, so app-level and module-level defaults disagreed. If an app is
     ever exposed directly, pass an explicit sentinel host instead.
+
+    WHICH ENTRY (6 October 2026). nginx sends `$proxy_add_x_forwarded_for`:
+    whatever X-Forwarded-For the client sent, then the address nginx saw. Only
+    that last entry is nginx's word; everything left of it is the client's. This
+    took the FIRST entry until 1.78.1, so any client could choose its own
+    rate-limit bucket (and its audit address) by sending the header itself. The
+    walk goes right to left past trusted proxies, so a chain of our own proxies
+    still ends at the address the outermost one saw.
     """
     proxies = default_trusted_proxies() if not trusted_proxies else trusted_proxies
     direct = request.client.host if request.client else "unknown"
     if direct in proxies:
         forwarded = request.headers.get("x-forwarded-for")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
+        hops = [h.strip() for h in (forwarded or "").split(",") if h.strip()]
+        for hop in reversed(hops):
+            if hop not in proxies:
+                return hop
+        if hops:
+            return hops[0]
     return direct

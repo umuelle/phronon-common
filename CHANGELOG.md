@@ -5,9 +5,21 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
-## Unreleased (for 1.79.0)
+## 1.78.1 — 2026-10-06
 
-Test kit only; nothing a running service imports.
+A defect fix that every tool runs, and the FL-061 test kit.
+
+- **`request_ip.client_ip` believes only the address nginx appended.** nginx
+  sends `$proxy_add_x_forwarded_for`: the client's own X-Forwarded-For, then
+  the address nginx saw. The function took the FIRST entry, so any client
+  chose its own rate-limit bucket and its audit address by sending the header.
+  It now walks the header from the right past trusted proxies. Every app-level
+  rate limit (sign-in, withdrawal, link mails) and every audit row's address
+  are keyed correctly again; nginx's own per-address limits held throughout.
+  `tests/test_rate_limit.py`: a spoofed first entry is ignored, a chain of our
+  own proxies ends at the outermost one's address.
+
+Test kit (FL-061); nothing a running service imports:
 
 - **`testing.fleet_baseline` is strict wherever there is a database (FL-061).**
   `strict_here` is true on the server, in CI (`GITHUB_ACTIONS`) and when
