@@ -60,6 +60,8 @@ class SplitApp:
     def __init__(self, modules, root=None):
         object.__setattr__(self, "_modules", tuple(modules))
         object.__setattr__(self, "_root", Path(root).resolve() if root else None)
+        #: name -> the modules a delete took it from (see __setattr__).
+        object.__setattr__(self, "_deleted", {})
 
     def _refuse_runtime_caller(self, name):
         if self._root is None:
@@ -79,16 +81,27 @@ class SplitApp:
         raise AttributeError(f"no module of the split app defines {name!r}")
 
     def __setattr__(self, name, value):
-        current = getattr(self, name)
+        try:
+            current = getattr(self, name)
+        except AttributeError:
+            # mock.patch.object restores a name it did not find in the view's
+            # own __dict__ by deleting it and setting it again: put it back in
+            # the modules the delete took it from.
+            if name not in self._deleted:
+                raise
+            for m in self._deleted.pop(name):
+                setattr(m, name, value)
+            return
         for m in self._modules:
             if name in vars(m) and vars(m)[name] is current:
                 setattr(m, name, value)
 
     def __delattr__(self, name):
         current = getattr(self, name)
-        for m in self._modules:
-            if name in vars(m) and vars(m)[name] is current:
-                delattr(m, name)
+        held = [m for m in self._modules if name in vars(m) and vars(m)[name] is current]
+        for m in held:
+            delattr(m, name)
+        self._deleted[name] = held
 
     @property
     def modules(self) -> tuple:

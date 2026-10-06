@@ -48,28 +48,21 @@ def effective_routes(app) -> list[tuple[str, str, str]]:
     return out
 
 
-#: The module that answers a kit route: phase 2's, or the frozen phase 1 code
-#: an adapter in phase 1's shape is served from (1.75.0, expand then contract).
+#: The module that answers a kit route.
 KIT_MODULE = "phronon_common.account_kit"
-PHASE_1_MODULE = "phronon_common.account_kit_v1"
 
 
 def kit_routes(legacy_password_path: str | None = None, *,
-               sign_in: bool = False) -> list[tuple[str, str]]:
-    """The kit's (path, METHOD) pairs. `sign_in=True` is phase 2 (sign-in,
-    sign-out, reset links and the admin two-factor reset too); the default is
-    phase 1's set, which is what a tool's code from before its phase-2 deploy
-    asks for."""
-    if sign_in:
-        from phronon_common import account_kit
-        routes = [(p, "GET") for p in account_kit.GET_PATHS]
-        routes += [(p, "POST") for p in account_kit.PATHS if p != account_kit.ACCOUNT_URL]
-    else:
-        from phronon_common import account_kit_v1
-        gets = {"/backoffice/verify", "/backoffice/two-factor", "/backoffice/account",
-                "/backoffice/account/email/confirm"}
-        routes = [(p, "GET") for p in gets]
-        routes += [(p, "POST") for p in account_kit_v1.PATHS if p != "/backoffice/account"]
+               sign_in: bool = True) -> list[tuple[str, str]]:
+    """The kit's (path, METHOD) pairs: sign-in, sign-out, reset links and the
+    admin two-factor reset included. `sign_in` stays for callers that pass
+    True (Moral Mirror's tests); phase 1's smaller set left with
+    `account_kit_v1` in 1.78.0 (FL-083)."""
+    if not sign_in:
+        raise ValueError("phase 1's route set (sign_in=False) left with account_kit_v1 in 1.78.0")
+    from phronon_common import account_kit
+    routes = [(p, "GET") for p in account_kit.GET_PATHS]
+    routes += [(p, "POST") for p in account_kit.PATHS if p != account_kit.ACCOUNT_URL]
     if legacy_password_path:
         routes += [(legacy_password_path, "GET"), (legacy_password_path, "POST")]
     return sorted(routes)
@@ -78,17 +71,13 @@ def kit_routes(legacy_password_path: str | None = None, *,
 def assert_the_kit_is_mounted_once(app, legacy_password_path: str | None = None) -> None:
     routes = effective_routes(app)
     answered = [(path, method) for path, method, _module in routes]
-    # Which phase the tool mounts: phase 2's own module answers the code prompt.
-    phase_2 = any(path == "/backoffice/verify" and module == KIT_MODULE
-                  for path, _method, module in routes)
-    kit_module = KIT_MODULE if phase_2 else PHASE_1_MODULE
-    wanted = kit_routes(legacy_password_path, sign_in=phase_2)
+    wanted = kit_routes(legacy_password_path)
     twice = sorted({r for r in wanted if answered.count(r) > 1})
     assert not twice, (
         f"{twice} are answered twice — a copy of the route is still in app.py, and "
         f"only the one registered first is ever reached")
     by_kit = {(path, method) for path, method, module in routes
-              if module == kit_module}
+              if module == KIT_MODULE}
     missing = [r for r in wanted if r not in by_kit]
     assert not missing, f"the account kit does not answer {missing}"
 

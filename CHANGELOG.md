@@ -5,8 +5,37 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
-## Unreleased
+## 1.78.0 — 2026-10-06
 
+The contract steps of FL-080 and FL-083: every tool's LIVE commit now uses the
+new shapes, so the old ones go. FL-083 expanded in 1.75.0; FL-080 in each
+tool's own tests, live in all nine since 6 October. With them, the complete
+audit vocabulary.
+
+- **`shared_assets`:** `ONLY_FOR`, `TOOLS`, `assets_for(tool)` and
+  `drifted(tool, dir)` are removed. Which masters a tool carries is its own
+  `ops/tool.json` (operations.shared_assets), read by
+  `server-ops/sync_shared_assets.py` and each tool's
+  `tests/test_shared_assets_match.py`; the module keeps `ASSETS`,
+  `master_path()` and, as prose, why a tool carries fewer (FL-080).
+- **`account_kit`:** `account_kit_v1.py` (the frozen 1.74.0 kit that served an
+  adapter in phase 1's shape) is deleted, with the phase-1 fields
+  `register_failure`, `error_status`, `login_rate_limit` and
+  `AccountTables.last_login_at`. `AccountTables.transaction`,
+  `set_pending_cookie`, `not_an_admin` and `after_two_factor_reset` are
+  required again. The switches `password_change_checks_confirmation` and
+  `sign_in_page_shows_messages` are removed and their behaviour is the only
+  one: a password change checks the confirmation and refuses the current
+  password, and the sign-in page shows the keyed `?msg=`/`?err=` texts. Moral
+  Mirror and Drawbridge set neither (FL-083 (c), (g)).
+- **`testing.account_kit`:** `kit_routes()` is the whole kit's route set;
+  `sign_in=True` is still accepted, `sign_in=False` raises. `PHASE_1_MODULE`
+  is gone. `testing.manage_account` drops `KIT_V1_PY`.
+- **`testing.split_app`:** `mock.patch.object(view, name, ...)` restores
+  every module on exit. It deletes the name and sets it again, because the
+  view finds names through `__getattr__`; the delete took the name out of
+  every module and the set then raised. The view now puts a name it deleted
+  back where it was (FL-089).
 - **`audit.ACTIONS` is complete** (TO DO FL-089): every action name a tool or
   the account kit writes, 79 in all, grouped by topic. It held 18 while the
   fleet wrote about 60. New: `audit.SYNONYMS`, the names one tool wrote for an

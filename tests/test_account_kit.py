@@ -845,33 +845,31 @@ def test_address_change_requests_are_limited_per_account(world):
 
 
 def test_changing_the_password(world):
-    for checks in (True, False):
-        w = world(password_change_checks_confirmation=checks)
-        acc = w.account(must_change_password=1)
-        c = w.signed_in(acc)
+    w = world()
+    acc = w.account(must_change_password=1)
+    c = w.signed_in(acc)
 
-        def change(current, new, confirm):
-            return c.post("/backoffice/account/password", data={
-                "csrf_token": _tok(acc), "current_password": current,
-                "new_password": new, "confirm_password": confirm})
+    def change(current, new, confirm):
+        return c.post("/backoffice/account/password", data={
+            "csrf_token": _tok(acc), "current_password": current,
+            "new_password": new, "confirm_password": confirm})
 
-        r = change("wrong", "N" * 20, "N" * 20)
-        assert r.status_code == 200 and "Current password is incorrect." in r.text
-        r = change(PASSWORD, "short", "short")
-        assert r.status_code == 200 and "at least" in r.text
-        r = change(PASSWORD, "N" * 20, "M" * 20)
-        if checks:
-            assert "New passwords do not match." in r.text
-            r = change(PASSWORD, PASSWORD, PASSWORD)
-            assert "must differ" in r.text
-            assert w.row(acc["id"])["session_epoch"] == 0
-            r = change(PASSWORD, "N" * 20, "N" * 20)
-        assert r.status_code == 303 and r.headers["location"] == "/backoffice/dashboard"
-        row = w.row(acc["id"])
-        assert row["must_change_password"] == 0 and row["session_epoch"] == 1
-        assert bcrypt.checkpw(b"N" * 20, row["password_hash"].encode())
-        assert f"kit_session={acc['id']}:1" in r.headers["set-cookie"]
-        assert w.actions(acc["id"]) == ["password_changed"]
+    r = change("wrong", "N" * 20, "N" * 20)
+    assert r.status_code == 200 and "Current password is incorrect." in r.text
+    r = change(PASSWORD, "short", "short")
+    assert r.status_code == 200 and "at least" in r.text
+    r = change(PASSWORD, "N" * 20, "M" * 20)
+    assert "New passwords do not match." in r.text
+    r = change(PASSWORD, PASSWORD, PASSWORD)
+    assert "must differ" in r.text
+    assert w.row(acc["id"])["session_epoch"] == 0
+    r = change(PASSWORD, "N" * 20, "N" * 20)
+    assert r.status_code == 303 and r.headers["location"] == "/backoffice/dashboard"
+    row = w.row(acc["id"])
+    assert row["must_change_password"] == 0 and row["session_epoch"] == 1
+    assert bcrypt.checkpw(b"N" * 20, row["password_hash"].encode())
+    assert f"kit_session={acc['id']}:1" in r.headers["set-cookie"]
+    assert w.actions(acc["id"]) == ["password_changed"]
 
 
 def test_required_password_fields_are_the_tools_choice(world):
@@ -917,13 +915,6 @@ def test_the_sign_in_page_is_the_tools_own_with_keyed_texts_only(world):
     assert "ERROR[That is not your current password.]" in r.text
     r = c.get("/backoffice/login?msg=<b>x</b>&err=anything")
     assert "NOTICE" not in r.text and "ERROR" not in r.text and "<b>x</b>" not in r.text
-
-
-def test_the_sign_in_page_can_ignore_the_query(world):
-    """`sign_in_page_shows_messages=False` was Drawbridge's page (DB-006)."""
-    w = world(sign_in_page_shows_messages=False)
-    r = w.client().get("/backoffice/login?msg=email_changed&err=wrong_password")
-    assert r.status_code == 200 and "NOTICE" not in r.text and "ERROR" not in r.text
 
 
 def test_signed_in_already_goes_to_the_dashboard_with_the_tools_status(world):
@@ -1472,53 +1463,27 @@ def test_the_gate_opens_exact_paths_and_paths_below_them_only():
         assert not opens(path, open_paths), path
 
 
-# ── phase 1's adapter shape, accepted until the pilot tools run phase 2 ────
-# 1.75.0 must run the code that is LIVE: a tool's phase-1 adapter (1.72.0 to
-# 1.74.0) keeps working, served by the frozen account_kit_v1 (expand, then
-# contract; TO DO FL-083).
+# ── the adapter's shape (1.78.0: phase 1's shape is gone, TO DO FL-083) ─────
 
-def _phase_1_kit(w, **extra):
+def test_an_adapter_names_every_field_the_routes_need(world):
     import dataclasses
-    return dataclasses.replace(
-        w.kit, register_failure=lockout.register_failure, error_status=200,
-        login_rate_limit=(10, 60), set_pending_cookie=None, not_an_admin=None,
-        after_two_factor_reset=None,
-        tables=dataclasses.replace(w.kit.tables, transaction=None), **extra)
+    w = world()
+    values = {f.name: getattr(w.kit, f.name) for f in dataclasses.fields(w.kit)}
+    for name in ("set_pending_cookie", "not_an_admin", "after_two_factor_reset"):
+        with pytest.raises(TypeError, match=name):
+            kit_mod.AccountKit(**{k: v for k, v in values.items() if k != name})
+    tables = {f.name: getattr(w.kit.tables, f.name) for f in dataclasses.fields(w.kit.tables)}
+    with pytest.raises(TypeError, match="transaction"):
+        kit_mod.AccountTables(**{k: v for k, v in tables.items() if k != "transaction"})
+    for gone in ("register_failure", "error_status", "login_rate_limit",
+                 "password_change_checks_confirmation", "sign_in_page_shows_messages"):
+        with pytest.raises(TypeError, match=gone):
+            dataclasses.replace(w.kit, **{gone: None})
 
 
-def test_a_phase_1_adapter_is_served_by_the_frozen_code(world):
-    from fastapi import FastAPI
-    from fastapi.testclient import TestClient
+def test_the_route_list_is_the_whole_kit():
     from phronon_common.testing import account_kit as contract
-    w = world()
-    app = FastAPI()
-    app.include_router(kit_mod.build_account_router(_phase_1_kit(w)))
-    modules = {m for p, _meth, m in contract.effective_routes(app) if p.startswith("/backoffice")}
-    assert modules == {"phronon_common.account_kit_v1"}
-    paths = {(p, meth) for p, meth, _m in contract.effective_routes(app) if meth != "HEAD"}
-    assert ("/backoffice/login", "POST") not in paths     # the tool keeps its sign-in
-    assert set(contract.kit_routes()) <= paths
-    # Phase 1's behaviour: its own re-shown-form status (200 here, MM's).
-    acc = w.account(totp_enabled=1, totp_secret=SECRET32)
-    c = TestClient(app, base_url=BASE, follow_redirects=False)
-    c.cookies.set("kit_pending", str(acc["id"]))
-    r = c.post("/backoffice/verify", data={"csrf_token": "pre", "code": "000000"})
-    assert r.status_code == 200
-
-
-def test_the_two_shapes_are_never_mixed(world):
-    import dataclasses
-    w = world()
-    with pytest.raises(TypeError, match="pick one shape"):
-        kit_mod.build_account_router(dataclasses.replace(
-            w.kit, register_failure=lockout.register_failure))       # phase 2 fields kept
-    with pytest.raises(TypeError, match="without register_failure"):
-        kit_mod.build_account_router(dataclasses.replace(w.kit, error_status=200))
-    with pytest.raises(TypeError, match="missing"):
-        kit_mod.build_account_router(dataclasses.replace(w.kit, not_an_admin=None))
-
-
-def test_a_phase_1_adapter_keeps_its_own_gate(world):
-    w = world()
-    with pytest.raises(TypeError, match="keeps its own gate"):
-        kit_mod.account_gate(_phase_1_kit(w))
+    assert contract.kit_routes() == contract.kit_routes(sign_in=True)
+    assert ("/backoffice/login", "POST") in contract.kit_routes()
+    with pytest.raises(ValueError, match="account_kit_v1"):
+        contract.kit_routes(sign_in=False)

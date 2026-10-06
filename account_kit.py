@@ -202,8 +202,7 @@ class AccountTables:
     get_conn: Callable[[], Any]
     #: [(sql, params), ...] -> None; runs the statements in ONE transaction
     #: (a completed reset changes the password and spends every link at once).
-    #: Required for phase 2; None only in phase 1's shape (see below).
-    transaction: Optional[Callable[[list], Any]] = None
+    transaction: Callable[[list], Any]
     accounts: str = "admins"
     passkeys: str = "passkeys"
     #: The passkey table's column naming the account. Moral Mirror's says
@@ -227,9 +226,6 @@ class AccountTables:
     #: what it meant; the two agree only where the MySQL session clock is UTC.
     #: An expiry is CHECKED against the database's NOW() in both tools.
     clock: Optional[Callable[[], Any]] = None
-    #: Phase 1's name for `clock` (1.72.0 to 1.74.0). Only an adapter in phase
-    #: 1's shape passes it, and only `account_kit_v1` reads it.
-    last_login_at: Optional[Callable[[], Any]] = None
 
     def __post_init__(self):
         for name in (self.accounts, self.passkeys, self.passkey_owner, self.reset_tokens,
@@ -261,9 +257,7 @@ class AccountPageLayout:
 class AccountKit:
     """Everything the account routes need from the tool that mounts them.
 
-    Keyword-only, so the fields phase 2 added can be optional for an adapter
-    still in phase 1's shape (`register_failure` given): see
-    `build_account_router`."""
+    Keyword-only: an adapter names every field it sets."""
 
     # ── who the tool is ──────────────────────────────────────────────────────
     #: The product name: the authenticator app's account label (TOTP issuer),
@@ -301,7 +295,7 @@ class AccountKit:
     pending_cookie: str
     #: (response, account_id) -> mark a sign-in whose password was right and
     #: whose code is still owed (the cookie `pending_account` reads).
-    set_pending_cookie: Optional[Callable[[Response, int], None]] = None
+    set_pending_cookie: Callable[[Response, int], None]
     #: (response, account_id) -> issue a fresh session cookie.
     set_session_cookie: Callable[[Response, int], None]
     #: The session cookie, deleted on sign-out and when an address change ends
@@ -334,12 +328,12 @@ class AccountKit:
     #: from the admin "reset two-factor" action. May raise. Moral Mirror
     #: redirects to the dashboard (303), Drawbridge answers 403: ACCIDENTAL,
     #: kept (each tool's other admin routes answer the same way).
-    not_an_admin: Optional[Callable[[Request], Response]] = None
+    not_an_admin: Callable[[Request], Response]
     #: (request, admin_row) -> what the administrator sees after resetting
     #: another account's two-factor: the tool's own users list. Moral Mirror
     #: renders it with a note saying so; Drawbridge redirects to /backoffice/users
     #: (303) and says nothing. ACCIDENTAL, kept.
-    after_two_factor_reset: Optional[Callable[[Request, dict], Response]] = None
+    after_two_factor_reset: Callable[[Request, dict], Response]
 
     # ── its policy ───────────────────────────────────────────────────────────
     #: The tool's phronon_common.audit.AuditRecorder.
@@ -378,10 +372,6 @@ class AccountKit:
     #: Drawbridge still says /backoffice/change-password, which redirects to
     #: the account page; Moral Mirror goes there directly.
     must_change_url: str = ACCOUNT_URL
-    #: Refuse a password change whose confirmation differs, or whose new
-    #: password is the current one. Drawbridge does; Moral Mirror's form had
-    #: the confirmation field but its server never read it (MM-005).
-    password_change_checks_confirmation: bool = True
     #: Password-change fields (other than the CSRF token) a request must carry
     #: or be refused with FastAPI's 422. Moral Mirror declared current and new
     #: password required. Only a hand-made request can tell.
@@ -402,10 +392,6 @@ class AccountKit:
     #: None leaves the cookie alone (Moral Mirror). Never asked when the
     #: session lookup failed, so an outage cannot sign anybody out.
     drop_dead_session_cookie: Optional[Callable[[Request], bool]] = None
-    #: The sign-in page shows the kit's keyed texts for `?msg=` and `?err=`,
-    #: among them "Your e-mail address has been changed" after a confirmed
-    #: address change. Drawbridge's never read them (DB-006).
-    sign_in_page_shows_messages: bool = True
     #: The enrolment page stays reachable while a temporary password is in
     #: force (Drawbridge). Moral Mirror sends such an account to the password
     #: form first.
@@ -416,66 +402,6 @@ class AccountKit:
     #: epoch, its age or is_active, so a dead session meets the gate's
     #: redirect first and the sign-in page one hop later.
     gate_account: Optional[Callable[[Request], Optional[dict]]] = None
-
-    # ── phase 1's adapter shape (1.72.0 to 1.74.0) ──────────────────────────
-    # An adapter that passes `register_failure` is in phase 1's shape: its tool
-    # keeps its own sign-in, sign-out, reset and gate, and `build_account_router`
-    # serves it from `account_kit_v1`, the frozen 1.74.0 code. Accepted so the
-    # LIVE code of a tool keeps working when the fleet moves to 1.75.0 before
-    # that tool's phase-2 deploy (FL-083, expand then contract).
-    #: Phase 1: (failed_logins_before) -> (failed_logins, locked_until).
-    register_failure: Optional[Callable[..., Any]] = None
-    #: Phase 1: the status of a re-shown form (Moral Mirror 200, Drawbridge 400).
-    error_status: Optional[int] = None
-    #: Phase 1: (requests, seconds) for the passkey sign-in.
-    login_rate_limit: Optional[tuple] = None
-
-
-#: Fields phase 2 needs that phase 1's shape does not have.
-_PHASE_2_ONLY = ("set_pending_cookie", "not_an_admin", "after_two_factor_reset")
-
-
-def _phase_1(kit: "AccountKit") -> bool:
-    """Is this adapter in phase 1's shape? Refuses a mixture of the two."""
-    if kit.register_failure is not None:
-        mixed = [n for n in _PHASE_2_ONLY if getattr(kit, n) is not None]
-        if kit.tables.transaction is not None:
-            mixed.append("tables.transaction")
-        if mixed:
-            raise TypeError(f"an adapter in phase 1's shape (register_failure) also sets "
-                            f"phase 2's {mixed}; pick one shape")
-        return True
-    stray = [n for n in ("error_status", "login_rate_limit") if getattr(kit, n) is not None]
-    if kit.tables.last_login_at is not None:
-        stray.append("tables.last_login_at")
-    missing = [n for n in _PHASE_2_ONLY if getattr(kit, n) is None]
-    if kit.tables.transaction is None:
-        missing.append("tables.transaction")
-    if stray or missing:
-        raise TypeError(f"account kit adapter: phase 1's fields {stray} without "
-                        f"register_failure, or phase 2's {missing} missing")
-    return False
-
-
-def _as_phase_1(kit: "AccountKit"):
-    """The same adapter as `account_kit_v1` objects."""
-    import dataclasses
-    from . import account_kit_v1 as v1
-    t = kit.tables
-    values = {}
-    for f in dataclasses.fields(v1.AccountKit):
-        if f.name == "tables":
-            values["tables"] = v1.AccountTables(
-                query_one=t.query_one, query_all=t.query_all, execute=t.execute,
-                get_conn=t.get_conn, accounts=t.accounts, passkeys=t.passkeys,
-                passkey_owner=t.passkey_owner, last_login_at=t.last_login_at)
-        elif f.name == "layout":
-            values["layout"] = v1.AccountPageLayout(**dataclasses.asdict(kit.layout))
-        elif f.name in ("error_status", "login_rate_limit") and getattr(kit, f.name) is None:
-            continue                                      # phase 1's own default
-        else:
-            values[f.name] = getattr(kit, f.name)
-    return v1.AccountKit(**values)
 
 
 # ── templates ────────────────────────────────────────────────────────────────
@@ -500,13 +426,7 @@ def template(name: str) -> str:
 # ── the router ───────────────────────────────────────────────────────────────
 
 def build_account_router(kit: AccountKit) -> APIRouter:
-    """The account routes for one tool. Mount with `app.include_router`.
-
-    An adapter in phase 1's shape gets phase 1's routes, from the frozen
-    1.74.0 code, unchanged in behaviour."""
-    if _phase_1(kit):
-        from . import account_kit_v1
-        return account_kit_v1.build_account_router(_as_phase_1(kit))
+    """The account routes for one tool. Mount with `app.include_router`."""
     router = APIRouter()
     T = kit.tables.accounts
     PK = kit.tables.passkeys
@@ -654,10 +574,8 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         # login itself has just changed). Both texts come from the fixed
         # tables above: the query string carries a key, and only the key is
         # read.
-        error = notice = None
-        if kit.sign_in_page_shows_messages:
-            error = ACCOUNT_ERRORS.get(request.query_params.get("err", ""))
-            notice = ACCOUNT_MESSAGES.get(request.query_params.get("msg", ""))
+        error = ACCOUNT_ERRORS.get(request.query_params.get("err", ""))
+        notice = ACCOUNT_MESSAGES.get(request.query_params.get("msg", ""))
         resp = sign_in_page(request, error=error, notice=notice)
         if (not lookup_failed and request.cookies.get(kit.session_cookie)
                 and kit.drop_dead_session_cookie and kit.drop_dead_session_cookie(request)):
@@ -1238,12 +1156,11 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         ok, why = pw_policy.validate_password(new_password)
         if not ok:
             return account_page(request, account, error=why)
-        if kit.password_change_checks_confirmation:
-            if new_password != confirm_password:
-                return account_page(request, account, error="New passwords do not match.")
-            if kit.bcrypt.checkpw(new_password.encode()[:72], account["password_hash"].encode()):
-                return account_page(request, account,
-                                    error="The new password must differ from the current one.")
+        if new_password != confirm_password:
+            return account_page(request, account, error="New passwords do not match.")
+        if kit.bcrypt.checkpw(new_password.encode()[:72], account["password_hash"].encode()):
+            return account_page(request, account,
+                                error="The new password must differ from the current one.")
         pw_hash = kit.bcrypt.hashpw(new_password.encode()[:72], kit.bcrypt.gensalt()).decode()
         # session_epoch+1: a password change must end every session that was
         # already open elsewhere — that is the point of changing it (A2).
@@ -1371,9 +1288,6 @@ def account_gate(kit: AccountKit):
     must not lock the whole backoffice out, and every page checks the session
     again itself.
     """
-    if _phase_1(kit):
-        raise TypeError("an adapter in phase 1's shape keeps its own gate; "
-                        "account_gate is phase 2's")
     must_change_open = MUST_CHANGE_OPEN
     if kit.legacy_password_path:
         must_change_open += (kit.legacy_password_path,)

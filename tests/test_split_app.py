@@ -110,6 +110,24 @@ def test_deleting_a_name_removes_it_wherever_it_is_the_same_object(tmp_path, mon
     assert not hasattr(m["core"], "LIMIT") and not hasattr(m["routes_site"], "LIMIT")
 
 
+def test_mock_patch_object_restores_every_module(tmp_path, monkeypatch):
+    """mock.patch.object finds the name through __getattr__, so on exit it
+    deletes it and sets it again. Until 1.78.0 the delete took the name out of
+    every module and the set then raised (TO DO FL-089)."""
+    from unittest import mock
+    root, m = _tool(tmp_path, monkeypatch, FILES)
+    view = split_app.view(m["app"], root)
+    real = m["core"].send
+    with mock.patch.object(view, "send", return_value="fake"):
+        assert m["routes_site"].page() == "fake"
+    assert m["core"].send is m["app"].send is m["routes_site"].send is real
+    assert m["routes_site"].page() == "real"
+    with mock.patch.object(view, "LIMIT", 7):
+        assert m["core"].LIMIT == m["routes_site"].LIMIT == 7
+    assert m["core"].LIMIT == m["routes_site"].LIMIT == 5
+    assert not hasattr(m["app"], "LIMIT"), "the restore adds the name nowhere new"
+
+
 def test_a_module_of_the_same_name_from_elsewhere_is_not_part_of_the_view(tmp_path, monkeypatch):
     (tmp_path / "tool").mkdir()
     root, m = _tool(tmp_path / "tool", monkeypatch, {"app": "TITLE = 'Tool'\n"})

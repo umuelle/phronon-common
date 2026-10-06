@@ -32,7 +32,6 @@ MODULES = sorted(p.stem for p in PKG.glob("*.py") if p.stem != "__init__")
 #: Modules whose job is HTTP: they may load FastAPI/Starlette.
 WEB_MODULES = {
     "account_kit",       # the account routes: a router (FL-083)
-    "account_kit_v1",    # its frozen 1.74.0 copy, for phase 1's adapter shape
     "csrf",              # a middleware
     "legal",             # the legal-pages router
     "rate_limit",        # a middleware
@@ -74,7 +73,7 @@ def test_only_passkeys_loads_webauthn(footprints):
     # account_kit serves the passkey routes, so it reaches webauthn through
     # passkeys; nothing else may.
     assert sorted(m for m, f in footprints.items()
-                  if "webauthn" in f["roots"]) == ["account_kit", "account_kit_v1", "passkeys"]
+                  if "webauthn" in f["roots"]) == ["account_kit", "passkeys"]
 
 
 def test_the_mail_diagnostic_is_stdlib_only(footprints):

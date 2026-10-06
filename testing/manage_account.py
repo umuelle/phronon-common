@@ -47,9 +47,6 @@ _DECORATOR = r"@(?:app|router)\."
 #: The shared account routes and their templates (account_kit.py). Found next
 #: to this package rather than imported: the wheel ships both.
 KIT_PY = Path(__file__).resolve().parents[1] / "account_kit.py"
-#: The frozen 1.74.0 kit, which serves an adapter in phase 1's shape: a tool
-#: whose code predates its phase-2 deploy is read where its routes really live.
-KIT_V1_PY = Path(__file__).resolve().parents[1] / "account_kit_v1.py"
 KIT_TEMPLATES = Path(__file__).resolve().parents[1] / "account_templates"
 #: What an app.py that mounts the kit contains.
 KIT_MOUNT = "account_kit.build_account_router("
@@ -122,7 +119,7 @@ class AccountPageContract:
 
     @property
     def kit_src(self) -> str:
-        return _read(KIT_PY if self.uses_kit_gate else KIT_V1_PY)
+        return _read(KIT_PY)
 
     def _page(self, name: str) -> Path:
         """The tool's own template, or the kit's when the tool mounts the kit
