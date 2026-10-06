@@ -9,11 +9,14 @@ The same four checks in every tool, so no suite is thinner than this floor:
 3. anonymous visitors are redirected away from every protected page,
 4. the security headers are on the page.
 
-On the server (deploy gate, via run_tests.py) these run for real against the
-deployment environment. Where the app cannot even be imported — a laptop
-without the dependencies, a CI job without a database — the tool's wrapper
-skips with an allowed environmental reason; the server run is the
-authoritative gate.
+Strict wherever a green run is a gate or a test database is wired in: on the
+server, in CI, and in any run with a `*_test` schema (server-ops/run_tests.py on
+this Mac). There a server error is a failure. Only a bare local `pytest`, which
+has no database, may still skip the database-backed parts, and even then every
+check walks every route first and the access-control assertions hold
+(FL-061, 6 October 2026). An app that cannot be IMPORTED is never an
+environmental skip where a run is a gate: `run_reporting.collect_unexpected_skip`
+refuses that skip reason whatever a tool's allow-list says.
 
 Deliberately GET-only and parameterless: on most tools the suite runs against
 the production database, so the walk must not guess IDs or touch routes whose
@@ -56,13 +59,23 @@ def set_env_fallbacks() -> None:
 
 
 def strict_here(test_file: Path | str) -> bool:
-    """Strict only where the environment is the real one: the server.
+    """Strict wherever the run has a real database: the server, CI, and any
+    run pointed at a `*_test` schema.
 
-    In CI and on laptops the database is a stub or absent, so DB-backed
-    failures there are environmental, not behavioural — the deploy gate on the
-    server is the authoritative run of this file.
+    Until 6 October 2026 this was the server alone, on the grounds that CI and
+    laptops had no database. That stopped being true: every tool's CI has a
+    MySQL service since 18 September and every tool ships `.env.test`, which
+    server-ops/run_tests.py layers in. A server error there was still turned
+    into the allowed skip "requires the live server environment", so one broken
+    route silently removed the whole walk from CI (FL-061). The latest CI run of
+    all nine ran the baseline with no skip at all when this was tightened. A
+    bare local `pytest` (no DB_* settings) stays lenient: it is not a gate.
     """
-    return str(Path(test_file).resolve()).startswith(("/var/www/", "/opt/"))
+    if str(Path(test_file).resolve()).startswith(("/var/www/", "/opt/")):
+        return True
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        return True
+    return os.environ.get("DB_NAME", "").endswith("_test")
 
 
 def csrf_token(html: str) -> str:
@@ -155,7 +168,11 @@ class FleetBaseline:
         return None
 
     def check_anonymous_is_kept_out_of_protected_pages(self, fleet_app, client):
-        checked = []
+        # Every protected route is asked, whatever the first one answered
+        # (FL-061): this used to return a skip at the first 5xx, so off the
+        # server one database-backed page hid every route after it, including
+        # one that let an anonymous visitor in.
+        checked, let_in, errors = [], [], []
         for path in self.walkable_get_routes(fleet_app):
             if not any(path.startswith(p) for p in self.PROTECTED_PREFIXES):
                 continue
@@ -163,18 +180,24 @@ class FleetBaseline:
                     or "login" in path or "password" in path:
                 continue
             resp = client.get(path, follow_redirects=False)
-            if resp.status_code >= 500 and not self.STRICT:
-                return ("requires the live server environment (auth check on "
-                        + path + " needs the database)")
             checked.append(path)
+            if resp.status_code >= 500:
+                errors.append(path + " -> " + str(resp.status_code))
             # 3xx to login, 401, or 403 all keep the visitor out; JSON/XHR
             # endpoints legitimately answer 403 instead of redirecting.
-            assert resp.status_code in (301, 302, 303, 307, 308, 401, 403), (
-                path + " answered " + str(resp.status_code)
-                + " to an anonymous visitor — expected to be kept out"
-            )
+            elif resp.status_code not in (301, 302, 303, 307, 308, 401, 403):
+                let_in.append(path + " -> " + str(resp.status_code))
         assert checked, ("no protected routes found under "
                          + repr(self.PROTECTED_PREFIXES))
+        assert not let_in, (
+            "answered an anonymous visitor instead of keeping them out:\n  "
+            + "\n  ".join(let_in))
+        if errors and not self.STRICT:
+            return ("requires the live server environment (auth check needs "
+                    "the database: " + ", ".join(errors) + ")")
+        assert not errors, (
+            "server error on a protected page for an anonymous visitor:\n  "
+            + "\n  ".join(errors))
         return None
 
     def check_security_headers_on_the_login_page(self, client):
@@ -295,17 +318,29 @@ class FleetBaseline:
             f"{BACKOFFICE_LOGIN} answered {page.status_code}: the sign-in page "
             "must live at the fleet address")
         assert 'type="password"' in page.text, f"{BACKOFFICE_LOGIN} has no password field"
+        # All three are asked before any verdict (FL-061).
+        wrong, errors = [], []
         for path in ("/backoffice", "/backoffice/", BACKOFFICE_DASHBOARD):
             resp = client.get(path, follow_redirects=False)
-            if resp.status_code >= 500 and not self.STRICT:
-                return f"requires the live server environment ({path} needs the database)"
+            if resp.status_code >= 500:
+                errors.append(f"{path} -> {resp.status_code}")
+                continue
             where = resp.headers.get("location", "")
-            assert resp.status_code in _REDIRECTS, (
-                f"{path} answered {resp.status_code} to a signed-out visitor; "
-                f"it must lead to {BACKOFFICE_LOGIN}")
+            if resp.status_code not in _REDIRECTS:
+                wrong.append(f"{path} answered {resp.status_code} to a signed-out "
+                             f"visitor; it must lead to {BACKOFFICE_LOGIN}")
+                continue
             # A trailing-slash hop (/backoffice/ -> /backoffice) is allowed as
             # long as the chain ends on the login page.
             final = client.get(path, follow_redirects=True)
-            assert final.url.path == BACKOFFICE_LOGIN, (
-                f"{path} -> {where} ends at {final.url.path}, not {BACKOFFICE_LOGIN}")
+            if final.status_code >= 500:
+                errors.append(f"{path} -> {where} -> {final.status_code}")
+            elif final.url.path != BACKOFFICE_LOGIN:
+                wrong.append(f"{path} -> {where} ends at {final.url.path}, "
+                             f"not {BACKOFFICE_LOGIN}")
+        assert not wrong, "\n".join(wrong)
+        if errors and not self.STRICT:
+            return ("requires the live server environment (the entry addresses "
+                    "need the database: " + ", ".join(errors) + ")")
+        assert not errors, "server error on an entry address:\n  " + "\n  ".join(errors)
         return None

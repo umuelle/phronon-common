@@ -5,6 +5,22 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## Unreleased (for 1.79.0)
+
+Test kit only; nothing a running service imports.
+
+- **`testing.fleet_baseline` is strict wherever there is a database (FL-061).**
+  `strict_here` is true on the server, in CI (`GITHUB_ACTIONS`) and when
+  `DB_NAME` ends in `_test` (server-ops/run_tests.py with `.env.test`); a bare
+  local `pytest` stays lenient. The anonymous-access and entry-address checks
+  ask every route before their verdict, so a 5xx on one page can no longer
+  hide a later page that lets an anonymous visitor in.
+- **`testing.run_reporting.NEVER_ALLOWED_SKIPS` (FL-061).** A skip saying the
+  app, FastAPI or the test client could not be imported counts as unexpected
+  whatever a tool's allow-list says, so where a run is a gate it fails.
+- `tests/test_fleet_baseline_kit.py`: 15 tests; 11 fail against 1.78.0.
+
+
 ## 1.78.0 — 2026-10-06
 
 The contract steps of FL-080 and FL-083: every tool's LIVE commit now uses the

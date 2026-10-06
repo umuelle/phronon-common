@@ -49,15 +49,34 @@ BASE_ALLOWED_SKIPS = (
 
 SERVER_ROOTS = ("/var/www/", "/opt/")
 
+#: Never allowed, whatever an allow-list says (FL-061, 6 October 2026). Every
+#: tool's fleet-baseline wrapper skips with "requires the live server
+#: environment (app import: ...)" when `import app` fails, and "requires the
+#: live server" is on BASE_ALLOWED_SKIPS, so an app that could not even be
+#: imported was a permitted skip: the whole route walk, the login round trip
+#: and the anonymous-access check gone from a green run. Where a run is a gate
+#: (CI, the server) the environment is complete by definition, so a failed
+#: import is a broken commit or a broken deployment. The latest CI run of all
+#: nine had no such skip when this was added.
+NEVER_ALLOWED_SKIPS = (
+    "(app import:",          # tests/test_fleet_baseline.py, every tool
+    "(TestClient import:",   # ditto: the test client itself could not load
+    "(TestClient:",          # ditto: it loaded but could not be built
+    "environment (fastapi)", # ditto: the framework itself is missing
+    "Could not import app",  # the conftest app fixtures
+)
+
 
 def collect_unexpected_skip(report, allowed, sink: list) -> None:
-    """Append `report` to `sink` if it is a skip for an unrecognised reason."""
+    """Append `report` to `sink` if it is a skip for an unrecognised reason,
+    or for a reason that is never allowed (NEVER_ALLOWED_SKIPS)."""
     if not report.skipped or hasattr(report, "wasxfail"):
         return
     longrepr = report.longrepr
     reason = (str(longrepr[2]) if isinstance(longrepr, tuple) and len(longrepr) == 3
               else str(longrepr))
-    if any(a in reason for a in allowed):
+    if any(a in reason for a in allowed) \
+            and not any(n in reason for n in NEVER_ALLOWED_SKIPS):
         return
     sink.append(f"{report.nodeid}\n      {reason}")
 
