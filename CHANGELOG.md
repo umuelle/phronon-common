@@ -5,7 +5,7 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
-## 1.80.0 — 2026-10-07
+## 1.80.0 — unreleased (pyproject.toml takes the number when the tag is cut)
 
 Two defects the 1.79.0 rollout left (TO DO FL-090 (a), FL-091).
 
