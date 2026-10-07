@@ -5,6 +5,54 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.79.0 — 2026-10-07
+
+The owner's harmonisation of 6 October 2026 (README §11, "One fleet behaviour
+for a participant's deletion…"): three new kits and the account kit's last
+adapter fields. FL-076's owner-instructed exception.
+
+- **`withdrawal_kit` (new).** A participant's deletion on request, one
+  behaviour for every tool: `WithdrawalKit` holds the tool's data (lookup,
+  kind, delete, forget_browser, describe; the recovery four link_rows,
+  store_token, link_url, send_link, all or none; render, confirm_word, prefix,
+  csrf_ok, client_ip, logger) and `build_withdrawal_router(kit)` serves
+  GET/POST `/withdraw` and, with recovery, GET/POST `/withdrawal-link`. The
+  typed word is checked first and every locale's word counts
+  (`participant.WITHDRAW_CONFIRM_WORDS` gains WITHDRAWAL, WIDERRUF and the
+  other locales' words); 10 tries in 5 minutes per client, GETs with a token
+  included, answered with the tool's page and 429; the link form answers the
+  same page whatever the address and mails afterwards (`send_fresh_links`),
+  storing the new hash only once `send_link` returned True; one log line with
+  the kind. `token_from` reads the token out of a pasted link.
+  `tests/test_withdrawal_kit.py` (10).
+- **`join_sheet` (new).** `JoinSheet(find, join_url, context, render)` and
+  `render_join_sheet(request, code, sheet, lang)`: the code upper-cased
+  (`session_code`), 404 for a code with no sheet, `X-Robots-Tag: noindex`, 20
+  requests a minute per client, and `qr_svg(url)`, the QR inline at error
+  level M. `tests/test_join_sheet.py` (5).
+- **`routing`: language twins.** `lang_prefix`, `locale_prefixes`,
+  `add_language_twins(router, locales, paths, keep_prefix=…)` (`/en/x` 301 to
+  `/x` for GET and HEAD unless kept; an unknown language 404) and
+  `guard_query_lang(router, locales)` (a `?lang=` the tool does not serve is
+  404). On FastAPI 0.139 an included router's route builds its handler from
+  `get_route_handler()` on every request, so the guard wraps that.
+  `tests/test_routing_language_twins.py` (10).
+- **`account_kit`: the remaining adopters' data (FL-083).** AccountTables
+  `password_column` and `name_column`; AccountKit `verify_password` (Layoff's
+  legacy hashes), `strip_passwords` (Controversy Generator) and
+  `gated_prefixes` (Layoff's `/admin`). The admin check ignores the role's case
+  (FL-083 (f)). Every self-service reset request is audited, mail sent or not
+  ((d)), and every account mail goes after the response ((e)). A reset link
+  stored as the full SHA-256 (two adopters' old shape) still works. An address
+  change confirms with one conditional UPDATE, so a second click finds the link
+  used. A bcrypt check that raises on a foreign hash counts as no match.
+  `tests/test_account_kit.py`: 7 new tests.
+- **`emails.send_withdrawal_link` returns whether the mail went out** (False
+  without a mail server), which the withdrawal kit needs to keep an old link
+  alive. `tests/test_withdrawal_link_mail.py` (2).
+- `testing.manage_account` knows the kit's `password_ok`.
+
+
 ## 1.78.1 — 2026-10-06
 
 A defect fix that every tool runs, and the FL-061 test kit.
