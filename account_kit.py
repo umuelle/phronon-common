@@ -464,6 +464,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         "section_wrapper": kit.layout.section_wrapper,
         "password_tools": kit.layout.password_tools,
         "logout_url": LOGOUT_URL,
+        "dashboard_url": DASHBOARD_URL,
     }
 
     def mail(name: str) -> Callable:
@@ -691,6 +692,17 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         resp = redirect(landing(row))
         kit.set_session_cookie(resp, row["id"])
         return resp
+
+    @router.get(LOGOUT_URL)
+    def sign_out_page(request: Request):
+        """A link to the sign-out address (an old tab, a bookmark, a GET "Log
+        out" link from before 6 October 2026) gets the button that signs out.
+        The GET itself signs nobody out, since a page on another site could send
+        one (TO DO FL-090 (a), 7 October 2026)."""
+        account = kit.current_account(request)
+        if not account:
+            return kit.signed_out(request)
+        return page(request, "sign_out.html", csrf_for=account, account=named(account))
 
     @router.post(LOGOUT_URL)
     def sign_out(request: Request, csrf_token: str = csrf_field()):
@@ -1336,7 +1348,7 @@ PATHS = (
     ADMIN_TWO_FACTOR_RESET_URL,
 )
 #: The paths that answer GET (and HEAD) as well.
-GET_PATHS = (LOGIN_URL, RESET_URL, "/backoffice/verify", TWO_FACTOR_URL, ACCOUNT_URL,
+GET_PATHS = (LOGIN_URL, LOGOUT_URL, RESET_URL, "/backoffice/verify", TWO_FACTOR_URL, ACCOUNT_URL,
              "/backoffice/account/email/confirm")
 
 

@@ -49,7 +49,7 @@ PASSWORD = "Kit-test-passphrase-2026"  # pragma: allowlist secret (test value)
 
 def test_there_are_templates_to_check():
     assert {p.name for p in TEMPLATES} == {
-        "account.html", "account_confirm_email.html", "two_factor.html",
+        "account.html", "account_confirm_email.html", "sign_out.html", "two_factor.html",
         "two_factor_verify.html"}
 
 
@@ -400,7 +400,7 @@ def test_the_router_answers_exactly_its_paths(world):
     w = world()
     got = sorted((r.path, m) for r in w.router.routes for m in r.methods)
     expected = sorted(
-        [(p, m) for p in ("/backoffice/login", "/backoffice/password-reset",
+        [(p, m) for p in ("/backoffice/login", "/backoffice/logout", "/backoffice/password-reset",
                           "/backoffice/verify", "/backoffice/two-factor",
                           "/backoffice/account", "/backoffice/account/email/confirm")
          for m in ("GET", "HEAD")]
@@ -1094,6 +1094,22 @@ def test_signing_out_needs_a_session_and_its_own_token(world):
     # over: a half-finished sign-in and an unconfirmed authenticator secret.
     for name in ("kit_session", "kit_pending", "kit_pending_totp"):
         assert any(h.startswith(f'{name}=""') for h in cleared), (name, cleared)
+
+
+def test_a_link_to_sign_out_offers_the_button_and_signs_nobody_out(world):
+    """FL-090 (a): an old tab or a bookmark sent a GET and got a bare 405."""
+    w = world()
+    acc = w.account()
+    c = w.signed_in(acc)
+    r = c.get("/backoffice/logout")
+    assert r.status_code == 200 and "Sign out" in r.text
+    form = r.text.split('action="/backoffice/logout"')[1].split("</form>")[0]
+    assert 'method="post"' in r.text.split('action="/backoffice/logout"')[0].rsplit("<form", 1)[1]
+    assert f'value="{_tok(acc)}"' in form
+    assert "set-cookie" not in r.headers and w.row(acc["id"])["session_epoch"] == 0
+    assert c.head("/backoffice/logout").status_code == 200
+    gone = w.client().get("/backoffice/logout")
+    assert gone.status_code == 303 and gone.headers["location"] == "/backoffice/login"
 
 
 # ── the password-reset links ─────────────────────────────────────────────────

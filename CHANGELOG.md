@@ -5,6 +5,25 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.80.0 — 2026-10-07
+
+Two defects the 1.79.0 rollout left (TO DO FL-090 (a), FL-091).
+
+- **A link to the sign-out address offers the button.** Since 1.75.0 sign-out
+  is a POST with the session's token, so an old tab, a bookmark or a GET "Log
+  out" link from before got a bare 405 and stayed signed in. `GET
+  /backoffice/logout` now shows the kit's page `sign_out.html` with the button
+  (a signed-out visitor gets the tool's signed-out answer); the GET itself still
+  signs nobody out. `GET_PATHS` includes it, so `testing.account_kit`'s
+  mounted-once check expects it.
+  `test_a_link_to_sign_out_offers_the_button_and_signs_nobody_out`.
+- **The withdrawal-link mail promises a research record only where there is
+  one.** `emails.withdrawal_link_bodies` and `send_withdrawal_link` take
+  `research=True` (the old text, the default); a tool that keeps no research
+  record past its deadline passes False and the mail drops the sentence about
+  one. `tests/test_withdrawal_link_mail.py`.
+
+
 ## 1.79.0 — 2026-10-07
 
 The owner's harmonisation of 6 October 2026 (README §11, "One fleet behaviour

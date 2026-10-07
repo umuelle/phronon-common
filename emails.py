@@ -548,12 +548,21 @@ def send_participant_resume(tool_name: str, default_from: str, to_email: str,
     _smtp_send(sender, to_email, msg)
 
 
-def withdrawal_link_bodies(tool_name: str, withdraw_url: str, deadline: str = ""):
+def withdrawal_link_bodies(tool_name: str, withdraw_url: str, deadline: str = "",
+                           research: bool = True):
+    """The link mail's text and HTML. `research`: whether the tool keeps a
+    pseudonymous research record past the deadline, as its notice says. A tool
+    that keeps none passes False, and the mail promises nothing about one
+    (Layoff and OrgDesignSim, TO DO FL-091, 7 October 2026)."""
     safe_url = _html.escape(withdraw_url)
-    until = (f" You can use it until {deadline}, when your identifying data is removed anyway;"
-             f" any pseudonymous research record you agreed to keep stays deletable with the "
-             f"same link for as long as it exists." if deadline else
-             " It keeps working for as long as we hold data that this link can delete.")
+    if not deadline:
+        until = " It keeps working for as long as we hold data that this link can delete."
+    elif research:
+        until = (f" You can use it until {deadline}, when your identifying data is removed anyway;"
+                 f" any pseudonymous research record you agreed to keep stays deletable with the "
+                 f"same link for as long as it exists.")
+    else:
+        until = f" You can use it until {deadline}, when your identifying data is removed anyway."
     text = (f"Here is your personal deletion link for {tool_name}. Opening it lets you delete "
             f"your submission; nothing happens until you confirm on the page.{until}\n\n"
             f"{withdraw_url}\n\nThis link replaces any earlier deletion link we sent you. "
@@ -569,16 +578,17 @@ def withdrawal_link_bodies(tool_name: str, withdraw_url: str, deadline: str = ""
 
 def send_withdrawal_link(tool_name: str, default_from: str, to_email: str,
                          withdraw_url: str, deadline: str = "",
-                         subject_prefix: str = "") -> bool:
+                         subject_prefix: str = "", research: bool = True) -> bool:
     """True once the mail was handed to the mail server; False when it could
     not be sent (no SMTP configured). The withdrawal kit stores the link's new
     token only after a True, so a mail that never left keeps the old link
-    working (6 October 2026). A refused SMTP conversation raises."""
+    working (6 October 2026). A refused SMTP conversation raises. `research`:
+    see `withdrawal_link_bodies`."""
     if not os.getenv("SMTP_PASSWORD"):
         _unsendable("withdrawal link", to_email, withdraw_url)
         return False
     sender = _sender_address(default_from)
-    text, html = withdrawal_link_bodies(tool_name, withdraw_url, deadline)
+    text, html = withdrawal_link_bodies(tool_name, withdraw_url, deadline, research)
     msg = _multipart(f"{subject_prefix}{tool_name} — your deletion link", sender, to_email,
                      text, branded_html(tool_name, html))
     _smtp_send(sender, to_email, msg)

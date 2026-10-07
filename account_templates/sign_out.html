@@ -1,0 +1,20 @@
+{# Shared by the account kit (phronon_common/account_kit.py). Rendered inside
+   the tool's own backoffice/base.html. What a GET to the sign-out address
+   shows: the button, since only a POST with this session's token signs out
+   (TO DO FL-090 (a), 7 October 2026). Edit here, not in a tool. -#}
+{% extends "backoffice/base.html" %}
+{% block title %}{{ account_kit.tool_name }} — Sign out{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ asset('/static/css/two-factor.css') }}">
+<div class="tfa-card">
+<h1>Sign out</h1>
+<p>You are signed in as <strong>{{ account.email }}</strong>. Signing out ends this
+  session on this device.</p>
+<form method="post" action="{{ account_kit.logout_url }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button type="submit" class="tfa-btn">Sign out</button>
+</form>
+<p class="tfa-back"><a href="{{ account_kit.dashboard_url }}">&larr; Back to the dashboard</a></p>
+</div>
+{% endblock %}
