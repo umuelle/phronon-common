@@ -100,6 +100,33 @@ def test_an_unknown_language_is_a_404():
     assert c.post("/fr/join", data={"code": "A"}).status_code == 404
 
 
+def test_an_unknown_language_leaves_the_path_to_a_later_router():
+    """A twin used to claim any first segment and answer 404, so a later
+    router's /withdraw/report/{x} was shadowed by /{lang}/report/{token}
+    (Polarity Profiler, 7 October 2026)."""
+    first = APIRouter()
+
+    @first.get("/report/{token}")
+    def report(token: str, lang: str = "en"):
+        return {"page": "report", "lang": lang}
+
+    routing.add_language_twins(first, LOCALES, ["/report/{token}"])
+    later = APIRouter()
+
+    @later.get("/withdraw/report/{signed}")
+    def tombstone(signed: str):
+        return {"page": "tombstone", "signed": signed}
+
+    app = FastAPI()
+    app.include_router(routing.answer_head(first))
+    app.include_router(routing.answer_head(later))
+    c = TestClient(app)
+    assert c.get("/withdraw/report/abc").json() == {"page": "tombstone", "signed": "abc"}
+    assert c.get("/de/report/abc").json() == {"page": "report", "lang": "de"}
+    assert c.get("/fr/report/abc").status_code == 404
+    assert c.get("/en/report/abc", follow_redirects=False).status_code == 301
+
+
 def test_twin_gets_answer_head_like_its_base():
     app, _ = _app()
     twin = next(r for r in app.state.router.routes if r.path == "/{lang}/join" and "GET" in r.methods)

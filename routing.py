@@ -108,7 +108,21 @@ def _twin_route_class(locales, canonical, keep_prefix):
     from fastapi.routing import APIRoute
     from starlette.responses import RedirectResponse
 
+    from starlette.routing import Match
+
     class LanguageTwin(APIRoute):
+        def matches(self, scope):
+            # A first segment that is no language of this tool is no match, so
+            # routing goes on to the routes after this one. Answering 404 here
+            # shadowed every later path of the same shape: Polarity Profiler's
+            # /{lang}/report/{token} took /withdraw/report/<x> (7 October 2026).
+            match, child = super().matches(scope)
+            if match != Match.NONE:
+                lang = child.get("path_params", {}).get("lang", "")
+                if lang not in locales and lang != canonical:
+                    return Match.NONE, {}
+            return match, child
+
         def get_route_handler(self):
             inner = super().get_route_handler()
 

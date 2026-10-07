@@ -35,8 +35,11 @@ adapter fields. FL-076's owner-instructed exception.
   `/x` for GET and HEAD unless kept; an unknown language 404) and
   `guard_query_lang(router, locales)` (a `?lang=` the tool does not serve is
   404). On FastAPI 0.139 an included router's route builds its handler from
-  `get_route_handler()` on every request, so the guard wraps that.
-  `tests/test_routing_language_twins.py` (10).
+  `get_route_handler()` on every request, so the guard wraps that. A twin does
+  not match a first segment that is no language of the tool, so routing goes on
+  to later routes (`/{lang}/report/{token}` had shadowed a later router's
+  `/withdraw/report/{x}`).
+  `tests/test_routing_language_twins.py` (11).
 - **`account_kit`: the remaining adopters' data (FL-083).** AccountTables
   `password_column` and `name_column`; AccountKit `verify_password` (Layoff's
   legacy hashes), `strip_passwords` (Controversy Generator) and
