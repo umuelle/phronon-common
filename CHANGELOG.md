@@ -47,6 +47,11 @@ adapter fields. FL-076's owner-instructed exception.
   change confirms with one conditional UPDATE, so a second click finds the link
   used. A bcrypt check that raises on a foreign hash counts as no match.
   `tests/test_account_kit.py`: 7 new tests.
+- **The forced authenticator setup page can sign out.** The gate holds an
+  administrator without an authenticator on `/backoffice/two-factor`, which
+  passes no `account`, so the tool's nav offered no sign-out, and sign-out is a
+  POST since 1.75.0: the page was a dead end. It now carries the sign-out form
+  with the session's token. `test_an_administrator_held_at_enrolment_can_sign_out`.
 - **`emails.send_withdrawal_link` returns whether the mail went out** (False
   without a mail server), which the withdrawal kit needs to keep an old link
   alive. `tests/test_withdrawal_link_mail.py` (2).

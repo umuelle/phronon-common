@@ -71,6 +71,15 @@
   <p class="tfa-muted" style="margin-top:.8rem">Nothing is switched on until that
     code is accepted, so a half-finished setup cannot lock you out.</p>
   {% if not required %}<p class="tfa-back"><a href="{{ back_url }}">&larr; Back</a></p>{% endif %}
+  {% if required and not replacing %}
+  {# The gate holds an administrator here until enrolled, and this page passes
+     no `account`, so the tool's nav shows no sign-out. Sign-out is a POST
+     with the session's token. #}
+  <form method="post" action="{{ account_kit.logout_url }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="tfa-btn tfa-btn--secondary">Sign out</button>
+  </form>
+  {% endif %}
 {% endif %}
 </div>
 {% endblock %}

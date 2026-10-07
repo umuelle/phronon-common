@@ -1235,6 +1235,22 @@ def test_an_administrator_without_an_authenticator_may_only_enrol(world):
     assert w.signed_in(enrolled).get("/backoffice/dashboard").text == "DASHBOARD"
 
 
+def test_an_administrator_held_at_enrolment_can_sign_out(world):
+    """The forced setup page was a dead end: the gate allows sign-out, but
+    sign-out is a POST and the page offered no form (7 October 2026)."""
+    w = world()
+    admin = w.account(role="admin")
+    c = w.signed_in(admin)
+    page = c.get("/backoffice/two-factor")
+    assert page.status_code == 200 and 'action="/backoffice/logout"' in page.text
+    assert f'value="{_tok(admin)}"' in page.text.split('action="/backoffice/logout"')[1]
+    r = c.post("/backoffice/logout", data={"csrf_token": _tok(admin)})
+    assert r.status_code == 303 and r.headers["location"] == "/backoffice/login"
+    assert any(h.startswith('kit_session=""') for h in r.headers.get_list("set-cookie"))
+    optional = w.signed_in(w.account()).get("/backoffice/two-factor")
+    assert 'action="/backoffice/logout"' not in optional.text, "the nav has it there"
+
+
 def test_the_enrolment_gate_covers_the_account_page(world):
     """MM-007 / DB-007: the account page was on the must-change list, and the
     enrolment check never ran for it, so an administrator without an

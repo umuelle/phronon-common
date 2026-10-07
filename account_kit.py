@@ -463,6 +463,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         "back_link_while_must_change": kit.layout.back_link_while_must_change,
         "section_wrapper": kit.layout.section_wrapper,
         "password_tools": kit.layout.password_tools,
+        "logout_url": LOGOUT_URL,
     }
 
     def mail(name: str) -> Callable:
