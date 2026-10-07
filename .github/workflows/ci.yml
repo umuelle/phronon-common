@@ -1,12 +1,16 @@
 name: CI
-# Runs on every push/PR (Python 3.10, matching the server):
+# Runs weekly, on request and on PRs (Python 3.10, matching the server):
 #   1. py_compile every tracked .py     — syntax
 #   2. parse every Jinja template        — template syntax
 #   3. install deps + the shared phronon_common package, then pytest
 # A MySQL service runs the DB-backed tests, which must not skip here
 # (PHRONON_REQUIRE_DB=1, tests/conftest.py). No secrets are needed.
 on:
-  push:
+  # Weekly, on request, and on pull requests: never on push (owner, 7 October
+  # 2026; README §5, "The light path").
+  schedule:
+    - cron: "0 5 * * 1"   # Mondays 05:00 UTC
+  workflow_dispatch:
   pull_request:
 jobs:
   check:
