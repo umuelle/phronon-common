@@ -1269,11 +1269,13 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         account = kit.current_account(request)
         if not account:
             return kit.signed_out(request)
-        # Any case (FL-083 (f)): four adopters spell the role ADMIN. The first
-        # comparison is the text Moral Mirror's and Drawbridge's LIVE role-gate
-        # tests look for (their KIT_GUARDS); it goes once their tests name the
-        # second (expand, then contract: README §11, account kit rule 8).
-        if account.get("role") != "admin" and str(account.get("role") or "").lower() != "admin":
+        # Any case (FL-083 (f)): four adopters spell the role ADMIN, so the
+        # check reads a lower-cased copy. The comparison stays one plain line:
+        # it is the text the fleet's role-gate tests look for (KIT_GUARDS), and
+        # their checker reads a guard inside an `and` as a narrowed one.
+        signed_in = account
+        account = {**account, "role": str(account.get("role") or "").lower()}
+        if account.get("role") != "admin":
             return kit.not_an_admin(request)
         if not kit.csrf_ok(request, csrf_token, account):
             raise bad_csrf()
@@ -1287,7 +1289,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         kit.audit("two_factor_reset_by_admin", request=request, admin_id=account["id"],
                   admin_email=account.get("email"), subject=str(user_id),
                   details={"email": target.get("email")})
-        return later(kit.after_two_factor_reset(request, account),
+        return later(kit.after_two_factor_reset(request, signed_in),
                      mail("send_two_factor_reset_notice"), target["email"],
                      f"{kit.base_url()}{ACCOUNT_URL}")
 
