@@ -769,7 +769,9 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                      f"AND a.is_active=1", reset_token_hashes(token))
             if not row:
                 return reset_page(request, token=token, error=RESET_DEAD)
-            ok, why = pw_policy.validate_password(new_password)
+            # The policy judges what will be stored: a stripped password is
+            # checked without its blanks (Controversy Generator, 7 October).
+            ok, why = pw_policy.validate_password(clean(new_password))
             if not ok:
                 return reset_page(request, token=token, error=why)
             owner = row[RT_OWNER]
@@ -1231,10 +1233,10 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             raise bad_csrf()
         if not password_ok(current_password, account):
             return account_page(request, account, error="Current password is incorrect.")
-        ok, why = pw_policy.validate_password(new_password)
+        ok, why = pw_policy.validate_password(clean(new_password))
         if not ok:
             return account_page(request, account, error=why)
-        if new_password != confirm_password:
+        if clean(new_password) != clean(confirm_password):
             return account_page(request, account, error="New passwords do not match.")
         if password_ok(new_password, account):
             return account_page(request, account,

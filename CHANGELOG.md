@@ -47,6 +47,12 @@ adapter fields. FL-076's owner-instructed exception.
   change confirms with one conditional UPDATE, so a second click finds the link
   used. A bcrypt check that raises on a foreign hash counts as no match.
   `tests/test_account_kit.py`: 7 new tests.
+- **A stripped password meets the policy without its blanks.** With
+  `strip_passwords`, the policy judged the typed value and the stripped one was
+  stored, so ten characters and two blanks passed the twelve-character rule
+  (found by Controversy Generator's adoption). Reset and password change now
+  judge, and compare, the stripped value.
+  `test_a_stripped_password_meets_the_policy_without_its_blanks`.
 - **The forced authenticator setup page can sign out.** The gate holds an
   administrator without an authenticator on `/backoffice/two-factor`, which
   passes no `account`, so the tool's nav offered no sign-out, and sign-out is a

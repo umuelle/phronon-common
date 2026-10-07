@@ -1546,6 +1546,29 @@ def test_stripped_passwords_still_sign_in_with_the_blank(world):
     assert _sign_in(world(), acc["email"], PASSWORD + "  ").status_code == 200
 
 
+def test_a_stripped_password_meets_the_policy_without_its_blanks(world):
+    """The policy judged the typed value and the stripped one was stored, so
+    ten characters and two blanks passed a twelve-character rule (7 October)."""
+    w = world(strip_passwords=True)
+    acc = w.account()
+    c = w.signed_in(acc)
+    padded = "  " + "Nn9-" * 2 + "xy" + "  "          # 10 characters inside the blanks
+    r = c.post("/backoffice/account/password", data={
+        "csrf_token": _tok(acc), "current_password": PASSWORD,
+        "new_password": padded, "confirm_password": padded.strip()})
+    assert r.status_code == 200 and "at least" in r.text
+    _reset(w, email=acc["email"])
+    raw = w.mails[-1][2].split("token=", 1)[1]
+    r = _reset(w, token=raw, new_password=padded)
+    assert "ERROR[" in r.text and w.tokens(acc["id"]) == [(0, 1)]
+    good = "  A-brand-new-passphrase-1 "
+    r = c.post("/backoffice/account/password", data={
+        "csrf_token": _tok(acc), "current_password": PASSWORD,
+        "new_password": good, "confirm_password": good.strip()})
+    assert r.status_code == 303
+    assert _sign_in(w, acc["email"], good.strip()).status_code == 303
+
+
 def test_an_admin_role_in_capitals_may_reset_another_accounts_two_factor(world):
     w = world()
     admin = w.account(role="ADMIN", totp_enabled=1, totp_secret=SECRET32)
