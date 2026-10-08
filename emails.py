@@ -204,6 +204,9 @@ def _sender_address(default_from: str) -> str:
     return os.getenv("EMAIL_FROM") or os.getenv("SMTP_FROM") or default_from
 
 
+SMTP_TIMEOUT_SECONDS = 30
+
+
 def _smtp_send(sender: str, to_email: str, msg: MIMEMultipart) -> None:
     """The one SMTP conversation in the fleet.
 
@@ -211,9 +214,13 @@ def _smtp_send(sender: str, to_email: str, msg: MIMEMultipart) -> None:
     added since do not each grow their own copy of the host/port/STARTTLS
     handling — the drift that `recipient_domain` above is a monument to.
     """
+    # A timeout, so a mail server that stops answering fails the send after
+    # 30 s instead of holding the request (or the worker) forever. Since
+    # 8 October 2026 some tools send the reset mail before answering the admin.
     with smtplib.SMTP(
         os.getenv("SMTP_HOST", "smtp.ionos.de"),
         int(os.getenv("SMTP_PORT", "587")),
+        timeout=SMTP_TIMEOUT_SECONDS,
     ) as smtp:
         smtp.ehlo()
         smtp.starttls()

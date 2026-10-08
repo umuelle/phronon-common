@@ -23,6 +23,9 @@ the journal through SMTP errors (TO DO FL-096, best-practices review).
   for each tool's `tests/test_fleet_baseline.py`: fails unless the tool's
   process installed the redaction, and proves it on a refused-recipient
   traceback.
+- **The shared SMTP conversation times out after 30 s** (`emails.SMTP_TIMEOUT_SECONDS`).
+  It had no timeout, so a mail server that stopped answering held the request
+  forever; some tools now send the reset mail before answering the admin.
 - **Lint clean under `server-ops/ruff.toml`**: three unused imports gone; the
   CSRF body parse catches `ValueError` and the passkey challenge reader
   `(KeyError, TypeError, ValueError)` where both caught everything; the two
