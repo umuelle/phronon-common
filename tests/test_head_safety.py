@@ -4,10 +4,8 @@ The detector is pinned on synthetic modules (every shape that decides a
 verdict), then run end to end on a small FastAPI app split into a router
 module, the way a tool looks after its app.py split.
 """
-import ast
 import sys
 import textwrap
-from pathlib import Path
 
 import pytest
 
@@ -132,7 +130,7 @@ def test_the_tools_db_layer_is_judged_by_name(tmp_path):
 # ── end to end: a split app ──────────────────────────────────────────────────
 def test_problems_on_a_split_app(tmp_path, monkeypatch):
     pytest.importorskip("fastapi")
-    from fastapi import APIRouter, FastAPI
+    from fastapi import FastAPI
     from phronon_common.routing import answer_head
 
     (tmp_path / "routes_area.py").write_text(textwrap.dedent("""

@@ -194,7 +194,7 @@ def record(get_conn: Callable[[], Any], action: str, *,
         if conn is not None:
             try:
                 conn.close()
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001, S110 - closing after the work; a failure there is logged above
                 pass
 
 
@@ -222,7 +222,7 @@ def prune(get_conn: Callable[[], Any], days: int = RETENTION_DAYS) -> int:
         if conn is not None:
             try:
                 conn.close()
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001, S110 - closing after the work; a failure there is logged above
                 pass
 
 

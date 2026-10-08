@@ -7,7 +7,6 @@ its real database with two racing threads.
 """
 from __future__ import annotations
 
-import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor

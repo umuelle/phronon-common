@@ -132,8 +132,8 @@ def open_sealed_challenge(secret_key, cookie_value: str | None,
         return None
     try:
         return SealedChallenge(base64url_to_bytes(data["c"]), int(data["t"]))
-    except Exception:
-        return None
+    except (KeyError, TypeError, ValueError):
+        return None  # a field missing, not text, or not base64/an integer: refused
 
 
 def open_challenge(secret_key, cookie_value: str | None, purpose: str) -> bytes | None:

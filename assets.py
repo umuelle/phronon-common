@@ -30,7 +30,6 @@ because a static-only change may not restart the service at all.
 from __future__ import annotations
 
 import hashlib
-import os
 from pathlib import Path
 
 # path -> (mtime_ns, size, digest). Bounded by the number of static files a

@@ -5,6 +5,29 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.81.0 — 2026-10-08
+
+A defect fix allowed under the FL-076 stabilisation: e-mail addresses reached
+the journal through SMTP errors (TO DO FL-096, best-practices review).
+
+- **`log_privacy.install_address_redaction()`** wraps logging's record factory
+  so every record in the process, from every logger including uvicorn's, comes
+  out with `***@domain` in place of an address: the message, each argument (an
+  exception passed as `%s` too), and the traceback, which is formatted once,
+  redacted and cached in `exc_text`. Argument tuples keep their shape, so
+  uvicorn's access formatter still works. Idempotent. When the mail server
+  refuses a recipient, `SMTPRecipientsRefused` carries the full address, and
+  every handler that logged it wrote the address to the journal.
+  `tests/test_log_privacy.py`.
+- **Kit check `testing.log_privacy.assert_addresses_never_reach_the_log()`**,
+  for each tool's `tests/test_fleet_baseline.py`: fails unless the tool's
+  process installed the redaction, and proves it on a refused-recipient
+  traceback.
+- **Lint clean under `server-ops/ruff.toml`**: three unused imports gone; the
+  CSRF body parse catches `ValueError` and the passkey challenge reader
+  `(KeyError, TypeError, ValueError)` where both caught everything; the two
+  silent `conn.close()` catches in `audit` say why.
+
 ## 1.80.0 — 2026-10-07
 
 Two defects the 1.79.0 rollout left (TO DO FL-090 (a), FL-091).

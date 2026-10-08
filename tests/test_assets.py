@@ -1,5 +1,4 @@
 """The cache-busting string comes from the file (FL-037)."""
-import pathlib
 
 from phronon_common.assets import asset_url, clear_cache
 

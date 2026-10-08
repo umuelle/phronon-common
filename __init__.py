@@ -80,7 +80,7 @@ def _version() -> str:
             return m.group(1)
     # An installed wheel: the metadata carries what pyproject said when built.
     try:
-        from importlib.metadata import PackageNotFoundError, version
+        from importlib.metadata import version
         return version("phronon_common")
     except Exception:  # noqa: BLE001 — a version string must never break an import
         return "unknown"

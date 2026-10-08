@@ -143,8 +143,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     values = parse_qs(body.decode("utf-8", errors="replace")).get("csrf_token", [])
                     if values:
                         csrf_token = values[0]
-                except Exception:
-                    pass
+                except ValueError:
+                    pass  # an unparsable body carries no form token; the header may still
             # Deliberately not parsing multipart here: it would need an extra
             # dependency and a full parse of an upload just to find one field.
             # Multipart callers send the token as the X-CSRF-Token header.
