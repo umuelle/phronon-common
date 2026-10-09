@@ -5,6 +5,24 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.82.0 — 2026-10-09
+
+Front-end assets only; no Python changes. Polarity Profiler's radars leave
+Chart.js for the fleet's chart engine (TO DO FL-027), so the last Chart.js in
+the fleet goes.
+
+- **`svg-charts.js` `drawRadar` gains options**, all optional, so every chart
+  already drawn by it renders exactly as before: per series `dash` (a dashed
+  outline, for a reference such as a session average), `fill: false`,
+  `points: false` and `pointColors` (a colour per spoke for the dots); per
+  chart `spokeColors` (a colour per spoke label), `legend: false` (one legend
+  for several radars, kept by the page), `ringLabels: false`, `labelSize` and
+  `labelRoom` (whole-word spoke labels, which the 26-unit default clipped). A
+  radar without a legend no longer reserves the legend's height.
+- **`chart-table.js` is retired.** It built accessible data tables for
+  Chart.js charts (FL-012); Polarity Profiler, its last user, shows each
+  radar's figures beside it or in its aria-label instead.
+
 ## 1.81.0 — 2026-10-08
 
 A defect fix allowed under the FL-076 stabilisation: e-mail addresses reached

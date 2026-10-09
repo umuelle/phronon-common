@@ -1610,11 +1610,18 @@
    * radar's area depends on the arbitrary order of its spokes. Two or three
    * series is the useful range; past that the polygons occlude one another.
    *
-   * spokes: the item labels. series: [{label, values[], color}].
+   * spokes: the item labels. series: [{label, values[], color}], and per
+   * series optionally dash ('5 4': a dashed outline, for a reference such as
+   * a class average), fill: false, points: false, pointColors[] (one colour
+   * per spoke for the dots).
    * opts: min, max, step, unit, aria, height, valueFormat(v) -> string,
    * pointValues (default: on when spokes x series stays small enough to
    * read — otherwise the data table carries them, which the caller should
-   * always draw).
+   * always draw), spokeColors[] (one colour per spoke label), legend: false
+   * (when the page carries one legend for several radars), ringLabels: false,
+   * labelSize and labelRoom (spoke labels that are whole words).
+   * The per-series and colour options came with Polarity Profiler's move off
+   * Chart.js (1.82.0, 9 October 2026); everything else draws as before.
    */
   function drawRadar(host, spokes, series, opts) {
     if (!host || !spokes.length || !series.length) return;
@@ -1627,10 +1634,12 @@
        spoke labels are short by contract — the caller keeps the full names
        for the data table. */
     var W = opts.width || 560, H = opts.height || 520;
-    var legendH = 34;
+    var legendH = opts.legend === false ? 0 : 34;
     var cx = W / 2, cy = (H - legendH) / 2 + 4;
     var rim = opts.rimGap || 20;
-    var R = Math.min(cy - rim - 20, W / 2 - rim - 26);
+    /* labelRoom: the width kept free beside the rim for the left and right
+       spoke labels. 26 suits CG's short labels; whole words need more. */
+    var R = Math.min(cy - rim - 20, W / 2 - rim - (opts.labelRoom || 26));
     var lo = has(opts.min) ? opts.min : 0;
     var hi = has(opts.max) ? opts.max : 1;
     var step = opts.step || niceStep(hi - lo);
@@ -1658,7 +1667,7 @@
         stroke: Math.abs(t - hi) < 1e-9 ? C.range : C.grid,
         'stroke-width': Math.abs(t - hi) < 1e-9 ? 1.5 : 1,
       }));
-      if (t > lo + 1e-9) {
+      if (t > lo + 1e-9 && opts.ringLabels !== false) {
         // On the BISECTOR between the first two spokes, not up the vertical:
         // spoke 0 sits at twelve o'clock, so ring labels stacked there ran
         // straight through its own item label.
@@ -1682,7 +1691,9 @@
       var lx = cx + (R + rim) * Math.cos(a), ly = cy + (R + rim) * Math.sin(a);
       var cos = Math.cos(a);
       svg.appendChild(tag('text', {
-        x: lx, y: ly + 4, fill: C.ink, 'font-size': 11.5, 'font-weight': 600,
+        x: lx, y: ly + 4,
+        fill: (opts.spokeColors && opts.spokeColors[i2]) || C.ink,
+        'font-size': opts.labelSize || 11.5, 'font-weight': 600,
         'text-anchor': cos > 0.2 ? 'start' : cos < -0.2 ? 'end' : 'middle',
       }, String(spokes[i2])));
     }
@@ -1699,14 +1710,18 @@
         pts.push(px(i3, v) + ',' + py(i3, v));
       }
       svg.appendChild(tag('polygon', {
-        points: pts.join(' '), fill: color, 'fill-opacity': 0.12,
-        stroke: color, 'stroke-width': 2.5, 'stroke-linejoin': 'round',
+        points: pts.join(' '),
+        fill: se.fill === false ? 'none' : color,
+        'fill-opacity': se.fill === false ? null : 0.12,
+        stroke: color, 'stroke-width': se.dash ? 2 : 2.5,
+        'stroke-dasharray': se.dash || null, 'stroke-linejoin': 'round',
       }));
       for (var i4 = 0; i4 < n; i4++) {
-        if (!has(se.values[i4])) continue;
+        if (!has(se.values[i4]) || se.points === false) continue;
         var vx = px(i4, se.values[i4]), vy = py(i4, se.values[i4]);
         var dot = tag('circle', {
-          cx: vx, cy: vy, r: 4.5, fill: color,
+          cx: vx, cy: vy, r: 4.5,
+          fill: (se.pointColors && se.pointColors[i4]) || color,
           stroke: C.surface, 'stroke-width': 1.5,
         });
         dot.appendChild(tag('title', {},
@@ -1733,11 +1748,14 @@
       }
     });
 
-    legendRow(svg, series.map(function (se, si) {
-      return { label: se.label,
-               fill: se.color || TONE[se.tone]
-                   || [C.better, C.worse, C.ink][si % 3] };
-    }), 12, H - 12);
+    if (opts.legend !== false) {
+      legendRow(svg, series.map(function (se, si) {
+        return { label: se.label,
+                 fill: se.color || TONE[se.tone]
+                     || [C.better, C.worse, C.ink][si % 3],
+                 hollow: !!se.dash };
+      }), 12, H - 12);
+    }
     host.appendChild(svg);
   }
 

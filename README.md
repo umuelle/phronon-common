@@ -63,7 +63,7 @@ each tool, and which tools carry it. The masters themselves sit beside it —
 `design-tokens.css`, `backoffice-nav.css`, `backoffice-core.css`,
 `share-card.css`, `two-factor.css`, `actions.js`, `bulk-select.js`,
 `dashboard-table.js`, `rank-a11y.js`, `share-card-download.js`,
-`svg-charts.js`, `chart-table.js`, `users-password.js` — and they ship in the
+`svg-charts.js`, `users-password.js` — and they ship in the
 wheel, so a tool can compare its copy against the real master.
 
 Copy them out with `server-ops/sync_shared_assets.py --write`. Never edit a
