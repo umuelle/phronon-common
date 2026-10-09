@@ -5,7 +5,7 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
-## 1.82.0 — 2026-10-09
+## 1.82.1 — 2026-10-09
 
 Front-end assets only; no Python changes. Polarity Profiler's radars leave
 Chart.js for the fleet's chart engine (TO DO FL-027), so the last Chart.js in
@@ -19,9 +19,16 @@ the fleet goes.
   for several radars, kept by the page), `ringLabels: false`, `labelSize` and
   `labelRoom` (whole-word spoke labels, which the 26-unit default clipped). A
   radar without a legend no longer reserves the legend's height.
-- **`chart-table.js` is retired.** It built accessible data tables for
-  Chart.js charts (FL-012); Polarity Profiler, its last user, shows each
-  radar's figures beside it or in its aria-label instead.
+- **`chart-table.js` has no user left** (Polarity Profiler showed its radars'
+  figures beside them or in an aria-label instead). Its master and its entry
+  in `shared_assets.py` go with the next release that changes Python anyway:
+  touching the asset map makes a release "code", and a code release is
+  verified against every tool's live commit, whose copies of the old master
+  cannot pass the drift check against a new one.
+- **1.82.0 was tagged and never published.** It retired `chart-table.js`
+  together with the engine change, which made it a code release that the
+  live commits could not verify (they still carried the old engine copy).
+  1.82.1 carries 1.82.0's `svg-charts.js` byte for byte.
 
 ## 1.81.0 — 2026-10-08
 
