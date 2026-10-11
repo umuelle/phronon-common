@@ -5,6 +5,22 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.84.0 — 2026-10-11
+
+Front-end assets only; no Python changes. The owner's password manager
+(LastPass) filled both fields of the sign-in page, so the browser offered no
+passkey and the password was never empty: neither way in of 1.83 started.
+Owner's decision: the page remembers, per browser, that a passkey was used.
+
+- **`passkeys.js`: the passkey first, once this browser has used one.** After
+  a passkey sign-in the browser keeps `phronon-passkey-signin` = `1` in its
+  own storage (localStorage; never sent to the server). On the next visit the
+  sign-in page hides the form and the `data-passkey-or` line and shows the
+  `data-passkey-use-password` element, whose link brings the form back for
+  that visit. Private browsing or blocked storage: no marker, the page stays
+  as it was. Each tool's cookie table lists the marker (wording approved by
+  the owner).
+
 ## 1.83.1 — 2026-10-11
 
 1.83.0 with the autofill route at `/backoffice/login/passkey/autofill`

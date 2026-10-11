@@ -41,6 +41,15 @@
  *   - "Log in" with the password left empty, in the form that holds that
  *     e-mail field, asks for the passkey in place of sending the form.
  *
+ *   Since 1.84.0 (owner, 11 October 2026: a password manager filled both
+ *   fields, so neither way above ever started): after a passkey sign-in the
+ *   browser keeps a marker in its own storage (localStorage
+ *   "phronon-passkey-signin" = "1", nothing else, never sent to the server).
+ *   On the next visit the page hides the sign-in form and the element marked
+ *   data-passkey-or, and shows the element marked data-passkey-use-password
+ *   (it holds a link, "Use e-mail and password instead", which brings the
+ *   form back for this visit). Each tool's cookie table lists the marker.
+ *
  * Both blocks start `hidden` and are shown only when the browser can do
  * passkeys at all, so nobody is offered a button that cannot work. The server
  * answers every POST with JSON: options, {"ok": true}, {"redirect": url} or
@@ -170,6 +179,23 @@
   }
 
   var RENEW_MS = 4 * 60 * 1000;
+  var MARKER = 'phronon-passkey-signin';
+
+  // Private browsing or blocked storage: no marker, the page stays as it is.
+  function remembered() {
+    try { return window.localStorage.getItem(MARKER) === '1'; } catch (e) { return false; }
+  }
+  function remember() {
+    try { window.localStorage.setItem(MARKER, '1'); } catch (e) { /* not kept */ }
+  }
+
+  // Shown or not, whatever a tool's own CSS says about `display` for the
+  // element's class (a class rule beats the [hidden] attribute).
+  function show(el, on) {
+    if (!el) return;
+    el.hidden = !on;
+    el.style.display = on ? '' : 'none';
+  }
 
   function wireLogin(box) {
     var start = box.querySelector('[data-passkey-start]');
@@ -187,7 +213,10 @@
     function signIn(cred) {
       return post(box.getAttribute('data-submit-url'),
                   { csrf_token: csrf, credential: credentialJSON(cred) })
-        .then(function (data) { if (data.redirect) window.location.assign(data.redirect); });
+        .then(function (data) {
+          remember();
+          if (data.redirect) window.location.assign(data.redirect);
+        });
     }
 
     function stopWaiting() {
@@ -245,6 +274,26 @@
 
     if (start) start.addEventListener('click', function () { askForPasskey(); });
 
+    // The passkey first: this browser has signed in with one before.
+    var orLine = box.querySelector('[data-passkey-or]');
+    var usePassword = box.querySelector('[data-passkey-use-password]');
+    var passkeyFirst = !!(form && usePassword && remembered());
+    show(usePassword, passkeyFirst);
+    if (passkeyFirst) {
+      show(form, false);
+      show(orLine, false);
+      var link = usePassword.querySelector('a, button') || usePassword;
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        show(form, true);
+        show(orLine, true);
+        show(usePassword, false);
+        if (field) field.focus();
+        offerInAutofill();
+      });
+      if (start) start.focus();
+    }
+
     if (form) {
       var password = form.querySelector('input[type="password"]');
       form.addEventListener('submit', function (e) {
@@ -254,7 +303,7 @@
       });
     }
 
-    offerInAutofill();
+    if (!passkeyFirst) offerInAutofill();
   }
 
   function init() {
