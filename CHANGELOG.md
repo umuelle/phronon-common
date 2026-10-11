@@ -5,6 +5,19 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.83.1 — 2026-10-11
+
+1.83.0 with the autofill route at `/backoffice/login/passkey/autofill`
+(`AUTOFILL_OPTIONS_URL`). Moral Mirror's live pilot answers
+`/backoffice/login/passkey/autofill-options` itself, and its live commit has
+a test that refuses a path answered twice, so `verify` could not pass 1.83.0
+against it, and its new commit (without the pilot) cannot be deployed before
+the release is active. A path of the kit's own removes the deadlock. Every
+tool's template and the hub (`/admin/login/passkey/autofill`) use the new
+path.
+
+- **1.83.0 was tagged and published, never activated.**
+
 ## 1.83.0 — 2026-10-11
 
 Signing in with a passkey without typing (owner, 10 October 2026: "after

@@ -127,7 +127,10 @@ SIGN_IN_LIMIT = (5, 60)
 #: the sign-in page asks for a challenge, so those requests have a budget of
 #: their own. Handing out a challenge signs nobody in; the sign-in that follows
 #: still spends SIGN_IN_LIMIT.
-AUTOFILL_OPTIONS_URL = "/backoffice/login/passkey/autofill-options"
+#: Not ".../autofill-options": Moral Mirror's pilot (live 10 October 2026)
+#: answered that path itself, and its live commit refuses a path answered
+#: twice, so 1.83.0 with that path could not be verified (re-cut as 1.83.1).
+AUTOFILL_OPTIONS_URL = "/backoffice/login/passkey/autofill"
 AUTOFILL_LIMIT = (20, 60)
 #: (d) Password-reset requests per address: (requests, seconds). Each one can
 #: send a mail.

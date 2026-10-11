@@ -31,7 +31,7 @@
  *
  *   Since 1.83.0 (owner, 10 October 2026: "after setting up a passkey, other
  *   sites know that this is established"), two more ways in, both optional:
- *   - data-autofill-url="/backoffice/login/passkey/autofill-options" on the
+ *   - data-autofill-url="/backoffice/login/passkey/autofill" on the
  *     block and autocomplete="username webauthn" on the e-mail field: as the
  *     page opens the browser is asked with mediation "conditional", so it
  *     lists a saved passkey in the field's autofill (one tap and Touch ID).
