@@ -5,6 +5,33 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.83.0 — 2026-10-11
+
+Signing in with a passkey without typing (owner, 10 October 2026: "after
+setting up a passkey, other sites know that this is established"). Piloted on
+Moral Mirror on 10 October; Python and one shared JS master change, the asset
+map does not.
+
+- **`passkeys.js`, the sign-in page:** as the page opens it asks the browser
+  for a passkey with mediation "conditional", so a browser that holds one
+  lists it in the e-mail field's autofill (the field needs
+  `autocomplete="username webauthn"`, the login block `data-autofill-url`).
+  The waiting request is renewed every four minutes, before its five-minute
+  challenge expires, and cancelled before the button asks. "Log in" with the
+  password left empty asks for the passkey in place of sending the form. A
+  passkey picked and refused is offered again twice at most.
+- **`account_kit`: `POST /backoffice/login/passkey/autofill-options`**
+  (`AUTOFILL_OPTIONS_URL`, in `PATHS`): the sign-in challenge on a budget of
+  its own, `AUTOFILL_LIMIT` = 20 a minute per address. On the shared
+  `SIGN_IN_LIMIT` every page view would have cost the password form a try.
+- **`account_kit` sign-in: an empty e-mail or password gets the page back**
+  with `SIGN_IN_INCOMPLETE` (400), looks nothing up and counts against
+  nobody. Both fields were required by the route itself, so an e-mail alone
+  answered FastAPI's raw 422 JSON (the owner met it on 10 October).
+- Each tool's `passkey_challenge` cookie row says the cookie is also set
+  while the sign-in page is open in a browser that can offer a passkey (the
+  tools' own notices; wording approved by the owner on 10 October).
+
 ## 1.82.1 — 2026-10-09
 
 Front-end assets only; no Python changes. Polarity Profiler's radars leave

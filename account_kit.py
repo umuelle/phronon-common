@@ -123,12 +123,22 @@ RESHOWN = 400
 #: the password form and the passkey, which nginx's exact-match limit on
 #: /backoffice/login does not cover.
 SIGN_IN_LIMIT = (5, 60)
+#: The passkey in the e-mail field's autofill (10 October 2026): every view of
+#: the sign-in page asks for a challenge, so those requests have a budget of
+#: their own. Handing out a challenge signs nobody in; the sign-in that follows
+#: still spends SIGN_IN_LIMIT.
+AUTOFILL_OPTIONS_URL = "/backoffice/login/passkey/autofill-options"
+AUTOFILL_LIMIT = (20, 60)
 #: (d) Password-reset requests per address: (requests, seconds). Each one can
 #: send a mail.
 RESET_LIMIT = (5, 300)
 #: (c) What a failed password sign-in hears, whatever the reason: an unknown
 #: address, a wrong password, a deactivated account.
 SIGN_IN_REFUSED = "Invalid email or password."
+#: A form sent with the e-mail or the password left empty. Until 10 October
+#: 2026 both fields were required by the route itself, and an empty one
+#: answered FastAPI's raw 422 JSON in place of the page.
+SIGN_IN_INCOMPLETE = "Enter your e-mail address and your password, or sign in with a passkey."
 RESET_SENT = "If that email is registered you will receive a reset link shortly."
 RESET_DONE = "Password updated. You can now log in."
 RESET_DEAD = "Token is invalid or expired."
@@ -653,12 +663,15 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     @router.post(LOGIN_URL)
     def sign_in(request: Request, csrf_token: str = csrf_field(),
-                email: str = Form(...), password: str = Form(...)):
+                email: str = Form(""), password: str = Form("")):
         # (c) the budget first, then the token, then the account.
         if not sign_in_allowed(request):
             raise HTTPException(429, "Too many login attempts")
         if not kit.csrf_ok(request, csrf_token, None):
             raise bad_csrf()
+        # An empty field looks nothing up and counts against nobody.
+        if not email.strip() or not password:
+            return sign_in_page(request, error=SIGN_IN_INCOMPLETE, status_code=RESHOWN)
         # (c) A deactivated account is not looked up at all, so it hears what
         # an unknown address hears and nothing is counted against it.
         row = q1(f"SELECT * FROM {T} WHERE email=%s AND is_active=1", (email.strip().lower(),))
@@ -1046,6 +1059,24 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                         **pk_secure())
         return resp
 
+    @router.post(AUTOFILL_OPTIONS_URL)
+    def passkey_autofill_options(request: Request, csrf_token: str = Form("")):
+        """The same sign-in challenge for the browser's autofill (passkeys.js
+        asks with mediation "conditional" as the page opens), on a budget of
+        its own: on the shared one, every page view would leave the password
+        form a try fewer."""
+        limit, window = AUTOFILL_LIMIT
+        if not is_allowed(f"passkey-autofill:{kit.client_ip(request)}", max_requests=limit,
+                          window_seconds=window):
+            return json_error("Too many requests. Wait a minute.", 429)
+        if not kit.csrf_ok(request, csrf_token, None):
+            return json_error("Please reload the page and try again.")
+        options, challenge = passkeys.authentication_options(base_url=kit.passkey_base_url())
+        resp = Response(options, media_type="application/json")
+        resp.set_cookie(value=passkeys.seal_challenge(kit.secret_key, challenge, "login"),
+                        **pk_secure())
+        return resp
+
     @router.post("/backoffice/login/passkey")
     def passkey_login(request: Request, csrf_token: str = Form(""), credential: str = Form("")):
         if not sign_in_allowed(request):
@@ -1339,6 +1370,7 @@ PATHS = (
     "/backoffice/passkeys",
     "/backoffice/passkeys/{pid}/delete",
     "/backoffice/login/passkey/options",
+    AUTOFILL_OPTIONS_URL,
     "/backoffice/login/passkey",
     ACCOUNT_URL,
     "/backoffice/account/name",

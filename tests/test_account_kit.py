@@ -315,7 +315,8 @@ class World:
     @staticmethod
     def reset_limits():
         from phronon_common.rate_limit import _shared_window
-        for key in ("login:kit-test-client", "pwreset:kit-test-client"):
+        for key in ("login:kit-test-client", "pwreset:kit-test-client",
+                    "passkey-autofill:kit-test-client"):
             _shared_window.reset(key)
 
     # the adapter's database functions, and the test's
@@ -543,6 +544,7 @@ def test_every_post_refuses_when_the_tools_csrf_check_says_no(world):
         "/backoffice/passkeys": (400, "Please reload the page and try again."),
         "/backoffice/passkeys/1/delete": (400, None),
         "/backoffice/login/passkey/options": (400, "Please reload the page and try again."),
+        kit_mod.AUTOFILL_OPTIONS_URL: (400, "Please reload the page and try again."),
         "/backoffice/login/passkey": (400, "Please reload the page and try again."),
         "/backoffice/account/name": (400, None),
         "/backoffice/account/email": (400, None),
@@ -711,6 +713,42 @@ def test_passkey_sign_in_is_limited_to_five_a_minute(world):
     assert codes == [200] * 5 + [429]
     r = c.post("/backoffice/login/passkey", data={"csrf_token": "pre", "credential": "{}"})
     assert r.status_code == 429 and r.json() == {"error": "Too many sign-in attempts. Wait a minute."}
+
+
+# the passkey in the e-mail field's autofill (1.83.0, 10 October 2026)
+
+def test_a_passkey_picked_from_the_autofill_signs_in(world):
+    """The autofill challenge is the sign-in challenge: the kit's own sign-in
+    route accepts the answer."""
+    from phronon_common.testing.soft_authenticator import SoftAuthenticator
+    w = world()
+    acc = w.account()
+    auth = SoftAuthenticator(origin=BASE)
+    _add_passkey(w, w.signed_in(acc), acc, auth)
+    c = w.client()
+    opts = c.post(kit_mod.AUTOFILL_OPTIONS_URL, data={"csrf_token": "pre"})
+    assert opts.status_code == 200 and opts.json()["challenge"]
+    r = c.post("/backoffice/login/passkey", data={"csrf_token": "pre",
+                                                   "credential": auth.get(opts.text)})
+    assert r.status_code == 200 and r.json() == {"redirect": "/backoffice/dashboard"}
+
+
+def test_the_autofill_offer_leaves_the_password_its_five_tries(world):
+    """Every page view asks for an autofill challenge, on a budget of its own:
+    on the shared one the password form would have lost a try per view."""
+    w = world()
+    acc = w.account()
+    c = w.client()
+    codes = [c.post(kit_mod.AUTOFILL_OPTIONS_URL, data={"csrf_token": "pre"}).status_code
+             for _ in range(kit_mod.AUTOFILL_LIMIT[0] + 1)]
+    assert codes == [200] * kit_mod.AUTOFILL_LIMIT[0] + [429]
+    assert _sign_in(w, acc["email"], PASSWORD).status_code == 303
+
+
+def test_the_autofill_route_checks_the_token(world):
+    w = world()                     # the adapter takes only "pre" before sign-in
+    r = w.client().post(kit_mod.AUTOFILL_OPTIONS_URL, data={"csrf_token": "forged"})
+    assert r.status_code == 400 and "passkey_challenge" not in r.headers.get("set-cookie", "")
 
 
 def test_a_passkey_is_removed_by_its_owner_only(world):
@@ -904,6 +942,22 @@ def test_the_old_password_address_still_answers(world):
 def _sign_in(w, email, password, c=None, token="pre"):
     return (c or w.client()).post("/backoffice/login", data={
         "csrf_token": token, "email": email, "password": password})
+
+
+def test_an_empty_field_gets_the_page_back_and_counts_nothing(world):
+    """Owner, 10 October 2026: only an e-mail, then "Log in", answered
+    FastAPI's raw 422 JSON. Now the sign-in page comes back with a sentence,
+    nothing is looked up and nothing counts against the account."""
+    w = world()
+    acc = w.account()
+    for email, password in ((acc["email"], ""), ("", PASSWORD), ("", "")):
+        r = w.client().post("/backoffice/login", data={
+            "csrf_token": "pre", "email": email, "password": password})
+        assert r.status_code == 400, r.text[:200]
+        assert kit_mod.SIGN_IN_INCOMPLETE in r.text
+    r = w.client().post("/backoffice/login", data={"csrf_token": "pre", "email": acc["email"]})
+    assert r.status_code == 400 and kit_mod.SIGN_IN_INCOMPLETE in r.text
+    assert w.row(acc["id"])["failed_logins"] == 0
 
 
 def test_the_sign_in_page_is_the_tools_own_with_keyed_texts_only(world):

@@ -29,6 +29,18 @@
  *   </div>
  *   On success the browser goes where the server says ({"redirect": …}).
  *
+ *   Since 1.83.0 (owner, 10 October 2026: "after setting up a passkey, other
+ *   sites know that this is established"), two more ways in, both optional:
+ *   - data-autofill-url="/backoffice/login/passkey/autofill-options" on the
+ *     block and autocomplete="username webauthn" on the e-mail field: as the
+ *     page opens the browser is asked with mediation "conditional", so it
+ *     lists a saved passkey in the field's autofill (one tap and Touch ID).
+ *     The waiting request is renewed every four minutes, before its
+ *     five-minute challenge expires, and cancelled before the button asks,
+ *     since a browser refuses a second request while one is open.
+ *   - "Log in" with the password left empty, in the form that holds that
+ *     e-mail field, asks for the passkey in place of sending the form.
+ *
  * Both blocks start `hidden` and are shown only when the browser can do
  * passkeys at all, so nobody is offered a button that cannot work. The server
  * answers every POST with JSON: options, {"ok": true}, {"redirect": url} or
@@ -157,12 +169,100 @@
     });
   }
 
+  var RENEW_MS = 4 * 60 * 1000;
+
+  function wireLogin(box) {
+    var start = box.querySelector('[data-passkey-start]');
+    var status = box.querySelector('[data-passkey-status]');
+    var csrf = box.getAttribute('data-csrf') || '';
+    var field = document.querySelector('input[autocomplete~="webauthn"]');
+    var form = field && field.form;
+    var waiting = null;      // the AbortController of the autofill request
+    var renew = null;
+    var reoffers = 2;        // after a refused passkey; never a loop of requests
+    box.hidden = false;
+
+    function say(msg) { if (status) status.textContent = msg; }
+
+    function signIn(cred) {
+      return post(box.getAttribute('data-submit-url'),
+                  { csrf_token: csrf, credential: credentialJSON(cred) })
+        .then(function (data) { if (data.redirect) window.location.assign(data.redirect); });
+    }
+
+    function stopWaiting() {
+      if (renew) { clearTimeout(renew); renew = null; }
+      if (waiting) { waiting.abort(); waiting = null; }
+    }
+
+    function offerInAutofill() {
+      var url = box.getAttribute('data-autofill-url');
+      if (!url || !field || !PublicKeyCredential.isConditionalMediationAvailable) return;
+      PublicKeyCredential.isConditionalMediationAvailable().then(function (available) {
+        if (!available) return;
+        stopWaiting();
+        var ctrl = new AbortController();
+        var picked = false;
+        waiting = ctrl;
+        renew = setTimeout(offerInAutofill, RENEW_MS);
+        post(url, { csrf_token: csrf })
+          .then(function (options) {
+            if (ctrl.signal.aborted) return null;
+            return navigator.credentials.get({
+              publicKey: requestOptions(options), mediation: 'conditional', signal: ctrl.signal
+            });
+          })
+          .then(function (cred) {
+            if (!cred || ctrl.signal.aborted) return null;
+            picked = true;
+            stopWaiting();
+            say('Signing in…');
+            return signIn(cred);
+          })
+          .catch(function (err) {
+            if (!picked) return;     // renewed, cancelled, or no autofill here
+            say(friendly(err));      // a passkey was picked and refused
+            if (reoffers-- > 0) offerInAutofill();
+          });
+      }).catch(function () { /* no autofill offer; the button remains */ });
+    }
+
+    function askForPasskey(afterFailure) {
+      stopWaiting();
+      if (start) start.disabled = true;
+      say('Waiting for your passkey…');
+      post(box.getAttribute('data-options-url'), { csrf_token: csrf })
+        .then(function (options) {
+          return navigator.credentials.get({ publicKey: requestOptions(options) });
+        })
+        .then(signIn)
+        .catch(function (err) {
+          say(afterFailure || friendly(err));
+          if (start) start.disabled = false;
+          offerInAutofill();
+        });
+    }
+
+    if (start) start.addEventListener('click', function () { askForPasskey(); });
+
+    if (form) {
+      var password = form.querySelector('input[type="password"]');
+      form.addEventListener('submit', function (e) {
+        if (!password || password.value) return;      // a password: send the form
+        e.preventDefault();
+        askForPasskey('No passkey was used. Type your password, or try your passkey again.');
+      });
+    }
+
+    offerInAutofill();
+  }
+
   function init() {
     if (!window.PublicKeyCredential || !navigator.credentials) return;  // stay hidden
     var reg = document.querySelectorAll('[data-passkey-register]');
     for (var i = 0; i < reg.length; i++) wire(reg[i], 'register');
     var login = document.querySelectorAll('[data-passkey-login]');
-    for (var j = 0; j < login.length; j++) wire(login[j], 'login');
+    for (var j = 0; j < login.length; j++) wireLogin(login[j]);
   }
 
   if (document.readyState === 'loading') {
