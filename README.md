@@ -56,6 +56,7 @@ imports. One version, everywhere, or the deploy stops.
 | `demographics` | the fleet's one scheme for the questions about you: six age bands, five gender options, the country answer and its hint; reads every value a tool stored before (14 October 2026) |
 | `exports` | spreadsheet formula-injection escaping (`csv_safe`) |
 | `retention_heartbeat` | last-successful-run heartbeat for the retention workers |
+| `scheduler` | the background clock: periodic jobs in one daemon thread per process, off under the boot check and the tools' skip switches |
 | `emails` | branded transactional-email building |
 | `mail_diagnostics` | the live sample-mail run (`scripts/send_test_emails.py`): where sample mail may go, and whether to send at all. Was `testing.mail_harness` (still importable) |
 
