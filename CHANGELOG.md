@@ -5,6 +5,17 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## Unreleased
+
+- **`countries`: one country list for the fleet (FL-098 point 5).** The 193 UN
+  member states with ISO alpha-2, alpha-3 and numeric codes, English and
+  German names, the 7-region roll-up and the UN M49 sub-region, plus "Other /
+  not listed". `options()` builds a select storing alpha-2, alpha-3 or the
+  English name; `lookup()` reads every spelling a tool has stored (including
+  non-member entries kept for old answers); `region_of()` and
+  `subregion_of()` group answers. No pycountry: the data is in the module.
+  Library only; no tool uses it yet.
+
 ## 1.85.0 — 2026-10-12
 
 - **`emails.send_password_reset` returns whether it sent (FL-096 (d)).** True

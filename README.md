@@ -51,6 +51,7 @@ imports. One version, everywhere, or the deploy stops.
 | `participant` | one participant identity, resume and withdrawal mechanism |
 | `joincode` | collision-checked, unambiguous join codes |
 | `kanon` | k-anonymity display decisions — demographic-only suppression |
+| `countries` | the 193 UN member states plus Other: codes, English and German names, regions; reads every spelling a tool has stored |
 | `exports` | spreadsheet formula-injection escaping (`csv_safe`) |
 | `retention_heartbeat` | last-successful-run heartbeat for the retention workers |
 | `emails` | branded transactional-email building |
