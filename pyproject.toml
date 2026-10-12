@@ -32,6 +32,9 @@ web = [
     "fastapi>=0.110",
     "starlette>=0.36",
     "jinja2>=3.1",
+    # `translations` (FL-098 point 7) builds the template translator on
+    # markupsafe.Markup. Jinja2 brings it; named because the module imports it.
+    "markupsafe>=2.1",
     # `passkeys` (FL-065, 2 October 2026): the WebAuthn verification is
     # py_webauthn's, which brings cryptography and cbor2 with it.
     "webauthn>=3.0.1",
