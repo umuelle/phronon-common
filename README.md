@@ -27,6 +27,7 @@ imports. One version, everywhere, or the deploy stops.
 | `rate_limit` | in-app sliding-window rate limiting |
 | `security_headers` | `SecurityHeadersMiddleware` (the `csp=` argument is required) |
 | `routing` | `answer_head`: read-only GET routes answer HEAD (link scanners), writing GETs never do |
+| `translations` | the `i18n/<lang>.json` loader and `t()`: English fallback per string, escaped values in templates |
 | `sessions` | instantly revocable admin sessions (`session_epoch`) |
 | `signing` | signed-cookie helpers (itsdangerous) |
 
