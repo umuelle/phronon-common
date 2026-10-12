@@ -13,7 +13,8 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
   not listed". `options()` builds a select storing alpha-2, alpha-3 or the
   English name; `lookup()` reads every spelling a tool has stored (including
   non-member entries kept for old answers); `region_of()` and
-  `subregion_of()` group answers. No pycountry: the data is in the module.
+  `subregion_of()` group answers; `stored_names(region)` lists every stored
+  spelling in a region, for PP's SQL filter. No pycountry: the data is in the module.
   Library only; no tool uses it yet.
 
 ## 1.85.0 — 2026-10-12

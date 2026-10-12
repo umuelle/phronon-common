@@ -155,3 +155,13 @@ def test_the_module_needs_nothing_outside_the_standard_library():
         "phronon_common", "__main__", "_distutils_hack", "_virtualenv"}
     assert {r for r in extra if not r.startswith("__editable__")} == set()
     assert "pycountry" not in roots
+
+
+def test_stored_names_expand_a_region_for_a_filter_over_stored_names():
+    europe = C.stored_names("Europe")
+    assert {"Germany", "Czech Republic", "Czechia", "Kosovo", "Russian Federation"} <= set(europe)
+    assert "Turkey" not in europe and "Taiwan" not in europe
+    every = [n for r in C.REGIONS for n in C.stored_names(r)]
+    assert len(every) == len(set(every))                 # each spelling in one region
+    assert all(C.region_of(n) == r for r in C.REGIONS for n in C.stored_names(r))
+    assert C.OTHER_LABEL in C.stored_names("Other") and "Antarctica" in C.stored_names("Other")

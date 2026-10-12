@@ -425,16 +425,20 @@ def _build_indexes():
                 codes[code] = c
         add_name(c.name, c)
         add_name(c.name_de, c)
+    # The English spellings a name column may hold, for stored_names().
+    spellings = [(c.name, c) for c in MEMBERS + NON_MEMBERS]
     for a2, aliases in _ALIASES.items():
         for label in aliases:
             add_name(label, codes[a2])
+            spellings.append((label, codes[a2]))
     for row in _NON_MEMBERS:
         for label in row[5]:
             add_name(label, codes[row[0]])
-    return codes, names
+            spellings.append((label, codes[row[0]]))
+    return codes, names, spellings
 
 
-_BY_CODE, _BY_NAME = _build_indexes()
+_BY_CODE, _BY_NAME, _SPELLINGS = _build_indexes()
 
 
 def lookup(value) -> Optional[Country]:
@@ -502,6 +506,19 @@ def subregion_of(value, *, merge_pacific: bool = False,
     if merge_pacific and found.subregion in _PACIFIC:
         return PACIFIC_ISLANDS
     return found.subregion
+
+
+def stored_names(region: str) -> list:
+    """Every spelling a name-storing tool may hold for ``region``, sorted.
+
+    For a SQL ``IN (...)`` over a column that stores names: PP's class
+    filter expands a region to the names in it. Old spellings and non-member
+    entries are included, and "Other / not listed" for the region "Other",
+    as PP's map did."""
+    names = {label for label, c in _SPELLINGS if c.region == region}
+    if region == "Other":
+        names.add(OTHER_LABEL)
+    return sorted(names)
 
 
 _VALUE_FIELDS = ("alpha2", "alpha3", "name")
