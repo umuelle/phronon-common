@@ -5,6 +5,16 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## Unreleased (for 1.85.0)
+
+- **`emails.send_password_reset` returns whether it sent (FL-096 (d)).** True
+  once the mail went to the server, False when SMTP is not configured (nothing
+  sent; the link logged or withheld as before). It returned None either way,
+  so an admin's "send reset link" reported success on a box without
+  SMTP_PASSWORD. A failed send still raises. Backward compatible: a caller that
+  ignores the value behaves as before; the eight tools' admin routes treat
+  `False` as "could not be sent".
+
 ## 1.84.0 — 2026-10-11
 
 Front-end assets only; no Python changes. The owner's password manager

@@ -159,8 +159,16 @@ def build_password_reset_message(tool_name: str, sender: str, to_email: str,
 
 
 def send_password_reset(tool_name: str, default_from: str, to_email: str,
-                        reset_url: str, subject_prefix: str = "") -> None:
-    """Send the branded reset email. No-op (logs the link) if SMTP unconfigured."""
+                        reset_url: str, subject_prefix: str = "") -> bool:
+    """Send the branded reset email. True when it went to the mail server.
+
+    False when SMTP is not configured: nothing is sent and the link is logged
+    or withheld as below. Until 12 October 2026 this returned None either way,
+    so an admin's "send reset link" button said "Reset link sent." on a box
+    with no SMTP_PASSWORD (TO DO FL-096 (d)). A refused or failed send still
+    raises, as before. Callers that must not reveal whether an account exists
+    (the self-service request) ignore the value.
+    """
     hours = os.getenv("RESET_TOKEN_HOURS", "2")
     if not os.getenv("SMTP_PASSWORD"):
         # A reset URL is a live credential and an address is personal data, so
@@ -191,11 +199,12 @@ def send_password_reset(tool_name: str, default_from: str, to_email: str,
                 "SMTP not configured — password reset for %s was not sent. Set "
                 "LOG_RESET_LINKS=1 to log the link while developing.", where,
             )
-        return
+        return False
     sender = _sender_address(default_from)
     msg = build_password_reset_message(tool_name, sender, to_email, reset_url,
                                        hours, subject_prefix)
     _smtp_send(sender, to_email, msg)
+    return True
 
 
 # ── transport, shared by every sender below ─────────────────────────────────
