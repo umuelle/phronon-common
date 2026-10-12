@@ -27,6 +27,14 @@
  *                            grid, better, worse, surface}
  *   has(v), fmt(v), tag(name, attrs, text)
  *   drawRows(host, rows, opts)   the row renderer, documented below
+ *   drawDotRows, drawShares, drawBars, drawScatter, drawLine,
+ *   drawGroupedBars, drawRadar, drawStackedBars, drawPie, legendRow,
+ *   dataTable                    the other forms, each documented above
+ *                                its own function
+ *   chartPng, exportChartPng, tableCsv, zipBlob, exportChartsZip,
+ *   saveBlob, exportName         export: a chart as PNG, a table as CSV,
+ *                                several as one ZIP (FL-098 point 8),
+ *                                documented above the export section
  */
 (function () {
   var NS = 'http://www.w3.org/2000/svg';
@@ -1992,6 +2000,424 @@
     host.appendChild(svg);
   }
 
+  /* ── Export: a chart as a PNG, a table as a CSV, several as one ZIP ─────
+   * FL-098 point 8 (12 October 2026). Before this, five tools each carried
+   * their own SVG-to-PNG routine (Drawbridge, Inequality, Layoff twice,
+   * Whiteout twice, plus the share card's), and Layoff and Whiteout each
+   * built a chart ZIP with JSZip. They agreed on the method and disagreed
+   * on the details. This is the strictest of each, once:
+   *
+   *   * The <svg> is serialised and drawn through an <img>, never through
+   *     html2canvas, which rasterises SVG text unreliably (all five agree).
+   *   * Size comes from the viewBox, so a chart in a hidden tab exports at
+   *     its real size; the page's layout is never needed. Layoff and
+   *     Whiteout reveal every hidden panel before a ZIP for html2canvas's
+   *     sake. Engine charts need no such thing.
+   *   * The SVG travels as a UTF-8 base64 data: URL (Whiteout's encoding:
+   *     ▲, ▼, − and typographic quotes survive). data:, never blob:, because
+   *     Drawbridge, Inequality, Whiteout and the hub allow `img-src 'self'
+   *     data:` without blob:. No inline script, no eval: CSP-safe in all nine.
+   *   * White under everything, twice: on the canvas and on the SVG's own
+   *     root. A transparent PNG turns black in most PDF viewers and in dark
+   *     slide themes (Whiteout found this, 3 August 2026).
+   *   * Scale: devicePixelRatio, never below 2 (every tool used 2 for
+   *     projectors and slide decks), capped at 4 so a phone cannot produce
+   *     a 40-megapixel file.
+   *   * Fonts: the engine paints with presentation attributes and the system
+   *     font stack it writes on every <svg>, and no tool's stylesheet reaches
+   *     inside a chart (checked 12 October 2026), so the attributes ARE what
+   *     the screen shows. An image cannot load web fonts; the system stack
+   *     needs none, so nothing is embedded and `font-src` is never involved.
+   *   * An optional title and subtitle are painted above the chart (Layoff's
+   *     layout): a chart on its own does not say what it measures.
+   *   * Tables travel as numbers, not pictures (Whiteout): UTF-8 with a BOM
+   *     so Excel keeps umlauts and the real minus sign, CRLF, quoted cells,
+   *     and formula cells neutralised exactly as phronon_common.exports.
+   *     csv_safe does (audit G2).
+   *   * The ZIP is written here, uncompressed, so no tool needs JSZip for
+   *     it. PNGs are compressed already; DEFLATE saved nothing worth a
+   *     100 KB library. An item that fails rejects the whole archive, and
+   *     an archive with nothing in it is an error: Layoff's "Download all"
+   *     delivered a 22-byte empty ZIP for two months with every gate green.
+   *
+   * API (all on window.PhrononCharts, all return Promises):
+   *   chartPng(svgOrHost, opts)        -> Blob (image/png); no download
+   *   exportChartPng(svgOrHost, opts)  -> Blob, and saves it as
+   *                                       opts.filename (default: the chart's
+   *                                       aria-label, slugged, + '.png')
+   *     opts: scale, background ('#ffffff'), title, subtitle, filename
+   *   tableCsv(tableOrHost)            -> string (synchronous)
+   *   zipBlob(files)                   -> Blob (application/zip);
+   *                                       files: [{name, data}] where data
+   *                                       is a Blob, string or Uint8Array
+   *   exportChartsZip(source, opts)    -> Blob, and saves it as
+   *                                       opts.filename (default charts.zip)
+   *     source: an element (every chart <svg> inside becomes NN_name.png,
+   *       every <table> NN_name.csv, in page order; anything inside
+   *       .print-hide or [data-no-export] is left out; opts.tables=false
+   *       skips the tables) OR a list of items, each with a `name` and one
+   *       of: svg (an <svg> or its host; title/subtitle allowed), table,
+   *       blob (a Blob, or a function returning a Promise of one: a tool's
+   *       own html2canvas capture goes here), text.
+   *     opts: filename, scale, background, tables, onProgress(done, total),
+   *       download (false = only resolve the Blob; for tests and callers
+   *       that post the file somewhere else)
+   *   saveBlob(blob, filename), exportName(text, fallback)
+   */
+  var FONT = 'system-ui,-apple-system,"Segoe UI",sans-serif';
+  var EXPORT_BG = '#ffffff';
+
+  function exportScale(s) {
+    if (s) return s;
+    var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+    return Math.min(4, Math.max(2, dpr));
+  }
+
+  function chartSvg(target) {
+    if (!target) return null;
+    if (target.namespaceURI === NS && target.tagName.toLowerCase() === 'svg') return target;
+    return target.querySelector ? target.querySelector('svg') : null;
+  }
+
+  /* The viewBox first: it is the chart's own coordinate size and survives
+   * display:none. The on-screen box only for a hand-made SVG without one. */
+  function svgSize(svg) {
+    var box = svg.viewBox && svg.viewBox.baseVal;
+    if (box && box.width && box.height) return { w: box.width, h: box.height };
+    var r = svg.getBoundingClientRect();
+    return { w: Math.round(r.width || svg.clientWidth || 0),
+             h: Math.round(r.height || svg.clientHeight || 0) };
+  }
+
+  function utf8Base64(text) {
+    var bytes = new TextEncoder().encode(text), bin = '';
+    for (var i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+
+  function svgImageUrl(svg, size, background) {
+    var clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', NS);
+    // Explicit pixels: an SVG sized in percent has no intrinsic size, and an
+    // <img> built from one renders empty. The live chart's width:100% and
+    // min-width belong to a page; an image has none.
+    clone.setAttribute('width', size.w);
+    clone.setAttribute('height', size.h);
+    clone.style.width = size.w + 'px';
+    clone.style.height = size.h + 'px';
+    clone.style.minWidth = '0';
+    clone.style.maxWidth = 'none';
+    // A hand-made SVG inherits its font from the page; pin what it showed.
+    var family = '';
+    try { family = svg.isConnected ? getComputedStyle(svg).fontFamily : ''; } catch (e) { /* detached */ }
+    if (!clone.style.fontFamily) clone.style.fontFamily = family || FONT;
+    if (background) clone.style.background = background;
+    return 'data:image/svg+xml;base64,'
+      + utf8Base64(new XMLSerializer().serializeToString(clone));
+  }
+
+  function loadImage(url) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { reject(new Error('the chart could not be rasterised')); };
+      img.src = url;
+    });
+  }
+
+  /* Greedy word wrap to `width`, so a long title cannot run off the image. */
+  function wrapLines(ctx, text, width) {
+    var words = String(text).split(/\s+/), lines = [], line = '';
+    words.forEach(function (w) {
+      var test = line ? line + ' ' + w : w;
+      if (line && ctx.measureText(test).width > width) { lines.push(line); line = w; }
+      else line = test;
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function canvasBlob(canvas) {
+    return new Promise(function (resolve, reject) {
+      canvas.toBlob(function (b) {
+        if (b) resolve(b); else reject(new Error('the browser could not encode a PNG'));
+      }, 'image/png');
+    });
+  }
+
+  function chartPng(target, opts) {
+    opts = opts || {};
+    var svg = chartSvg(target);
+    if (!svg) return Promise.reject(new Error('no chart to export'));
+    var size = svgSize(svg);
+    if (!size.w || !size.h) return Promise.reject(new Error('the chart has no size'));
+    var k = exportScale(opts.scale);
+    var bg = opts.background === undefined ? EXPORT_BG : opts.background;
+    var C = palette();
+    return loadImage(svgImageUrl(svg, size, bg)).then(function (img) {
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      var titled = !!(opts.title || opts.subtitle);
+      var pad = titled ? 32 : 0;
+      var tLines = [], sLines = [], TL = 34, SL = 24;
+      if (titled) {
+        ctx.font = '700 26px ' + FONT;
+        tLines = opts.title ? wrapLines(ctx, opts.title, size.w) : [];
+        ctx.font = '400 17px ' + FONT;
+        sLines = opts.subtitle ? wrapLines(ctx, opts.subtitle, size.w) : [];
+      }
+      var head = titled ? tLines.length * TL + sLines.length * SL + 14 : 0;
+      var W = size.w + pad * 2, H = pad + head + size.h + pad;
+      canvas.width = Math.round(W * k);
+      canvas.height = Math.round(H * k);
+      ctx.scale(k, k);
+      if (bg) { ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H); }
+      if (titled) {
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = C.ink;
+        ctx.font = '700 26px ' + FONT;
+        var y = pad;
+        tLines.forEach(function (l) { ctx.fillText(l, pad, y); y += TL; });
+        ctx.fillStyle = C.muted;
+        ctx.font = '400 17px ' + FONT;
+        sLines.forEach(function (l) { ctx.fillText(l, pad, y); y += SL; });
+      }
+      ctx.drawImage(img, pad, pad + head, size.w, size.h);
+      return canvasBlob(canvas);
+    });
+  }
+
+  /* Safe on every OS: letters, digits, dot, dash, underscore. Accents are
+   * folded (ä -> a) rather than dropped, so a German title stays readable. */
+  function exportName(text, fallback) {
+    var t = String(text || '');
+    if (t.normalize) t = t.normalize('NFKD').replace(/[̀-ͯ]/g, '');
+    t = t.replace(/ß/g, 'ss').replace(/[^A-Za-z0-9._-]+/g, '-')
+      .replace(/-{2,}/g, '-').replace(/^[-.]+|[-.]+$/g, '').slice(0, 80);
+    return t || fallback || 'chart';
+  }
+
+  function withExt(name, ext) {
+    var n = exportName(name, 'chart');
+    return n.toLowerCase().slice(-ext.length) === ext ? n : n + ext;
+  }
+
+  function chartLabel(svg) {
+    var a = svg.getAttribute('aria-label') || '';
+    return a.toLowerCase();
+  }
+
+  function saveBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // Ten seconds, not one: Safari on a slow machine starts the download
+    // after the click handler returns, and a revoked URL saves nothing.
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  }
+
+  function exportChartPng(target, opts) {
+    opts = opts || {};
+    return chartPng(target, opts).then(function (blob) {
+      var svg = chartSvg(target);
+      var name = opts.filename || (svg && chartLabel(svg)) || 'chart';
+      if (opts.download !== false) saveBlob(blob, withExt(name, '.png'));
+      return blob;
+    });
+  }
+
+  /* ── Tables as CSV ── */
+  var CSV_QUOTE_NEEDED = /[",;\r\n]/;
+  var CSV_FORMULA = /^[=+\-@\t\r]/;
+  var CSV_NUMBER = /^[-+]?\d+(?:[.,]\d+)?%?$/;
+
+  function csvCell(v) {
+    v = String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+    // A cell Excel would run as a formula gets a leading quote (exports.
+    // csv_safe). A plain number is a number in the table it came from, and
+    // csv_safe passes numbers through, so -3 stays -3.
+    if (CSV_FORMULA.test(v) && !CSV_NUMBER.test(v)) v = "'" + v;
+    return CSV_QUOTE_NEEDED.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+
+  function tableCsv(target) {
+    var table = target && target.tagName === 'TABLE'
+      ? target : (target && target.querySelector ? target.querySelector('table') : null);
+    if (!table) throw new Error('no table to export');
+    var lines = [];
+    Array.prototype.forEach.call(table.rows, function (tr) {
+      var cells = Array.prototype.map.call(tr.cells, function (c) {
+        return csvCell(c.textContent);
+      });
+      if (cells.length) lines.push(cells.join(','));
+    });
+    return '﻿' + lines.join('\r\n') + '\r\n';
+  }
+
+  /* ── A ZIP without a library: STORE entries, UTF-8 names ── */
+  var CRC_TABLE = null;
+  function crc32(bytes) {
+    if (!CRC_TABLE) {
+      CRC_TABLE = [];
+      for (var n = 0; n < 256; n++) {
+        var c = n;
+        for (var b = 0; b < 8; b++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+        CRC_TABLE[n] = c >>> 0;
+      }
+    }
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) {
+      crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function toBytes(data) {
+    if (data instanceof Uint8Array) return Promise.resolve(data);
+    if (typeof data === 'string') return Promise.resolve(new TextEncoder().encode(data));
+    if (data && typeof data.arrayBuffer === 'function') {
+      return data.arrayBuffer().then(function (buf) { return new Uint8Array(buf); });
+    }
+    return Promise.reject(new Error('cannot put this in a ZIP'));
+  }
+
+  function zipBlob(files) {
+    return Promise.all(files.map(function (f) { return toBytes(f.data); }))
+      .then(function (all) {
+        var now = new Date();
+        var dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+        var dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+        var parts = [], central = [], offset = 0, enc = new TextEncoder();
+        function header(sig, len) {
+          var v = new DataView(new ArrayBuffer(len));
+          v.setUint32(0, sig, true);
+          return v;
+        }
+        files.forEach(function (f, i) {
+          var name = enc.encode(f.name), data = all[i], crc = crc32(data);
+          var h = header(0x04034b50, 30);
+          h.setUint16(4, 20, true);  h.setUint16(6, 0x0800, true);  // UTF-8 name
+          h.setUint16(8, 0, true);   h.setUint16(10, dosTime, true);
+          h.setUint16(12, dosDate, true); h.setUint32(14, crc, true);
+          h.setUint32(18, data.length, true); h.setUint32(22, data.length, true);
+          h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+          parts.push(h, name, data);
+          var c = header(0x02014b50, 46);
+          c.setUint16(4, 20, true);  c.setUint16(6, 20, true);
+          c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+          c.setUint16(12, dosTime, true); c.setUint16(14, dosDate, true);
+          c.setUint32(16, crc, true); c.setUint32(20, data.length, true);
+          c.setUint32(24, data.length, true); c.setUint16(28, name.length, true);
+          c.setUint32(42, offset, true);
+          central.push(c, name);
+          offset += 30 + name.length + data.length;
+        });
+        var cdSize = central.reduce(function (s, p) { return s + p.byteLength; }, 0);
+        var end = header(0x06054b50, 22);
+        end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+        end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+        return new Blob(parts.concat(central, [end]), { type: 'application/zip' });
+      });
+  }
+
+  function exportable(el) {
+    return !(el.closest && el.closest('.print-hide, [data-no-export]'));
+  }
+
+  /* The name a file in the archive takes: the nearest data-export-name, the
+   * chart's own aria-label, a table's caption or its <details> summary. */
+  function itemName(el, kind) {
+    var named = el.closest && el.closest('[data-export-name]');
+    if (named) return named.getAttribute('data-export-name');
+    if (kind === 'svg') return chartLabel(el);
+    if (el.caption) return el.caption.textContent.toLowerCase();
+    var det = el.closest && el.closest('details');
+    var sum = det && det.querySelector('summary');
+    return sum ? sum.textContent.toLowerCase() : 'table';
+  }
+
+  function itemsFrom(root, opts) {
+    var sel = opts.tables === false ? 'svg' : 'svg, table';
+    var seq = 0;
+    return Array.prototype.filter.call(root.querySelectorAll(sel), function (el) {
+      // Only an outermost <svg>: a chart, never an icon nested inside one.
+      if (el.tagName.toLowerCase() === 'svg' && el.parentNode.closest &&
+          el.parentNode.closest('svg')) return false;
+      return exportable(el);
+    }).map(function (el) {
+      var kind = el.tagName === 'TABLE' ? 'table' : 'svg';
+      var nn = String(++seq);
+      if (nn.length < 2) nn = '0' + nn;
+      var item = { name: nn + '_' + exportName(itemName(el, kind), kind === 'svg' ? 'chart' : 'table') };
+      item[kind] = el;
+      return item;
+    });
+  }
+
+  function exportChartsZip(source, opts) {
+    opts = opts || {};
+    var items = Array.isArray(source) ? source
+      : (source && source.querySelectorAll ? itemsFrom(source, opts) : []);
+    var files = [], taken = {}, done = 0;
+    function unique(name) {
+      var n = name, i = 2, dot = name.lastIndexOf('.');
+      if (dot <= 0) dot = name.length;
+      while (taken[n]) { n = name.slice(0, dot) + '-' + (i++) + name.slice(dot); }
+      taken[n] = true;
+      return n;
+    }
+    function progress() {
+      done += 1;
+      if (typeof opts.onProgress === 'function') opts.onProgress(done, items.length);
+    }
+    // One at a time on purpose: a dozen 2x canvases at once is the memory
+    // a phone does not have, and the progress count stays honest.
+    var chain = Promise.resolve();
+    items.forEach(function (it) {
+      chain = chain.then(function () {
+        var made;
+        if (it.svg) {
+          made = chartPng(it.svg, { scale: opts.scale, background: opts.background,
+                                    title: it.title, subtitle: it.subtitle })
+            .then(function (b) { return { ext: '.png', data: b }; });
+        } else if (it.table) {
+          made = Promise.resolve({ ext: '.csv', data: tableCsv(it.table) });
+        } else if (it.blob) {
+          made = Promise.resolve(typeof it.blob === 'function' ? it.blob() : it.blob)
+            .then(function (b) {
+              if (!b) throw new Error('nothing was made');
+              return { ext: '', data: b };
+            });
+        } else if (it.text !== undefined) {
+          made = Promise.resolve({ ext: '', data: String(it.text) });
+        } else {
+          made = Promise.reject(new Error('nothing to export'));
+        }
+        return made.then(function (r) {
+          var name = r.ext ? withExt(it.name || 'item', r.ext) : exportName(it.name, 'file');
+          files.push({ name: unique(name), data: r.data });
+          progress();
+        }, function (e) {
+          throw new Error('could not export ' + (it.name || 'an item') + ': '
+                          + (e && e.message ? e.message : e));
+        });
+      });
+    });
+    return chain.then(function () {
+      if (!files.length) throw new Error('there was nothing to put in the archive');
+      return zipBlob(files);
+    }).then(function (blob) {
+      if (opts.download !== false) saveBlob(blob, withExt(opts.filename || 'charts', '.zip'));
+      return blob;
+    });
+  }
+
   window.PhrononCharts = {
     palette: palette,
     has: has,
@@ -2010,5 +2436,12 @@
     drawPie: drawPie,
     legendRow: legendRow,
     dataTable: dataTable,
+    chartPng: chartPng,
+    exportChartPng: exportChartPng,
+    tableCsv: tableCsv,
+    zipBlob: zipBlob,
+    exportChartsZip: exportChartsZip,
+    saveBlob: saveBlob,
+    exportName: exportName,
   };
 })();

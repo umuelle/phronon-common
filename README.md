@@ -81,6 +81,16 @@ report's look (its cover, its sections) stays in the tool. Its methods are
 listed at the top of the file; `tests/test_pdf_report_browser.py` runs it in
 Chromium and WebKit under the fleet's strictest CSP.
 
+`svg-charts.js` also carries the fleet's one chart export (FL-098 point 8):
+`PhrononCharts.chartPng` / `exportChartPng` (a chart as a PNG on white, at
+the device's pixel ratio and never below 2x), `tableCsv` (a table as CSV with
+a BOM and formula cells neutralised as `exports.csv_safe` does) and
+`exportChartsZip` (charts, tables and a tool's own captures as one ZIP,
+written without JSZip). The method and the options are documented above the
+export section in the file. `tests/test_chart_export_browser.py` runs them in
+Chromium and WebKit under the fleet's strictest CSP; it needs Playwright, and
+on the Mac reuses the browser venv of `server-ops/browser_submit_check.py`.
+
 ### The test kit — `phronon_common.testing`
 
 Fleet invariants implemented once, as plain functions and mixins that raise
