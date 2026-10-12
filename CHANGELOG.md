@@ -5,7 +5,7 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
-## Unreleased (for 1.85.0)
+## 1.85.0 — 2026-10-12
 
 - **`emails.send_password_reset` returns whether it sent (FL-096 (d)).** True
   once the mail went to the server, False when SMTP is not configured (nothing
