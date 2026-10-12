@@ -32,7 +32,8 @@
  *   dataTable                    the other forms, each documented above
  *                                its own function
  *   chartPng, exportChartPng, tableCsv, zipBlob, exportChartsZip,
- *   saveBlob, exportName         export: a chart as PNG, a table as CSV,
+ *   blobDataUrl, saveBlob,
+ *   exportName                   export: a chart as PNG, a table as CSV,
  *                                several as one ZIP (FL-098 point 8),
  *                                documented above the export section
  */
@@ -2062,6 +2063,9 @@
    *     opts: filename, scale, background, tables, onProgress(done, total),
    *       download (false = only resolve the Blob; for tests and callers
    *       that post the file somewhere else)
+   *   blobDataUrl(blob)               -> 'data:image/png;base64,...', for
+   *                                       an <img> where CSP has no blob:,
+   *                                       and for jsPDF's addImage
    *   saveBlob(blob, filename), exportName(text, fallback)
    */
   var FONT = 'system-ui,-apple-system,"Segoe UI",sans-serif';
@@ -2220,6 +2224,18 @@
     // Ten seconds, not one: Safari on a slow machine starts the download
     // after the click handler returns, and a revoked URL saves nothing.
     setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  }
+
+  /* A Blob as a data: URL, for the two places a Blob cannot go: an <img>
+   * under a CSP without blob: in img-src (Drawbridge, Inequality, Whiteout,
+   * the hub), and jsPDF's addImage. */
+  function blobDataUrl(blob) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(r.result); };
+      r.onerror = function () { reject(new Error('the file could not be read')); };
+      r.readAsDataURL(blob);
+    });
   }
 
   function exportChartPng(target, opts) {
@@ -2442,6 +2458,7 @@
     zipBlob: zipBlob,
     exportChartsZip: exportChartsZip,
     saveBlob: saveBlob,
+    blobDataUrl: blobDataUrl,
     exportName: exportName,
   };
 })();

@@ -127,6 +127,8 @@ window.__probe = (async function () {
   out.plain = await pixels(plain);
   out.plain.type = plain.type;
   out.plainB64 = await b64(plain);
+  var dataUrl = await PC.blobDataUrl(plain);
+  out.dataUrlMatches = dataUrl === 'data:image/png;base64,' + out.plainB64;
   var auto = await PC.chartPng(document.getElementById('rows'));
   out.auto = await pixels(auto);
   var hidden = await PC.chartPng(document.getElementById('bars'), { scale: 2 });
@@ -276,6 +278,7 @@ def _check(report: dict) -> None:
         assert r["plain"]["corner"] == [255, 255, 255, 255], (key, r["plain"]["corner"])
         assert r["plain"]["inkShare"] > 0.01, (key, "the PNG has no chart in it")
         assert r["plain"]["bluePixels"] > 50, (key, "the result marks did not paint")
+        assert r["dataUrlMatches"] is True, (key, "blobDataUrl changed the bytes")
 
         # Default scale: devicePixelRatio, never below 2.
         k = max(2, min(4, r["dpr"]))
