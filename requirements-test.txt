@@ -56,4 +56,4 @@ webauthn==3.0.1
 # The DB-backed tests (passkey one-use rule, once() under real row locks) need
 # a real MySQL. CI provides one since 3 October 2026 and sets
 # PHRONON_REQUIRE_DB=1, so a missing connector FAILS there instead of skipping.
-mysql-connector-python==9.7.0
+mysql-connector-python==26.7.0
