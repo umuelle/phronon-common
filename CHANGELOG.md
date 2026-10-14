@@ -5,7 +5,7 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
-## Unreleased
+## 1.86.0 — 2026-10-14
 
 - **`countries`: one country list for the fleet (FL-098 point 5).** The 193 UN
   member states with ISO alpha-2, alpha-3 and numeric codes, English and
