@@ -16,6 +16,21 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
   `subregion_of()` group answers; `stored_names(region)` lists every stored
   spelling in a region, for PP's SQL filter. No pycountry: the data is in the module.
   Library only; no tool uses it yet.
+- **`demographics`: one scheme for the questions about you (owner, 14 October
+  2026).** Age in six bands (under 25, 25–34, 35–44, 45–54, 55–64, 65 or
+  older), gender in five options (woman, man, non-binary, another gender
+  identity, prefer not to say), English and German labels, the stored value
+  English in every language. `clean_age`, `clean_gender` and `clean_country`
+  read a submitted form; `canonical_age` and `canonical_gender` read what a
+  tool stored before (every spelling live on 14 October converts, except a
+  band of another scheme such as "20–29", which stays as stored);
+  `age_label` and `gender_label` show either. `clean_country` stores a
+  member state as the select offers it, the typed text behind "Other / not
+  listed", or "Other / not listed" when the box is left empty.
+- **`country-other.js`, a new shared master.** Shows the typed box behind
+  "Other / not listed" only while that choice is selected and empties it
+  when it hides. Replaces five tools' own copies as each adopts the scheme;
+  no tool carries it yet.
 
 ## 1.85.0 — 2026-10-12
 

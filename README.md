@@ -52,6 +52,7 @@ imports. One version, everywhere, or the deploy stops.
 | `joincode` | collision-checked, unambiguous join codes |
 | `kanon` | k-anonymity display decisions — demographic-only suppression |
 | `countries` | the 193 UN member states plus Other: codes, English and German names, regions; reads every spelling a tool has stored |
+| `demographics` | the fleet's one scheme for the questions about you: six age bands, five gender options, the country answer and its hint; reads every value a tool stored before (14 October 2026) |
 | `exports` | spreadsheet formula-injection escaping (`csv_safe`) |
 | `retention_heartbeat` | last-successful-run heartbeat for the retention workers |
 | `emails` | branded transactional-email building |

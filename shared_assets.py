@@ -43,6 +43,7 @@ ASSETS = {
     "users-password.js":       "static/js/users-password.js",
     "recovery-codes.js":       "static/js/recovery-codes.js",
     "passkeys.js":             "static/js/passkeys.js",
+    "country-other.js":        "static/js/country-other.js",
 }
 
 # WHY A TOOL CARRIES FEWER (the lists themselves are in each ops/tool.json).
@@ -65,6 +66,10 @@ ASSETS = {
 #     Tool-specific actions live in each tool's actions-local.js, and
 #     dashboard-table.js's per-tool setup in dashboard-table-local.js, so the
 #     masters stay byte-identical everywhere.
+#   * country-other.js (the box behind "Other / not listed", 14 October 2026):
+#     only the tools that ask a country, Drawbridge, Inequality, Layoff, Moral
+#     Mirror, Polarity Profiler and Whiteout; each adopts it with the shared
+#     scheme (demographics.py).
 
 
 def master_path(asset: str) -> Path:
