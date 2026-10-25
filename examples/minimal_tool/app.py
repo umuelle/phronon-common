@@ -15,8 +15,9 @@ What it shows, in order:
 
 The tool key comes from MINIMAL_TOOL_KEY. A real tool hard-codes its own key
 once it is registered; this example borrows a registered one only so the
-legal pages and Host list have an entry to read. server-ops/new_tool.py turns
-this file into a new tool's app.py (NEW-TOOL.md, step 1).
+Host list has an entry to read, and its legal_content/notice.json is that
+tool's notice as it stood in October 2026. server-ops/new_tool.py turns this
+file into a new tool's app.py (NEW-TOOL.md, step 1).
 """
 from __future__ import annotations
 
@@ -32,6 +33,7 @@ from phronon_common.assets import asset_url
 from phronon_common.csrf import CSRFMiddleware, CSRFProtection, get_csrf_token
 from phronon_common.hosts import trusted_hosts
 from phronon_common.legal import build_legal_router
+from phronon_common.legal_content import load_legal_config
 from phronon_common.rate_limit import is_allowed
 from phronon_common.registry import TOOLS
 from phronon_common.request_ip import client_ip
@@ -57,10 +59,12 @@ app.add_middleware(CSRFMiddleware, csrf_protection=csrf, session_cookie=None)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts(TOOL_KEY))
 
 # 3. legal pages ──────────────────────────────────────────────────────────────
-# A real tool passes its OWN content (since v1.69.0): legal_content/notice.json,
-# loaded once with phronon_common.legal_content.load_legal_config and handed
-# over as config=. The example borrows a registered tool's frozen entry instead.
-app.include_router(build_legal_router(TOOL_KEY))
+# This tool's OWN notice (phronon_common v1.69.0), loaded once at start: a
+# broken file stops the start. NOTICE_VERSION is what an acknowledgement records.
+# The example ships the notice of the registered tool it borrows its key from.
+LEGAL = load_legal_config(TOOL_KEY, BASE_DIR / "legal_content" / "notice.json")
+NOTICE_VERSION = LEGAL["notice_version"]
+app.include_router(build_legal_router(TOOL_KEY, config=LEGAL))
 
 # 4. assets ───────────────────────────────────────────────────────────────────
 asset = asset_url(BASE_DIR)                    # in Jinja: templates.env.globals["asset"] = asset

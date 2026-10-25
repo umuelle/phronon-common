@@ -1,0 +1,51 @@
+{
+ "schema_version": 1,
+ "tool_key": "phronon",
+ "domain": "phronon.org",
+ "tool_name": "Phronon",
+ "languages": [
+  "en"
+ ],
+ "art9": false,
+ "is_hub": true,
+ "notice_version": "2026-09",
+ "last_updated": "2026-10-02",
+ "purpose": {
+  "en": "phronon.org is the umbrella site for the Phronon online tools. Each tool runs on its own domain and carries its own legal pages covering the participant data it processes; this site collects no participant data itself."
+ },
+ "collect": {
+  "en": "\n<ul>\n  <li><strong>Server log files</strong> — see the server-log section below; nothing beyond it.</li>\n  <li><strong>E-mail contact</strong> — if you write to us, the details you provide are stored to handle your enquiry and are not passed on.</li>\n  <li><strong>Administrator credentials</strong> — for the private administration area; the password is stored only as a bcrypt hash.</li>\n  <li><strong>Passkeys</strong> — only if an administrator adds one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>\n</ul>\n<ul>\n  <li><strong>Fleet overview (administration area only)</strong> — when a signed-in administrator opens the overview, this site queries each tool over the server's own loopback interface and displays that tool's session titles, session codes, the <strong>educator e-mail address</strong> that owns each one, its status, response count and last activity. This data is read live and shown on screen; the hub does not store it.</li>\n</ul>\n<p>This umbrella site does not collect questionnaire responses or participant\ndemographics — that processing happens inside the individual tools, each of\nwhich has its own privacy notice describing it.</p>"
+ },
+ "basis": {
+  "en": "\n<ul>\n  <li><strong>Operating and securing the site, answering enquiries</strong> — Art. 6(1)(f) GDPR, our legitimate interest in providing and securing the service.</li>\n  <li><strong>The fleet overview</strong> — Art. 6(1)(f) GDPR, our legitimate interest in operating the nine tools as one service: seeing which sessions are running, and where, is what makes support and capacity planning possible.</li>\n  <li><strong>Administrator accounts</strong> — Art. 6(1)(b) GDPR.</li>\n</ul>"
+ },
+ "access": {
+  "en": "<p>Only the administrator has access to the administration\narea, including the fleet overview described above. No participant responses\nare shown there — session titles, session codes, counts and the owning educator's\ne-mail address are.</p>"
+ },
+ "retention": {
+  "en": "\n<ul>\n  <li><strong>Server logs</strong> — rotated and deleted per the server-log section below.</li>\n  <li><strong>E-mail correspondence</strong> — kept as long as needed to handle the enquiry.</li>\n</ul>"
+ },
+ "erasure": {
+  "en": "<p>Write to us; correspondence and any stored contact details\nare deleted on request.</p>"
+ },
+ "provision": {
+  "en": "<p>Providing data is neither a statutory nor a contractual\nrequirement; the public pages can be read without providing any data at all.</p>"
+ },
+ "provenance": {
+  "en": "<p>The Phronon name, wordmark, logo and the tools\nlinked from this site are original works.</p>"
+ },
+ "cookies": [
+  [
+   "session",
+   "Set only inside the private administration area to keep an administrator signed in (signed, HTTP-only). Not used on public pages.",
+   "3 hours",
+   "backoffice"
+  ],
+  [
+   "passkey_challenge",
+   "Set only while an administrator adds a passkey or signs in with one: a signed, HTTP-only one-time challenge for the device to sign. Deleted as soon as it has been used.",
+   "5 minutes",
+   "backoffice"
+  ]
+ ]
+}

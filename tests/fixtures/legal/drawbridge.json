@@ -1,0 +1,80 @@
+{
+ "schema_version": 1,
+ "tool_key": "drawbridge",
+ "domain": "drawbridge-drama.org",
+ "tool_name": "Drawbridge Drama",
+ "languages": [
+  "en"
+ ],
+ "notice_version": "2026-10-03-db-comparison",
+ "last_updated": "2026-10-03",
+ "art9": true,
+ "purpose": {
+  "en": "The Drawbridge Drama presents a short illustrated narrative and asks participants to attribute responsibility, to support classroom discussion of moral judgment and framing effects."
+ },
+ "collect": {
+  "en": "\n<h3>From session participants</h3>\n<p>We do not ask for your name, e-mail address, phone number or any account.\nThe data we store is <strong>pseudonymous</strong>, per submission:</p>\n<ul>\n  <li><strong>Session code</strong> — attributes the response to the correct session; it is not linked to you personally.</li>\n  <li><strong>Story-path code</strong> — which version of the story flow was shown.</li>\n  <li><strong>Your responses</strong> — your responsibility attribution, certainty rating and optional follow-ups; a free-text explanation if you choose \"Other\". Your answers can reveal your moral views. The free-text box is the one field we cannot check for you: please do not type your name or anything that identifies you or another person, and we ask you not to on the page itself.</li>\n  <li><strong>Optional demographics</strong> — age bracket, gender, childhood country/region, prior familiarity. All optional.</li>\n  <li><strong>Submission timestamp.</strong></li>\n  <li><strong>A deletion code</strong> — shown to you once when you submit, and stored so that entering it later finds your response. It is the only thing that can, since no name or address is collected. Keep it if you might want your answers removed; we cannot re-send it.</li>\n  <li><strong>Your answer to the optional research question</strong>, with the date and the version of the wording you were shown — this is how we can demonstrate what you agreed to.</li>\n  <li><strong>Short one-way hashes of your participant cookie and browser identifier</strong> — checked before a response is accepted, so that one browser cannot submit twice. The original cookie and browser string are not retained in these fields, but the hashes can still single out the same browser; clearing your cookies gives you a fresh cookie, so this prevents accidental double submission rather than a determined one. Because such a key exists, the data is pseudonymous rather than anonymous.</li>\n</ul>\n<h3>From baseline (Prolific) participants</h3>\n<ul>\n  <li><strong>Prolific participant ID</strong> — a quasi-identifier used to deduplicate responses and to honour withdrawal via Prolific.</li>\n</ul>\n<h3>From educators and administrators</h3>\n<ul>\n  <li><strong>E-mail address, display name</strong> — for backoffice sign-in.</li>\n  <li><strong>Password</strong> — stored only as a bcrypt hash.</li>\n  <li><strong>Session data</strong> — names, codes and configuration of sessions you create.</li>\n  <li><strong>Passkeys</strong> — only if you add one: the public key and identifier your device created, the name you gave it, and when it was added and last used. Your fingerprint, face or device PIN never leave your device; we never see them.</li>\n</ul>"
+ },
+ "basis": {
+  "en": "\n<ul>\n  <li><strong>Running the study and aggregate visualisations</strong> — Art. 6(1)(f) GDPR, our legitimate interest in supporting the educational programme in which participants take part.</li>\n  <li><strong>Keeping a stripped research row after the session is erased</strong> — Art. 6(1)(a) GDPR, your separate, optional consent. The box is not pre-selected, declining changes nothing about the exercise, and you can withdraw at any time with your deletion code.</li>\n  <li><strong>Educator and administrator accounts</strong> — Art. 6(1)(b) GDPR.</li>\n  <li><strong>Security, rate-limiting and abuse prevention</strong> — Art. 6(1)(f) GDPR.</li>\n</ul>"
+ },
+ "access": {
+  "en": "\n<ul>\n  <li><strong>Educators</strong> see aggregate counts and the pseudonymous response-level data for their own sessions, plus aggregated comparison figures from the baseline sample. No stored field identifies a participant directly.</li>\n  <li><strong>The administrator</strong> has technical access for maintenance, backups and security only, and is the only role that can open or export the raw baseline (Prolific) sample.</li>\n</ul>"
+ },
+ "retention": {
+  "en": "\n<ul>\n  <li><strong>Session responses</strong> — erased automatically <strong>30 days</strong> after the session is closed, or 30 days after the last response if it is never closed. A session nobody ever joined is removed 90 days after it was created. Erasure removes the whole session: every response, the free-text answers, the optional demographics and the browser hashes. Educators are warned 14 days beforehand and may postpone up to three times by 30 days. The latest possible date is <strong>120 days after</strong> the session closed or the last response — 90 days beyond the original deletion date.</li>\n  <li><strong>If you tick the optional research box</strong> — one row of yours is kept after that date: the experimental story version and factor levels, your choice, certainty, optional closed-choice follow-up, and any demographics you gave. <strong>Your free-text explanation is never copied.</strong> The row has no session code or session name and no date finer than the half-year. It does carry a new random cohort key shared by people who answered in the same session, so co-membership can be analysed without retaining which session it was. Those rows are <strong>pseudonymous, not anonymous</strong>: the deletion code you were given still matches yours, which is exactly what lets you withdraw it. <strong>Kept rows are also used for one comparison that educators see.</strong> Next to the results of their own session, an educator can open “All previous responses”, which adds up the answers from all earlier sessions, including the rows kept after a deadline. It shows totals per choice and per story version. No single response is shown, and a breakdown by gender or age is hidden wherever the group is too small to keep a person out of view. If you do not tick it, nothing of yours survives the deadline.</li>\n  <li><strong>Baseline (Prolific) responses</strong> — a one-time benchmark sample, collected as research from the outset with consent given through Prolific and retained as part of that dataset. It is not on the session clock above. The Prolific ID is held only for deduplication and for withdrawal through Prolific.</li>\n  <li><strong>Educator accounts</strong> — retained until deactivated or deleted by an administrator.</li>\n</ul>"
+ },
+ "erasure": {
+  "en": "<p><strong>Use the deletion code you were shown when you\nsubmitted.</strong> Enter it at <a href=\"/withdraw\">/withdraw</a> and your\nresponse is erased immediately — before or after the 30-day deadline, and\nincluding the research row if you kept one. That code is the only thing that\nidentifies your response as yours: we store no name and no e-mail address, so\nwe cannot look it up for you, and we cannot send you another.</p>\n<p>If you did not keep it, we cannot identify which response is yours: the\nduplicate-prevention hashes are not exposed as a lookup code and sending us a\nmessage from the same browser does not transmit them. Baseline (Prolific)\nparticipants can request deletion via their Prolific ID.</p>"
+ },
+ "provision": {
+  "en": "<p>Providing data is neither a statutory nor a contractual\nrequirement. No identifying information is required at all; the demographic\nquestions are optional and skipping them has no consequence.</p>"
+ },
+ "provenance": {
+  "en": "<p>The Drawbridge Drama retells a public-domain classroom\nparable; the illustrated narrative, story-flow design, and site are original\nworks.</p>"
+ },
+ "cookies": [
+  [
+   "drawbridge_session",
+   "Signed, HTTP-only participant cookie holding a random identifier and nothing else. Which version of the story you were given, how far you had read and whether you had submitted are held on our server against that identifier.",
+   "8 hours",
+   "participants"
+  ],
+  [
+   "drawbridge_csrf",
+   "Protects the participant forms against cross-site request forgery (signed, HTTP-only). Separate from the cookie above so the deletion form still works later, when there is no pass left to carry it.",
+   "8 hours",
+   "participants"
+  ],
+  [
+   "drawbridge_admin",
+   "Keeps educators and administrators signed in (signed, HTTP-only).",
+   "6 hours (educators) / 3 hours (administrators)",
+   "backoffice"
+  ],
+  [
+   "bo_csrf",
+   "Protects backoffice forms against cross-site request forgery (signed, HTTP-only).",
+   "1 hour",
+   "backoffice"
+  ],
+  [
+   "bo_flash",
+   "Carries a one-off status message between two backoffice pages.",
+   "10 seconds",
+   "backoffice"
+  ],
+  [
+   "db_pending_totp / drawbridge_pending2fa",
+   "Carries the intermediate step of two-factor sign-in: the pending-login marker (5 minutes) and, while you are enrolling, the not-yet-confirmed TOTP secret (15 minutes).",
+   "5-15 minutes",
+   "backoffice"
+  ],
+  [
+   "passkey_challenge",
+   "Set only while you add a passkey or sign in with one: a signed, HTTP-only one-time challenge for your device to sign. Deleted as soon as it has been used.",
+   "5 minutes",
+   "backoffice"
+  ]
+ ]
+}

@@ -11,22 +11,22 @@ Two things are pinned here, and the second is the one that rots:
      hub's own role, which `twofactor.is_required` forgot for three weeks.
 
   2. Every backoffice row in every published cookie table names those same two
-     numbers. Nothing else connects the code to the notice: the numbers are
-     prose in a tuple, and a person changing the constant has no reason to open
-     `legal_conf.py`. `closing_audit.py` checks the same pairing from the other
-     end (published text against the `max_age` in the app) — this checks it
-     without needing the apps to be importable.
+     numbers. Since FL-079 (25 October 2026) that half runs in each tool's own
+     suite against the notice it publishes
+     (phronon_common.testing.legal_content,
+     `test_the_published_session_lifetimes_match_the_code`), and
+     `closing_audit.py` checks the same pairing from the other end (published
+     text against the `max_age` in the app).
 """
 from __future__ import annotations
 
-import re
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from phronon_common import legal_conf, signing  # noqa: E402
+from phronon_common import signing  # noqa: E402
 from phronon_common.sessions import (  # noqa: E402
     ADMIN_SESSION_MAX_AGE, EDUCATOR_SESSION_MAX_AGE, MAX_SESSION_AGE,
     is_privileged, max_age_for, session_age_ok,
@@ -134,56 +134,3 @@ def test_a_real_cookie_is_refused_at_three_hours_for_an_admin_and_six_for_an_edu
     assert accepted(4, "educator"), "an educator must survive 4 hours — the old fleet limit"
     assert accepted(5, "educator")
     assert not accepted(7, "educator"), "nobody survives past the 6-hour ceiling"
-
-
-# ── The published cookie tables ─────────────────────────────────────────────
-
-def _hours(text: str) -> set:
-    return {int(n) for n in re.findall(r"(\d+)\s*hours?", text)}
-
-
-def _backoffice_rows():
-    for key in legal_conf.TOOLS:
-        cfg = legal_conf.get_tool(key)
-        for name, _purpose, lifetime, audience in cfg["cookies"]:
-            if audience == "backoffice" and "signed in" in _purpose:
-                yield key, name, lifetime
-
-
-def test_every_tool_publishes_a_backoffice_session_row():
-    keys = {key for key, _n, _l in _backoffice_rows()}
-    assert keys == set(legal_conf.TOOLS), (
-        "a tool whose session row is missing publishes no lifetime at all: "
-        f"{set(legal_conf.TOOLS) - keys}"
-    )
-
-
-def test_published_lifetimes_match_the_constants():
-    expected_admin = ADMIN_SESSION_MAX_AGE // 3600
-    expected_educator = EDUCATOR_SESSION_MAX_AGE // 3600
-    for key, name, lifetime in _backoffice_rows():
-        published = _hours(lifetime)
-        assert published, f"{key}/{name}: no lifetime in hours published ({lifetime!r})"
-        if legal_conf.get_tool(key).get("is_hub"):
-            # The hub has no educators: every account on it is admin or owner,
-            # which is why two-factor is mandatory there.
-            assert published == {expected_admin}, f"{key}/{name}: {lifetime!r}"
-        else:
-            assert published == {expected_educator, expected_admin}, (
-                f"{key}/{name} publishes {sorted(published)} h — the code gives "
-                f"{expected_educator} h to educators and {expected_admin} h to "
-                f"admins, and the notice is what people are entitled to rely on"
-            )
-
-
-def test_the_published_row_says_who_each_number_applies_to():
-    """Two bare numbers in a cell would be worse than one wrong number."""
-    for key, name, lifetime in _backoffice_rows():
-        if legal_conf.get_tool(key).get("is_hub"):
-            continue
-        low = lifetime.lower()
-        assert "administrator" in low, f"{key}/{name}: {lifetime!r}"
-        # "educator", not "or facilitator": Whiteout published the odd word out
-        # until 19 August 2026 (owner), and accepting both here is how the two
-        # vocabularies stayed side by side in one fleet's legal pages.
-        assert "educator" in low, f"{key}/{name}: {lifetime!r}"

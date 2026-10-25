@@ -75,8 +75,8 @@ belongs in your tool.
    (retention, participant identity, audit wiring; TO DO FL-087). Until then
    keep both on the session branch, where the tool's own suite passes; its
    CI stays red on the identity test until the release. The notice lives in the tool,
-   `legal_content/notice.json` (since v1.69.0; `legal_conf.py` is frozen for
-   rollbacks and takes no new tool).
+   `legal_content/notice.json` (since v1.69.0; the old shared table in
+   `legal_conf.py` is gone since FL-079).
 3. **Accounts.** The scaffold signs in with `passwords`' rules, `lockout`,
    `sessions` (the epoch and the role-aware age) and `CookieSigner`, and it
    refuses an account with two-factor switched on. Before the first deploy

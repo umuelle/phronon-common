@@ -19,17 +19,18 @@ change is one deploy of that tool.
 
 What stays shared: the templates (`legal_templates/`, the operator,
 infrastructure and rights text, which no tool may restate), the router, this
-loader, and the fleet-wide defaults below. What moves: the per-tool entry,
-field for field as it was in `legal_conf.TOOLS`.
+loader, and the fleet-wide defaults below. What moved: the per-tool entry,
+field for field as it was in the old shared table.
 
 The file is trusted repository content (it carries reviewed HTML fragments),
 loaded ONCE at startup from an explicit path: no search, no network, no shared
 mutable state. Anything wrong with it stops the application from starting,
 which a deploy's boot check turns into a refused deploy.
 
-`legal_conf.TOOLS` stays, frozen, as the content of tools that have not
-migrated yet (and of earlier tool versions a rollback may restore). It is not
-an editing location for a migrated tool.
+The old shared table (`legal_conf.TOOLS`) stayed frozen for tool versions
+older than 4 October 2026, which a rollback might have restored, and went with
+FL-079 on 25 October 2026, together with `export_legacy_entry()`, the
+migration helper that turned one of its entries into a notice.json.
 """
 from __future__ import annotations
 
@@ -41,7 +42,10 @@ SCHEMA_VERSION = 1
 
 #: Fleet-wide facts, not per-tool content (the operator's infrastructure).
 FLEET_DEFAULTS = {
-    "log_retention_days": 14,   # nginx logrotate on the server; see legal_conf.py
+    # nginx logs to /var/log/nginx/access.log, logrotate daily, rotate 14
+    # (verified on the server 30 July 2026). If the rotation policy changes,
+    # change it there and here together.
+    "log_retention_days": 14,
 }
 
 LANGUAGES = {"en", "de"}
@@ -167,20 +171,3 @@ def load_legal_config(tool_key: str, path) -> dict:
     if problems:
         raise LegalConfigError(f"{tool_key}: {path}:\n  - " + "\n  - ".join(problems))
     return finish(raw)
-
-
-def export_legacy_entry(tool_key: str) -> dict:
-    """One `legal_conf.TOOLS` entry as the content of a tool's notice.json:
-    the migration (4 October 2026) and its parity check use it. Explicit
-    notice_version and last_updated; nothing the templates read changes."""
-    from . import legal_conf
-    entry = copy.deepcopy(legal_conf.TOOLS[tool_key])
-    entry.setdefault("notice_version", legal_conf.NOTICE_VERSION)
-    entry.setdefault("last_updated", legal_conf.LAST_UPDATED)
-    for k in ("cookies", "cookies_de"):
-        if k in entry:
-            entry[k] = [list(r) for r in entry[k]]
-    entry.pop("key", None)
-    out = {"schema_version": SCHEMA_VERSION, "tool_key": tool_key}
-    out.update(entry)
-    return out

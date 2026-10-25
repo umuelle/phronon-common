@@ -1,8 +1,13 @@
-"""Render every legal document for every tool and enforce the
+"""Render every legal document from the shared templates and enforce the
 anti-regression register (phronon-legal-blueprint.md, Part 6).
 
 This is the build-time half of the guard; server-ops/legal_check.py asserts
-the same things against the live sites after deploy.
+the same things against the live sites after deploy. Each tool runs the same
+checks against its own published notice.json
+(phronon_common.testing.legal_content); here the templates are rendered with
+three example files in tests/fixtures/legal/ (an English-only tool, a
+bilingual one and the hub), so a template change is caught in this package
+before any tool sees it.
 """
 from __future__ import annotations
 
@@ -15,7 +20,19 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from phronon_common.legal import render_legal  # noqa: E402
-from phronon_common.legal_conf import TOOLS, get_tool  # noqa: E402
+from phronon_common.legal_content import load_legal_config  # noqa: E402
+
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "legal"
+TOOLS = ("drawbridge", "whiteout", "phronon")
+GERMAN = "whiteout"
+
+
+def get_tool(key: str) -> dict:
+    return load_legal_config(key, FIXTURES / f"{key}.json")
+
+
+def _render(key: str, doc: str, lang: str = "en") -> str:
+    return render_legal(key, doc, lang, config=get_tool(key))
 
 DOCS = ["impressum", "legal_notice", "privacy", "cookies", "terms", "index"]
 
@@ -47,7 +64,7 @@ def _pages():
 
 @pytest.mark.parametrize("key,doc,lang", list(_pages()))
 def test_renders_clean(key, doc, lang):
-    html = render_legal(key, doc, lang)
+    html = _render(key, doc, lang)
     assert html.strip(), f"{key}/{doc}/{lang} rendered empty"
     for pat, why in FORBIDDEN:
         m = re.search(pat, html)
@@ -56,7 +73,7 @@ def test_renders_clean(key, doc, lang):
 
 @pytest.mark.parametrize("key", list(TOOLS))
 def test_impressum_is_german_and_complete(key):
-    html = render_legal(key, "impressum", "de")
+    html = _render(key, "impressum", "de")
     assert 'lang="de"' in html
     assert "§ 5 DDG" in html
     assert "Urs Müller" in html and "Gotenstr. 21" in html and "10829 Berlin" in html
@@ -67,25 +84,22 @@ def test_impressum_is_german_and_complete(key):
 
 @pytest.mark.parametrize("key", list(TOOLS))
 def test_privacy_art13_essentials(key):
-    html = render_legal(key, "privacy", "en")
+    html = _render(key, "privacy", "en")
     for needle in ("Art. 4(7) GDPR", "IONOS SE", "outside the EU/EEA",
                    "Berliner Beauftragte", "Alt-Moabit 59",
                    "Your right to object", "Art. 12(3) GDPR", "Art. 22 GDPR"):
         assert needle in html, f"{key}: privacy notice lacks {needle!r}"
 
 
-# The old fleet key until the Polarity Profiler rename (PP-004) retired it from
-# TOOLS and left this parametrization pointing at nothing — a KeyError, so the
-# whole shared suite was red and therefore gating nothing.
-@pytest.mark.parametrize("key", ["polarity", "whiteout", "layoff"])
-def test_german_ui_tools_have_german_notice(key):
+def test_german_ui_tools_have_german_notice():
     # Part 1.2a: a tool that addresses users in German owes them the notice
     # in German. Adding "de" to a tool's languages without German prose must
     # fail loudly (StrictUndefined/KeyError), never render half-English.
-    html = render_legal(key, "privacy", "de")
+    key = GERMAN
+    html = _render(key, "privacy", "de")
     assert "Datenschutzerklärung" in html
     assert "DSGVO" in html
-    html = render_legal(key, "cookies", "de")
+    html = _render(key, "cookies", "de")
     assert "§ 25 Abs. 2 Nr. 2 TDDDG" in html
 
 
@@ -98,11 +112,11 @@ def test_cookie_tables_have_rows():
 
 
 def test_shared_blocks_render_identically():
-    # The recipients paragraph must be byte-identical on all nine once the
+    # The recipients paragraph must be byte-identical in every example once the
     # per-tool e-mail is normalised out — it lives in exactly one partial.
     variants = set()
     for key in TOOLS:
-        html = render_legal(key, "privacy", "en")
+        html = _render(key, "privacy", "en")
         m = re.search(r"We use no third parties for advertising.*?no participant data and no\s*content\.",
                       html, re.S)
         assert m, (
