@@ -1552,6 +1552,70 @@ def test_the_gate_opens_exact_paths_and_paths_below_them_only():
         assert not opens(path, open_paths), path
 
 
+# ── the request reaches the cookie helpers (FL-090 (c), 25 October 2026) ────
+
+def test_a_tool_that_asks_gets_the_request_in_every_cookie_helper(world):
+    """Controversy Generator and Polarity Profiler decide the Secure flag per
+    request. With `cookie_setters_take_request` the kit hands each helper the
+    request it is answering, so neither needs its own bridge any more."""
+    seen = []
+    holder = {}
+
+    def secure(request):
+        seen.append(("secure", request.url.path))
+        return request.url.scheme == "https"
+
+    def set_pending(resp, aid, request):
+        seen.append(("pending", request.url.path))
+        resp.set_cookie("kit_pending", str(aid), secure=secure(request))
+
+    def set_session(resp, aid, request):
+        seen.append(("session", request.url.path))
+        resp.set_cookie("kit_session", f"{aid}:{holder['w'].row(aid)['session_epoch']}",
+                        secure=secure(request))
+
+    def set_enrolment(resp, secret, request):
+        seen.append(("enrolment", request.url.path))
+        resp.set_cookie("kit_pending_totp", secret, max_age=900, secure=secure(request))
+
+    w = holder["w"] = world(cookie_setters_take_request=True, secure_cookies=secure,
+                            set_pending_cookie=set_pending, set_session_cookie=set_session,
+                            set_enrolment_cookie=set_enrolment)
+    plain = w.account()
+    r = _sign_in(w, plain["email"], PASSWORD)
+    assert r.status_code == 303 and "kit_session" in r.headers["set-cookie"]
+    assert "secure" in r.headers["set-cookie"].lower()
+    assert ("session", "/backoffice/login") in seen
+    coded = w.account(totp_enabled=1, totp_secret=SECRET32)
+    r = _sign_in(w, coded["email"], PASSWORD)
+    assert r.headers["location"] == "/backoffice/verify" and ("pending", "/backoffice/login") in seen
+    c = _pending_client(w, coded)
+    r = c.post("/backoffice/verify", data={"csrf_token": "pre",
+                                            "code": twofactor.current_code(SECRET32)})
+    assert r.status_code == 303 and ("session", "/backoffice/verify") in seen
+    c = w.client()
+    c.cookies.set("kit_session", f"{plain['id']}:0")
+    r = c.get("/backoffice/two-factor")
+    assert r.status_code == 200 and ("enrolment", "/backoffice/two-factor") in seen
+    # The passkey challenge cookie follows the same request: Secure over
+    # https, not over plain http.
+    from fastapi.testclient import TestClient
+    for base, want in ((BASE, True), ("http://testserver", False)):
+        c = TestClient(w.app, base_url=base, follow_redirects=False)
+        r = c.post("/backoffice/login/passkey/options", data={"csrf_token": "pre"})
+        assert r.status_code == 200, r.text
+        assert ("secure" in r.headers["set-cookie"].lower()) is want, base
+    assert ("secure", "/backoffice/login/passkey/options") in seen
+
+
+def test_without_the_flag_the_helpers_keep_their_shape(world):
+    """The default: (response, id), (response, secret) and () -> bool, as every
+    other tool's adapter has them. A request argument would be a TypeError."""
+    w = world(secure_cookies=lambda: True)
+    acc = w.account()
+    assert _sign_in(w, acc["email"], PASSWORD).status_code == 303
+
+
 # ── the adapter's shape (1.78.0: phase 1's shape is gone, TO DO FL-083) ─────
 
 def test_an_adapter_names_every_field_the_routes_need(world):

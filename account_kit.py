@@ -435,6 +435,15 @@ class AccountKit:
     #: redirect first and the sign-in page one hop later.
     gate_account: Optional[Callable[[Request], Optional[dict]]] = None
 
+    # ── the 7 October 2026 adoption's open point (c), TO DO FL-090 ───────────
+    #: True: the kit hands the request on as the last argument of
+    #: `secure_cookies` (request) -> bool and of the three cookie setters,
+    #: (response, account_id, request) and (response, secret, request). For a
+    #: tool that decides the Secure flag per request: Controversy Generator
+    #: and Polarity Profiler had each built a bridge for it (a middleware, a
+    #: ContextVar), which this replaces. False: the shapes above, unchanged.
+    cookie_setters_take_request: bool = False
+
 
 # ── templates ────────────────────────────────────────────────────────────────
 
@@ -471,6 +480,23 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                       else (f"{SPENT}=0", f"{SPENT}=1"))
     q1, qall, run = kit.tables.query_one, kit.tables.query_all, kit.tables.execute
     email_signer = account_mod.email_change_signer(kit.secret_key)
+
+    # The tool's cookie helpers, with the request when the tool asks for it
+    # (`cookie_setters_take_request`, FL-090 (c)).
+    def with_request(request: Request) -> tuple:
+        return (request,) if kit.cookie_setters_take_request else ()
+
+    def set_pending_cookie(resp: Response, account_id: int, request: Request) -> None:
+        kit.set_pending_cookie(resp, account_id, *with_request(request))
+
+    def set_session_cookie(resp: Response, account_id: int, request: Request) -> None:
+        kit.set_session_cookie(resp, account_id, *with_request(request))
+
+    def set_enrolment_cookie(resp: Response, secret: str, request: Request) -> None:
+        kit.set_enrolment_cookie(resp, secret, *with_request(request))
+
+    def secure_cookies(request: Request) -> bool:
+        return kit.secure_cookies(*with_request(request))
     page_kit = {
         "tool_name": kit.tool_name,
         "back_link_while_must_change": kit.layout.back_link_while_must_change,
@@ -701,12 +727,12 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         # between code guesses and never reach the lock (review, 5 October 2026).
         if row.get("totp_enabled"):
             resp = redirect(VERIFY_URL)
-            kit.set_pending_cookie(resp, row["id"])
+            set_pending_cookie(resp, row["id"], request)
             return resp
         record_sign_in(row)
         kit.audit("login_success", request=request, admin_id=row["id"], admin_email=row["email"])
         resp = redirect(landing(row))
-        kit.set_session_cookie(resp, row["id"])
+        set_session_cookie(resp, row["id"], request)
         return resp
 
     @router.get(LOGOUT_URL)
@@ -872,7 +898,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         kit.audit("login_success", request=request, admin_id=row["id"],
                   admin_email=row.get("email"), details={"second_factor": True})
         resp = redirect(landing(row))
-        kit.set_session_cookie(resp, row["id"])
+        set_session_cookie(resp, row["id"], request)
         resp.delete_cookie(kit.pending_cookie)
         return resp
 
@@ -895,7 +921,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         uri = twofactor.provisioning_uri(secret, account["email"], kit.tool_name)
         resp = two_factor_page(request, account, secret=secret, qr_svg=twofactor.qr_svg(uri),
                                replacing=bool(replace and account.get("totp_enabled")))
-        kit.set_enrolment_cookie(resp, secret)
+        set_enrolment_cookie(resp, secret, request)
         return resp
 
     @router.post("/backoffice/two-factor")
@@ -959,8 +985,8 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     # ends in, without asking for a code: a passkey is both factors (owner's
     # decision, 2 October 2026).
 
-    def pk_secure() -> dict:
-        return passkeys.cookie_kwargs(secure=kit.secure_cookies())
+    def pk_secure(request: Request) -> dict:
+        return passkeys.cookie_kwargs(secure=secure_cookies(request))
 
     @router.post("/backoffice/passkeys/options")
     def passkey_register_options(request: Request, csrf_token: str = Form("")):
@@ -983,7 +1009,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         resp = Response(options, media_type="application/json")
         resp.set_cookie(value=passkeys.seal_challenge(kit.secret_key, challenge,
                                                       f"register:{account['id']}"),
-                        **pk_secure())
+                        **pk_secure(request))
         return resp
 
     @router.post("/backoffice/passkeys")
@@ -1059,7 +1085,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         options, challenge = passkeys.authentication_options(base_url=kit.passkey_base_url())
         resp = Response(options, media_type="application/json")
         resp.set_cookie(value=passkeys.seal_challenge(kit.secret_key, challenge, "login"),
-                        **pk_secure())
+                        **pk_secure(request))
         return resp
 
     @router.post(AUTOFILL_OPTIONS_URL)
@@ -1077,7 +1103,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         options, challenge = passkeys.authentication_options(base_url=kit.passkey_base_url())
         resp = Response(options, media_type="application/json")
         resp.set_cookie(value=passkeys.seal_challenge(kit.secret_key, challenge, "login"),
-                        **pk_secure())
+                        **pk_secure(request))
         return resp
 
     @router.post("/backoffice/login/passkey")
@@ -1125,7 +1151,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         kit.audit("login_success", request=request, admin_id=row["id"],
                   admin_email=row["email"], details={"passkey": True})
         resp = JSONResponse({"redirect": landing(row)})
-        kit.set_session_cookie(resp, row["id"])
+        set_session_cookie(resp, row["id"], request)
         resp.delete_cookie(passkeys.CHALLENGE_COOKIE, path="/")
         resp.delete_cookie(kit.pending_cookie)
         return resp
@@ -1297,7 +1323,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         # A fresh cookie (the bump above ended this session too), and straight
         # to the dashboard rather than a success note on this page.
         resp = redirect(DASHBOARD_URL)
-        kit.set_session_cookie(resp, account["id"])
+        set_session_cookie(resp, account["id"], request)
         return resp
 
     # ── an administrator resets another account's two-factor ─────────────────
