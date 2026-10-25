@@ -1,0 +1,40 @@
+/* The legal pages' layout: every tool's /impressum, /privacy, /cookies,
+   /terms, /legal-notice and /legal (phronon_common/legal_templates).
+   Served by the shared legal router at /legal.css (legal.py), same origin,
+   from the installed package; until 25 October 2026 (FL-093) these rules were
+   a <style> block in layout.html. A page reads fine without them: in a text
+   browser, as a screenshot taken as evidence, or with the sheet blocked. */
+:root { color-scheme: light dark; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6; font-size: 1rem;
+  background: #ffffff; color: #1c1e21;
+}
+@media (prefers-color-scheme: dark) {
+  body { background: #16181c; color: #d7dade; }
+  a { color: #7ab8f5; }
+  .lp-box { background: #22262c; border-color: #3a4048; }
+  .lp-head, .lp-foot { border-color: #3a4048; }
+  table th, table td { border-color: #3a4048; }
+}
+.lp-wrap { max-width: 46rem; margin: 0 auto; padding: 0 1.25rem 3rem; }
+.lp-head { border-bottom: 1px solid #d8dce1; padding: 1rem 0; margin-bottom: 1.5rem; }
+.lp-head a { text-decoration: none; font-weight: 600; color: inherit; }
+.lp-nav { font-size: .9rem; margin-top: .4rem; }
+.lp-nav a { margin-right: .25rem; }
+h1 { font-size: 1.6rem; line-height: 1.3; }
+h2 { font-size: 1.25rem; margin-top: 2rem; }
+h3 { font-size: 1.05rem; margin-top: 1.4rem; }
+.lp-box {
+  border: 1px solid #d8dce1; border-left: 4px solid #8a6d1a;
+  background: #faf7ee; border-radius: 4px;
+  padding: .75rem 1rem; margin: 1.25rem 0;
+}
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+table th, table td { border: 1px solid #d8dce1; padding: .45rem .6rem;
+  text-align: left; vertical-align: top; }
+.lp-table-scroll { overflow-x: auto; }
+.lp-foot { border-top: 1px solid #d8dce1; margin-top: 3rem; padding-top: 1rem;
+  font-size: .85rem; opacity: .8; }

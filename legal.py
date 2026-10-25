@@ -27,6 +27,9 @@ Route map (Part 2.3):
     /terms          Terms of use.
     /legal          Thin index.
     /imprint        301 -> /legal (handed out historically; must never 404).
+    /legal.css      the pages' one stylesheet, from this package (FL-093);
+                    linked with ?v=<hash of the file>, so it may be cached
+                    for a year and a changed sheet is a new address.
     /de/privacy,    German notice/cookie pages — only on tools whose UI
     /de/cookies     serves German (the config's `languages`).
 
@@ -35,11 +38,13 @@ rebuilt for the WCAG 2.2 baseline and carry per-tool known-gap lists).
 """
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 import jinja2
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from markupsafe import Markup
 
 _TEMPLATES = Path(__file__).resolve().parent / "legal_templates"
 
@@ -48,6 +53,15 @@ _env = jinja2.Environment(
     autoescape=True,
     undefined=jinja2.StrictUndefined,  # a missing config field must 500 in tests, not render blank
 )
+
+#: The legal pages' stylesheet (FL-093, 25 October 2026): the rules that were
+#: a <style> block in layout.html, served by the router below from this
+#: package, never from a tool's /static.
+STYLESHEET_PATH = "/legal.css"
+_CSS = (_TEMPLATES / "legal.css").read_text(encoding="utf-8")
+#: What a page links. The version is the file's content, so a release that
+#: changes a rule changes the address and no browser keeps the old sheet.
+STYLESHEET_URL = f"{STYLESHEET_PATH}?v={hashlib.sha256(_CSS.encode()).hexdigest()[:12]}"
 
 _TITLES = {
     "impressum":    {"de": "Impressum"},
@@ -59,19 +73,38 @@ _TITLES = {
 }
 
 
-def render_legal(tool_key: str, doc: str, lang: str = "en", *, config: dict) -> str:
+def render_legal(tool_key: str, doc: str, lang: str = "en", *, config: dict,
+                 stylesheet_url: str | None = None) -> str:
     """Render one legal document to HTML. Exposed for tests.
 
-    `config`: the tool's own content (legal_content.load_legal_config)."""
+    `config`: the tool's own content (legal_content.load_legal_config).
+    `stylesheet_url`: STYLESHEET_URL when the caller's app serves the sheet
+    (add_legal_stylesheet); without it the page carries the same rules
+    inline, so a page rendered elsewhere never loses its layout."""
     if config.get("key") != tool_key:
         raise ValueError(f"legal config for {config.get('key')!r} passed to render {tool_key!r}")
     template = _env.get_template(f"{doc}.html")
     return template.render(
+        stylesheet_url=stylesheet_url,
+        inline_css=None if stylesheet_url else Markup(_CSS),  # this package's own file
         cfg=config,
         lang=lang,
         doc_title=_TITLES[doc].get(lang) or next(iter(_TITLES[doc].values())),
         L=lambda prose: prose.get(lang) or prose["en"],
     )
+
+
+async def _stylesheet() -> Response:
+    return Response(_CSS, media_type="text/css; charset=utf-8",
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
+
+def add_legal_stylesheet(router: APIRouter) -> None:
+    """Serve the legal pages' stylesheet at STYLESHEET_PATH. build_legal_router
+    does it; a tool that renders its legal pages with its own router (Moral
+    Mirror's two doors) calls it and passes STYLESHEET_URL to render_legal."""
+    router.add_api_route(STYLESHEET_PATH, _stylesheet, name="legal_stylesheet",
+                         include_in_schema=False, methods=["GET", "HEAD"])
 
 
 def build_legal_router(tool_key: str, config: dict) -> APIRouter:
@@ -86,7 +119,8 @@ def build_legal_router(tool_key: str, config: dict) -> APIRouter:
         # Default arguments bind doc/lang per closure; FastAPI needs a
         # distinct callable per route.
         async def _page(doc=doc, lang=lang) -> HTMLResponse:
-            return HTMLResponse(render_legal(tool_key, doc, lang, config=config))
+            return HTMLResponse(render_legal(tool_key, doc, lang, config=config,
+                                             stylesheet_url=STYLESHEET_URL))
         return _page
 
     # Every route is NAMED so templates can url_path_for() it — Phronon's
@@ -126,5 +160,6 @@ def build_legal_router(tool_key: str, config: dict) -> APIRouter:
 
     router.add_api_route("/imprint", _imprint_redirect, name="imprint",
                          include_in_schema=False, methods=["GET", "HEAD"])
+    add_legal_stylesheet(router)
 
     return router

@@ -65,4 +65,4 @@ package-dir = { "phronon_common" = ".", "phronon_common.testing" = "testing" }
 #
 # The account kit's pages (account_templates/, FL-083) render inside each
 # tool's own layout; a wheel without them would 500 the account page in CI.
-phronon_common = ["legal_templates/*.html", "account_templates/*.html", "*.css", "*.js"]
+phronon_common = ["legal_templates/*.html", "legal_templates/*.css", "account_templates/*.html", "*.css", "*.js"]

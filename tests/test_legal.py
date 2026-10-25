@@ -129,3 +129,44 @@ def test_shared_blocks_render_identically():
         )
         variants.add(m.group(0))
     assert len(variants) == 1, "recipients block drifted between tools"
+
+
+# ── The stylesheet (FL-093, 25 October 2026) ────────────────────────────────
+
+def _router_client(key: str):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from phronon_common.legal import build_legal_router
+    app = FastAPI()
+    app.include_router(build_legal_router(key, config=get_tool(key)))
+    return TestClient(app)
+
+
+def test_the_router_serves_the_stylesheet_its_pages_link():
+    """The rules that were a <style> block in layout.html come from one file,
+    served by the router itself at a versioned same-origin address."""
+    from phronon_common.legal import STYLESHEET_URL
+    sheet = (Path(__file__).resolve().parents[1] / "legal_templates" / "legal.css").read_text(encoding="utf-8")
+    c = _router_client(GERMAN)
+    for path in ("/privacy", "/de/cookies", "/impressum", "/legal"):
+        html = c.get(path).text
+        assert f'<link rel="stylesheet" href="{STYLESHEET_URL}">' in html, path
+        assert "<style" not in html, f"{path} still carries an inline style block"
+    r = c.get(STYLESHEET_URL)
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/css")
+    assert r.text == sheet and ".lp-wrap" in r.text
+    assert "immutable" in r.headers["cache-control"]
+    assert c.head("/legal.css").status_code == 200
+    # The version is the file's content: a changed rule is a new address.
+    import hashlib
+    assert STYLESHEET_URL.endswith(hashlib.sha256(sheet.encode()).hexdigest()[:12])
+
+
+def test_a_page_rendered_outside_the_router_carries_the_same_rules_inline():
+    """render_legal without stylesheet_url (a tool's own legal router that does
+    not serve the sheet yet, and every test): the same file, inline, with its
+    quotes intact, so the page never loses its layout."""
+    sheet = (Path(__file__).resolve().parents[1] / "legal_templates" / "legal.css").read_text(encoding="utf-8")
+    html = _render(GERMAN, "privacy", "en")
+    assert sheet in html and '"Segoe UI"' in html
+    assert '<link rel="stylesheet"' not in html
