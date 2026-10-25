@@ -131,6 +131,20 @@ def test_shared_blocks_render_identically():
     assert len(variants) == 1, "recipients block drifted between tools"
 
 
+def test_healthchecks_is_named_for_the_alert_check_too():
+    # Since 1.88.0 (TO DO FL-107, wording approved by the owner on 25 October
+    # 2026) every alert run pings healthchecks.io, besides the backup run. The
+    # list and the transfers paragraph say so in both languages; going back to
+    # "backup run only" would publish less than the server sends.
+    for key in TOOLS:
+        en = " ".join(_render(key, "privacy", "en").split())
+        assert "monitoring that the backup run and the platform's alert check happened" in en, key
+        assert "status pings from the backup run and the alert check" in en, key
+    de = " ".join(_render(GERMAN, "privacy", "de").split())
+    assert "ob der Sicherungslauf und die Störungsprüfung der Plattform stattgefunden haben" in de
+    assert "Statusmeldungen des Sicherungslaufs und der Störungsprüfung" in de
+
+
 # ── The stylesheet (FL-093, 25 October 2026) ────────────────────────────────
 
 def _router_client(key: str):

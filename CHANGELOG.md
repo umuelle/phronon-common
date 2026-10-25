@@ -5,6 +5,23 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.88.0 — 2026-10-25
+
+One published sentence pair, no code change.
+
+- **`legal`: healthchecks.io is named for the alert check too (TO DO
+  FL-107).** The fleet's alert job (`server-ops/alert_check.py`) now pings a
+  healthchecks.io check on every run, so the owner hears when the job or the
+  server goes silent. `legal_templates/_processors.html` said healthchecks.io
+  receives backup-run pings only; the list entry and the transfers paragraph
+  now name the backup run and the alert check, in English and German, in the
+  wording the owner approved on 25 October 2026. Each line still ends in "no
+  participant data and no content", where `legal_check.py` and
+  `test_shared_blocks_render_identically` anchor. New test:
+  `test_healthchecks_is_named_for_the_alert_check_too`. The tools'
+  `notice_version` and `last_updated` stay: what participants are told about
+  their own data is unchanged.
+
 ## 1.87.0 — 2026-10-25
 
 The first release after the FL-076 freeze (4 to 18 October 2026): five

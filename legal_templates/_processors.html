@@ -21,7 +21,8 @@ Art. 28 DSGVO:</p>
     niemals beim Anbieter. Microsoft speichert also ausschließlich
     verschlüsselte Daten und kann sie nicht lesen.</li>
   <li><strong>healthchecks.io</strong> — Überwachung, ob der Sicherungslauf
-    stattgefunden hat. Übertragen werden nur Statusmeldungen
+    und die Störungsprüfung der Plattform stattgefunden haben. Übertragen
+    werden nur Statusmeldungen
     („Lauf erfolgreich/fehlgeschlagen“), keine Inhalts- oder
     Teilnehmendendaten.</li>
 </ul>
@@ -32,8 +33,8 @@ Vollständigkeit halber zu nennen: Microsoft (OneDrive) sieht für seine Dienste
 (EU-Standardvertragsklauseln) vor — dorthin gelangen ausschließlich die vor dem
 Verlassen des Servers verschlüsselten Sicherungskopien, deren Schlüssel wir
 nicht herausgeben; und healthchecks.io betreibt Infrastruktur in der EU und in
-den USA, erhält jedoch nur Statusmeldungen des Sicherungslaufs, keine
-Teilnehmenden- oder Inhaltsdaten.</p>
+den USA, erhält jedoch nur Statusmeldungen des Sicherungslaufs und der
+Störungsprüfung, keine Teilnehmenden- oder Inhaltsdaten.</p>
 <p><strong>Auswirkung auf die Löschung:</strong> Wird ein Datensatz gelöscht,
 kann er noch in den Sicherungskopien enthalten sein, bis diese turnusmäßig
 auslaufen: <strong>bis zu 14 Tage</strong> in den Sicherungen auf dem Server
@@ -52,9 +53,9 @@ agreement pursuant to Art. 28 GDPR:</p>
     <strong>encrypted before they leave the server</strong>, and the private
     key exists only on the operator's own machine — never at the provider. So
     Microsoft holds ciphertext it cannot read.</li>
-  <li><strong>healthchecks.io</strong> — monitoring that the backup run
-    happened. Only status pings are sent ("run succeeded / failed"); no
-    content and no participant data.</li>
+  <li><strong>healthchecks.io</strong> — monitoring that the backup run and
+    the platform's alert check happened. Only status pings are sent ("run
+    succeeded / failed"); no content and no participant data.</li>
 </ul>
 <p><strong>Transfers outside the EU/EEA:</strong> processing takes place in
 the EU; the servers and databases are in Germany. Two things are worth stating
@@ -62,8 +63,8 @@ in full. Microsoft (OneDrive) provides for transfers outside the EEA under
 Art. 46 GDPR safeguards (EU standard contractual clauses) — what reaches it is
 only the backup copies, encrypted before they leave the server, whose key we do
 not hand over. And healthchecks.io runs infrastructure in the EU and the US,
-but receives only backup-run status pings: no participant data and no
-content.</p>
+but receives only status pings from the backup run and the alert check:
+no participant data and no content.</p>
 <p><strong>What this means for erasure:</strong> when a record is deleted, a
 copy may remain inside backups until those expire: <strong>up to 14 days</strong>
 in the backups held on the server, and <strong>up to 30 days</strong> in the
