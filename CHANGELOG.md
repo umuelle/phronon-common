@@ -5,6 +5,53 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.87.0 — 2026-10-25
+
+The first release after the FL-076 freeze (4 to 18 October 2026): five
+items that waited for it. Every change keeps the live tools working as they
+are; FL-079 removes only what no tool has used since 4 October.
+
+- **`legal`: the frozen legal table is gone (FL-079).** `legal_conf.TOOLS`,
+  `get_tool()`, `legal_content.export_legacy_entry()` and the call of
+  `build_legal_router` / `render_legal` without `config=` served only tool
+  versions older than 4 October 2026 that a rollback might restore.
+  `config` is now required (keyword-only in `render_legal`); a call without
+  it fails at startup instead of publishing an old notice. `legal_conf.py`
+  keeps `lifetime_seconds()`. The package's own legal tests render three
+  example files (`tests/fixtures/legal/`); each tool keeps testing its own
+  notice with `testing.legal_content`. `examples/minimal_tool` loads its own
+  `legal_content/notice.json`.
+- **`legal`: the legal pages' rules are one stylesheet (FL-093).** The
+  35-line `<style>` block in `legal_templates/layout.html` is now
+  `legal_templates/legal.css`, unchanged, served by the legal router at
+  `/legal.css` and linked as `/legal.css?v=<hash of the file>` (cached a year).
+  `add_legal_stylesheet(router)` and `STYLESHEET_URL` serve and link it from a
+  tool's own legal router; `render_legal` without `stylesheet_url` carries
+  the same file inline, so Moral Mirror's two doors keep their layout until
+  they serve it. Old and new pages compared in headless Chrome, 1200 and
+  390 px, light and dark: pixel-identical. The unused `navbar.html` and
+  `footer.html` (each with a `<style>` block, used by no tool) are deleted.
+  Ships `legal_templates/*.css` as package data; imports MarkupSafe (Jinja2's
+  own requirement).
+- **`account_kit`: `cookie_setters_take_request` (FL-090 (c)).** True: the kit
+  passes the request as the last argument of `secure_cookies` and the three
+  cookie setters, for a tool that decides the Secure flag per request
+  (Controversy Generator's middleware and Polarity Profiler's ContextVar did
+  it by hand). False, the default: every adapter unchanged.
+- **`testing.schema_check`: the schema check every tool copied (FL-088).**
+  `SchemaSqlMatchesTheMigrations` (a tool sets `ROOT` and
+  `NOT_FROM_A_MIGRATION`), and `schema_names()`, `migrations_text()`,
+  `named_in()` for a tool's own extra checks. Same rules and messages as the
+  nine copies; on the nine tools' real files it gives each copy's verdicts.
+  The copies stay until each tool switches to the wrapper.
+- **`country-other.js` (FL-102), a changed master.** Finds a box joined to the
+  form with a `form=` attribute (it looked only inside the form element), and
+  its comment says what really happens without the script (the box stays
+  hidden). Tested in Chromium and WebKit. The six tools' copies were synced
+  before this release's matrix and go live with each tool's own deploy;
+  `verify` leaves the copy test out, as for every master change. No change to
+  `shared_assets.py`.
+
 ## 1.86.0 — 2026-10-14
 
 - **`countries`: one country list for the fleet (FL-098 point 5).** The 193 UN
