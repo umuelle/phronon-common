@@ -46,6 +46,7 @@ ASSETS = {
     "country-other.js":        "static/js/country-other.js",
     "flow-preview.js":         "static/js/flow-preview.js",
     "flow-preview-frame.js":   "static/js/flow-preview-frame.js",
+    "pdf-report.js":           "static/js/pdf-report.js",
 }
 
 # WHY A TOOL CARRIES FEWER (the lists themselves are in each ops/tool.json).
@@ -77,6 +78,9 @@ ASSETS = {
 #     Drawbridge, Inequality, Moral Mirror and Whiteout. Copies until
 #     26 October 2026 (TO DO FL-098 point 3): flow-preview.js was identical in
 #     all four, and the frame script's two versions differed only in comments.
+#   * pdf-report.js (the PDF report builder, FL-098, 26 October 2026): only
+#     the three tools that make a PDF in the browser, Layoff, Polarity
+#     Profiler and Whiteout. Each keeps its own cover and page design.
 #
 # LOOK SHARED, ARE NOT (checked 26 October 2026, FL-098 point 3): Polarity
 # Profiler's and Whiteout's session-tabs.js and lang-switcher.js, and Moral

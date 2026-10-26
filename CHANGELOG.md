@@ -5,6 +5,23 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.91.0 — 2026-10-26
+
+One new shared master; nothing a tool calls changes.
+
+- **`pdf-report.js`: one PDF builder for the three reports made in the
+  browser** (TO DO FL-098; owner, 26 October 2026). Layoff's results report,
+  Polarity Profiler's profile and Whiteout's session report each had their own
+  page cursor, page-fit check, SVG rasteriser and character rules (Layoff had
+  none). `PhrononPdf.report()` holds that machinery; each report keeps its own
+  cover and design. `safe()` takes Whiteout's rules, the strictest, and keeps
+  the dashes, curly quotes, bullet and ellipsis WinAnsi has: they print and
+  measure correctly in jsPDF's built-in fonts (checked in Chromium and WebKit),
+  so Whiteout's report shows them again instead of ASCII stand-ins, and
+  Polarity Profiler's em dashes stay em dashes. A tool adopts it by listing
+  `pdf-report.js` in `ops/tool.json` after this release is active.
+  Test: `tests/test_pdf_report_browser.py` (Chromium and WebKit, Whiteout's CSP).
+
 ## 1.90.0 — 2026-10-26
 
 TO DO FL-109, the last line of FL-097 and FL-098 point 3. Nothing a tool calls is added.

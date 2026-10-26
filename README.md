@@ -65,11 +65,19 @@ each tool, and which tools carry it. The masters themselves sit beside it —
 `design-tokens.css`, `backoffice-nav.css`, `backoffice-core.css`,
 `share-card.css`, `two-factor.css`, `actions.js`, `bulk-select.js`,
 `dashboard-table.js`, `rank-a11y.js`, `share-card-download.js`,
-`svg-charts.js`, `chart-table.js`, `users-password.js` — and they ship in the
+`svg-charts.js`, `chart-table.js`, `users-password.js`, `pdf-report.js` — and they ship in the
 wheel, so a tool can compare its copy against the real master.
 
 Copy them out with `server-ops/sync_shared_assets.py --write`. Never edit a
 tool's copy: the fix would reach one tool and miss eight.
+
+`pdf-report.js` (since 1.91.0, TO DO FL-098) is the PDF report builder under
+Layoff's, Polarity Profiler's and Whiteout's reports, on the tools' own jsPDF:
+the page cursor, `safe()` for the characters jsPDF's fonts can print, text,
+pictures of charts and page sections, tables as text, page numbers. Each
+report's look (its cover, its sections) stays in the tool. Its methods are
+listed at the top of the file; `tests/test_pdf_report_browser.py` runs it in
+Chromium and WebKit under the fleet's strictest CSP.
 
 ### The test kit — `phronon_common.testing`
 
