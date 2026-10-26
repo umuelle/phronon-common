@@ -27,7 +27,7 @@ imports. One version, everywhere, or the deploy stops.
 | `rate_limit` | in-app sliding-window rate limiting |
 | `security_headers` | `SecurityHeadersMiddleware` (the `csp=` argument is required) |
 | `routing` | `answer_head`: read-only GET routes answer HEAD (link scanners), writing GETs never do |
-| `translations` | the `i18n/<lang>.json` loader and `t()`: English fallback per string, escaped values in templates |
+| `translations` | the `i18n/<lang>.json` loader and `t()`: English fallback per string, escaped values in templates, the merged strings as cached JSON for the browser |
 | `sessions` | instantly revocable admin sessions (`session_epoch`) |
 | `signing` | signed-cookie helpers (itsdangerous) |
 
@@ -56,7 +56,7 @@ imports. One version, everywhere, or the deploy stops.
 | `demographics` | the fleet's one scheme for the questions about you: six age bands, five gender options, the country answer and its hint; reads every value a tool stored before (14 October 2026) |
 | `exports` | spreadsheet formula-injection escaping (`csv_safe`) |
 | `retention_heartbeat` | last-successful-run heartbeat for the retention workers |
-| `scheduler` | the background clock: periodic jobs in one daemon thread per process, off under the boot check and the tools' skip switches |
+| `scheduler` | the background clock: periodic jobs in one daemon thread per process, off under the boot check and the tools' skip switches; writes through the tool's own logger |
 | `emails` | branded transactional-email building |
 | `mail_diagnostics` | the live sample-mail run (`scripts/send_test_emails.py`): where sample mail may go, and whether to send at all. Was `testing.mail_harness` (still importable) |
 
@@ -86,7 +86,9 @@ Chromium and WebKit under the fleet's strictest CSP.
 the device's pixel ratio and never below 2x), `tableCsv` (a table as CSV with
 a BOM and formula cells neutralised as `exports.csv_safe` does) and
 `exportChartsZip` (charts, tables and a tool's own captures as one ZIP,
-written without JSZip). The method and the options are documented above the
+written without JSZip). Drawbridge, Inequality, Layoff and Whiteout use it;
+the share card keeps its own rasteriser, which swaps QR images for a
+screenshot of the card and does not load the chart engine. The method and the options are documented above the
 export section in the file. `tests/test_chart_export_browser.py` runs them in
 Chromium and WebKit under the fleet's strictest CSP; it needs Playwright, and
 on the Mac reuses the browser venv of `server-ops/browser_submit_check.py`.

@@ -5,6 +5,39 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.92.0 — 2026-10-26
+
+Two new modules and a chart export (TO DO FL-098 points 6 to 8); nothing a
+tool calls today changes.
+
+- **`scheduler`: one background clock for the eight tools that run one.**
+  `Scheduler(name, skip_env=, skip_under_pytest=, logger=)`, `add(job, every=,
+  first_after=, heartbeat=)`, `start()`. It refuses to start under the
+  deploy's boot check, a tool's skip switch or (when asked) pytest, and says
+  so in words the deploy's tripwire does not match; its start line contains
+  "clock started", which the tripwire does. A job that raises is logged with
+  its traceback and runs again on schedule; `heartbeat=` stamps
+  `retention_heartbeat` only after a run that returned (FL-050). `logger=`
+  takes the tool's own logger: under uvicorn this module's logger has no
+  handler, so the start line would miss the journal and the boot-check
+  tripwire would read a log without it. Tests: `tests/test_scheduler.py`.
+- **`translations`: one `i18n/<lang>.json` loader and `t()`** for Layoff,
+  Whiteout and Polarity Profiler, with PP's behaviour as the floor: each file
+  parsed once, a language merged over English per string, list indexes in
+  keys, `html=True` for the template translator (values escaped, the
+  translation's own markup kept), and a placeholder typo logged with a
+  fallback to English instead of an exception. `Catalog.load()` hands out a
+  copy parsed from cached JSON; `Catalog.as_json()` is that JSON for a page
+  that gives its strings to the browser. Needs `markupsafe` for `html=True`,
+  now named in the `web` extra. Tests: `tests/test_translations.py`.
+- **`svg-charts.js`: the fleet's chart export.** `chartPng`,
+  `exportChartPng`, `tableCsv`, `zipBlob`, `exportChartsZip`, `saveBlob`,
+  `exportName` and `blobDataUrl`, replacing the copies in Drawbridge,
+  Inequality, Layoff and Whiteout and the two JSZip archives. A changed
+  master: every tool that carries `svg-charts.js` gets the new copy with
+  this release. Test: `tests/test_chart_export_browser.py` (Chromium and
+  WebKit, Whiteout's CSP).
+
 ## 1.91.0 — 2026-10-26
 
 One new shared master; nothing a tool calls changes.
