@@ -2294,11 +2294,11 @@
     return (crc ^ 0xFFFFFFFF) >>> 0;
   }
 
-  function toBytes(data) {
-    if (data instanceof Uint8Array) return Promise.resolve(data);
-    if (typeof data === 'string') return Promise.resolve(new TextEncoder().encode(data));
-    if (data && typeof data.arrayBuffer === 'function') {
-      return data.arrayBuffer().then(function (buf) { return new Uint8Array(buf); });
+  function toBytes(content) {
+    if (content instanceof Uint8Array) return Promise.resolve(content);
+    if (typeof content === 'string') return Promise.resolve(new TextEncoder().encode(content));
+    if (content && typeof content.arrayBuffer === 'function') {
+      return content.arrayBuffer().then(function (buf) { return new Uint8Array(buf); });
     }
     return Promise.reject(new Error('cannot put this in a ZIP'));
   }
@@ -2316,23 +2316,23 @@
           return v;
         }
         files.forEach(function (f, i) {
-          var name = enc.encode(f.name), data = all[i], crc = crc32(data);
+          var name = enc.encode(f.name), bytes = all[i], crc = crc32(bytes);
           var h = header(0x04034b50, 30);
           h.setUint16(4, 20, true);  h.setUint16(6, 0x0800, true);  // UTF-8 name
           h.setUint16(8, 0, true);   h.setUint16(10, dosTime, true);
           h.setUint16(12, dosDate, true); h.setUint32(14, crc, true);
-          h.setUint32(18, data.length, true); h.setUint32(22, data.length, true);
+          h.setUint32(18, bytes.length, true); h.setUint32(22, bytes.length, true);
           h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
-          parts.push(h, name, data);
+          parts.push(h, name, bytes);
           var c = header(0x02014b50, 46);
           c.setUint16(4, 20, true);  c.setUint16(6, 20, true);
           c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
           c.setUint16(12, dosTime, true); c.setUint16(14, dosDate, true);
-          c.setUint32(16, crc, true); c.setUint32(20, data.length, true);
-          c.setUint32(24, data.length, true); c.setUint16(28, name.length, true);
+          c.setUint32(16, crc, true); c.setUint32(20, bytes.length, true);
+          c.setUint32(24, bytes.length, true); c.setUint16(28, name.length, true);
           c.setUint32(42, offset, true);
           central.push(c, name);
-          offset += 30 + name.length + data.length;
+          offset += 30 + name.length + bytes.length;
         });
         var cdSize = central.reduce(function (s, p) { return s + p.byteLength; }, 0);
         var end = header(0x06054b50, 22);

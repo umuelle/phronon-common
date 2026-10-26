@@ -148,6 +148,22 @@ def test_files_are_read_once_until_cleared(i18n):
     assert cat.translator("en")("home.title") == "Edited"
 
 
+def test_the_browser_gets_the_merged_strings_as_json_made_once(i18n):
+    """Layoff hands a page's strings to its scripts as ``i18n_json``: the
+    German page gets the English string where de.json has none, and the text
+    is made once per language, not on every page view."""
+    cat = tr.Catalog(i18n, ["en", "de"])
+    text = cat.as_json("de")
+    assert json.loads(text)["home"]["only_en"] == "English only"
+    assert json.loads(text)["home"]["title"] == "Willkommen"
+    assert text == json.dumps(cat.load("de"))
+    assert cat.as_json("de") is text
+    assert cat.as_json("xx") == cat.as_json("en")
+    (i18n / "de.json").write_text(json.dumps({"home": {"title": "Neu"}}))
+    cat.clear()
+    assert json.loads(cat.as_json("de"))["home"]["title"] == "Neu"
+
+
 def test_a_tool_built_dict_with_an_english_fallback(i18n):
     cat = tr.Catalog(i18n, ["en", "de"])
     frozen = tr.deep_merge(cat.load("de"), {"rank": {"intro": "Eingefroren"}})

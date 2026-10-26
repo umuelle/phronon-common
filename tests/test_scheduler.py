@@ -169,6 +169,53 @@ def test_a_failing_job_is_logged_and_runs_again(caplog, clocks):
     assert failed and failed[0].exc_info is not None
 
 
+class _Lines(logging.Handler):
+    def __init__(self):
+        super().__init__(logging.DEBUG)
+        self.records = []
+
+    def emit(self, record):
+        self.records.append(record)
+
+
+def test_every_line_goes_to_the_tools_own_logger(monkeypatch, clocks, caplog):
+    """Under uvicorn only the tool's logger has a handler. If the start line
+    went to this module's logger instead, it would never reach the journal
+    and the deploy's boot-check tripwire would read a log without it."""
+    tool = logging.getLogger("t-tool-logger")
+    tool.propagate = False
+    tool.setLevel(logging.INFO)
+    lines = _Lines()
+    tool.addHandler(lines)
+    try:
+        failed_once = threading.Event()
+
+        def job():
+            if not failed_once.is_set():
+                failed_once.set()
+                raise RuntimeError("database gone")
+
+        monkeypatch.setenv("PHRONON_BOOT_CHECK", "1")
+        refused = S.Scheduler("t-own-logger", logger=tool)
+        refused.add("retention", job, every=0.05)
+        with caplog.at_level(logging.DEBUG, logger="phronon_common.scheduler"):
+            assert refused.start() is False
+            monkeypatch.delenv("PHRONON_BOOT_CHECK")
+            sched = S.Scheduler("t-own-logger-2", logger=tool)
+            clocks.append(sched)
+            sched.add("retention", job, every=0.05)
+            assert sched.start() is True
+            assert _wait_for(lambda: any(r.levelno == logging.ERROR for r in lines.records))
+        text = "\n".join(r.getMessage() for r in lines.records)
+        assert "boot check: background clock not started (t-own-logger)" in text
+        assert DEPLOY_TRIPWIRE.search(text), "the start line missed the tool's logger"
+        failure = [r for r in lines.records if r.levelno == logging.ERROR]
+        assert failure and failure[0].exc_info is not None
+        assert caplog.text == "", "a line went to phronon_common.scheduler instead"
+    finally:
+        tool.removeHandler(lines)
+
+
 def test_one_clock_per_process(clocks, caplog):
     first = S.Scheduler("t-same")
     clocks.append(first)

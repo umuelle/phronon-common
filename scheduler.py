@@ -52,6 +52,13 @@ WHAT THE SHARED ONE DOES
     a run that did not raise, with the job's return value as the detail when
     it is a string, and never after one that raised: the FL-050 contract,
     written once.
+  * ``logger=`` takes the tool's own logger, and every line the clock writes
+    (started, not started, a job's failure with its traceback) goes there.
+    Under uvicorn the root logger has no handler, so a line on this module's
+    logger reaches the journal only at WARNING and above: the start line
+    would vanish, and with it the deploy's tripwire, which reads the boot
+    log for "clock started". The tools' loggers have a handler of their own
+    (Moral Mirror's test_the_workers_logger_can_actually_reach_the_journal).
   * Tests: ``run_now(name)`` runs one job synchronously, heartbeat included,
     and lets its exception through; ``run_due(now)`` is one tick of the loop
     against a given clock; ``stop()`` ends the thread.
@@ -70,7 +77,7 @@ from typing import Any, Callable, Iterable, Optional, Union
 
 from phronon_common import retention_heartbeat
 
-logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 BOOT_CHECK_ENV = "PHRONON_BOOT_CHECK"
 
@@ -110,8 +117,10 @@ class Scheduler:
 
     def __init__(self, name: str, *, skip_env: Union[str, Iterable[str]] = (),
                  skip_under_pytest: bool = False,
+                 logger: Optional[logging.Logger] = None,
                  clock: Callable[[], float] = time.monotonic):
         self.name = name
+        self.log = logger or _log
         self.skip_env = (skip_env,) if isinstance(skip_env, str) else tuple(skip_env)
         self.skip_under_pytest = skip_under_pytest
         self.clock = clock
@@ -176,7 +185,7 @@ class Scheduler:
             try:
                 self._execute(job)
             except Exception:
-                logger.exception("background clock %s: job %s failed; next run in %s",
+                self.log.exception("background clock %s: job %s failed; next run in %s",
                                  self.name, job.name, _span(job.every))
             finally:
                 job.lock.release()
@@ -211,12 +220,12 @@ class Scheduler:
         reason = self.refusal()
         if reason is not None:
             # Worded so the deploy's tripwire ("clock started", ...) cannot match.
-            logger.info("%s: background clock not started (%s)", reason, self.name)
+            self.log.info("%s: background clock not started (%s)", reason, self.name)
             return False
         with _running_lock:
             other = _running.get(self.name)
             if other is not None and other[0] == os.getpid() and other[1].running:
-                logger.warning("background clock %s is already running in this process; "
+                self.log.warning("background clock %s is already running in this process; "
                                "not starting a second one", self.name)
                 return False
             self._stop.clear()
@@ -227,7 +236,7 @@ class Scheduler:
                                             name="phronon-clock-%s" % self.name)
             self._thread.start()
             _running[self.name] = (os.getpid(), self)
-        logger.info("background clock started (%s): %s", self.name,
+        self.log.info("background clock started (%s): %s", self.name,
                     "; ".join(j.describe() for j in self.jobs.values()))
         return True
 

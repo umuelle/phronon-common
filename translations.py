@@ -36,8 +36,11 @@ WHAT THE SHARED ONE DOES, with PP's behaviour as the floor
     a fixed value list and its code checks their length.
   * The default language's file missing or broken raises (PP); another
     language's missing or broken file logs a warning and reads as English.
-  * ``Catalog.load(lang)`` returns a deep copy, so a caller that edits the
-    dict (Whiteout) cannot change what the next request sees.
+  * ``Catalog.load(lang)`` returns a fresh copy, so a caller that edits the
+    dict (Whiteout) cannot change what the next request sees. The copy is
+    parsed from cached JSON text, which is several times faster than a deep
+    copy of the same tree; ``Catalog.as_json(lang)`` hands out that text for
+    a page that gives its strings to the browser (Layoff's ``i18n_json``).
   * ``t(key, **values)``: dotted keys through objects and list indexes
     (Whiteout); a miss tries the fallback (English) and then returns the key
     itself (all three), logging the first miss of each key once; a value
@@ -185,6 +188,7 @@ class Catalog:
             raise ValueError("default language %r is not in %r"
                              % (self.default, self.languages))
         self._cache: dict = {}
+        self._json: dict = {}
         self._lock = threading.Lock()
 
     def language(self, lang: Optional[str]) -> str:
@@ -221,9 +225,20 @@ class Catalog:
             self._cache[lang] = self._read(lang)
         return self._cache[lang]
 
+    def as_json(self, lang: Optional[str]) -> str:
+        """The language's strings over English as JSON text (``json.dumps``
+        with its defaults), made once per language."""
+        lang = self.language(lang)
+        text = self._json.get(lang)
+        if text is None:
+            text = json.dumps(self._data(lang))
+            with self._lock:
+                self._json[lang] = text
+        return text
+
     def load(self, lang: Optional[str]) -> dict:
         """The language's strings over English, as a copy the caller may edit."""
-        return copy.deepcopy(self._data(lang))
+        return json.loads(self.as_json(lang))
 
     def translator(self, lang: Optional[str], *, html: bool = False) -> Callable[..., Any]:
         """``t()`` for one language; ``html=True`` for templates (see module doc)."""
@@ -234,3 +249,4 @@ class Catalog:
         """Forget the parsed files (tests; a file changed under a running app)."""
         with self._lock:
             self._cache.clear()
+            self._json.clear()
