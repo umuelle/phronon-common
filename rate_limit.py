@@ -26,11 +26,12 @@ Two shapes, because the tools genuinely need both:
 """
 from __future__ import annotations
 
+import inspect
 import logging
 import threading
 import time
 from collections import defaultdict, deque
-from typing import Iterable, Optional, Sequence
+from typing import Callable, Iterable, Optional, Sequence
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -129,13 +130,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     `limited_methods=None` (default) limits every method except GET/HEAD/
     OPTIONS. Pass an explicit set to limit reads too.
+
+    `limited_response(request, retry_after)` builds the answer to a refused
+    request, so a participant sees the tool's own page in their language
+    instead of a line of JSON (TO DO FL-104, 26 October 2026: Inequality's
+    /join and Layoff's participant steps answered bare JSON). It may be a
+    coroutine function. The answer always leaves with status 429 and
+    Retry-After, whatever the page set. Without it, or when it raises (logged),
+    the JSON answer below goes out as before.
     """
 
     def __init__(self, app, config: Optional[RateLimitConfig] = None,
                  rules: Optional[Iterable[tuple]] = None,
                  window: Optional[SlidingWindow] = None,
                  trusted_proxies: Optional[Sequence[str]] = None,
-                 limited_methods: Optional[Iterable[str]] = None):
+                 limited_methods: Optional[Iterable[str]] = None,
+                 limited_response: Optional[Callable] = None):
         super().__init__(app)
         if config is None:
             if rules is None:
@@ -147,6 +157,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.trusted_proxies = (list(trusted_proxies) if trusted_proxies
                                 else default_trusted_proxies())
         self.limited_methods = frozenset(limited_methods) if limited_methods else None
+        self.limited_response = limited_response
 
     def _applies(self, method: str) -> bool:
         if self.limited_methods is not None:
@@ -172,6 +183,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             # ExceptionMiddleware, so a raised HTTPException surfaces as a 500
             # instead of the app's own error page — the trap the CSRF module
             # documents and which this fleet has already been bitten by.
+            if self.limited_response is not None:
+                try:
+                    page = self.limited_response(request, retry_after)
+                    if inspect.isawaitable(page):
+                        page = await page
+                    page.status_code = 429
+                    page.headers["Retry-After"] = str(retry_after)
+                    return page
+                except Exception:  # noqa: BLE001 - logged with the traceback; the JSON answer still goes out
+                    logger.exception("Rate limited on %s: the tool's own page failed",
+                                     request.url.path)
             return JSONResponse(
                 {"detail": "Too many requests. Please try again later."},
                 status_code=429,

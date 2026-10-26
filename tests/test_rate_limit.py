@@ -114,3 +114,68 @@ def test_empty_trusted_list_falls_back_to_the_default_not_to_trust_nobody():
 def test_forwarded_header_is_trusted_only_behind_a_known_proxy(peer, forwarded, trusted, expected):
     from phronon_common.rate_limit import client_ip
     assert client_ip(_FakeRequest(peer, forwarded), trusted) == expected
+
+
+# ── the answer to a refused request (TO DO FL-104, 26 October 2026) ──────────
+
+def _limited_app(limited_response=None):
+    from fastapi import FastAPI
+    from fastapi.responses import HTMLResponse, PlainTextResponse
+    from fastapi.testclient import TestClient
+    from phronon_common.rate_limit import RateLimitMiddleware
+
+    app = FastAPI()
+
+    @app.post("/join")
+    def join():
+        return PlainTextResponse("joined")
+
+    kwargs = {"limited_response": limited_response} if limited_response else {}
+    app.add_middleware(RateLimitMiddleware, rules=[("/join", 1, 60)], **kwargs)
+    return TestClient(app), HTMLResponse
+
+
+def test_a_refused_request_gets_the_tools_own_page_with_429_and_retry_after():
+    seen = []
+
+    def page(request, retry_after):
+        seen.append((request.url.path, retry_after))
+        return html_response("<h1>Too many attempts</h1>", status_code=200)
+
+    client, html_response = _limited_app(page)
+    assert client.post("/join").text == "joined"
+    refused = client.post("/join")
+    assert refused.status_code == 429, "the page's own status must not win"
+    assert "Too many attempts" in refused.text and "detail" not in refused.text
+    assert refused.headers["content-type"].startswith("text/html")
+    assert 0 < int(refused.headers["retry-after"]) <= 60
+    assert seen and seen[0][0] == "/join"
+
+
+def test_a_coroutine_page_works_too():
+    async def page(request, retry_after):
+        return html_response("<p>wait</p>")
+
+    client, html_response = _limited_app(page)
+    client.post("/join")
+    refused = client.post("/join")
+    assert refused.status_code == 429 and "wait" in refused.text
+
+
+def test_a_page_that_fails_falls_back_to_the_json_answer(caplog):
+    def page(request, retry_after):
+        raise RuntimeError("template missing")
+
+    client, _ = _limited_app(page)
+    client.post("/join")
+    refused = client.post("/join")
+    assert refused.status_code == 429 and refused.json()["detail"]
+    assert "own page failed" in caplog.text
+
+
+def test_without_a_page_the_answer_is_unchanged():
+    client, _ = _limited_app()
+    client.post("/join")
+    refused = client.post("/join")
+    assert refused.status_code == 429
+    assert refused.json() == {"detail": "Too many requests. Please try again later."}

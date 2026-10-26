@@ -182,25 +182,77 @@ RESUME_TOKENS_DDL = f"""CREATE TABLE IF NOT EXISTS `{RESUME_TOKENS_TABLE}` (
 ) ENGINE=InnoDB"""
 
 
-def issue_resume_token(execute: Callable, query_one: Callable, participant_ref: str) -> Optional[str]:
-    """Mint a one-time resume token for a participant; None if throttled.
-
-    Invalidates any live link first (one live link per participant), then
-    inserts the hash with a RESUME_LINK_MINUTES expiry. Throttled per
-    participant so a stranger who knows an address cannot flood a mailbox.
-    """
+def _resume_throttled(query_one: Callable, participant_ref: str) -> bool:
+    """Three links per fifteen minutes per participant, so a stranger who
+    knows an address cannot flood a mailbox."""
     recent = query_one(
         f"SELECT COUNT(*) AS n FROM {RESUME_TOKENS_TABLE} WHERE participant_ref = %s "
         f"AND created_at > DATE_SUB(NOW(), INTERVAL {RESUME_LINK_WINDOW_MINUTES} MINUTE)",
         (participant_ref,))
-    if recent and int(recent["n"] or 0) >= RESUME_LINKS_PER_WINDOW:
-        return None
-    raw, digest = new_token()
+    return bool(recent) and int(recent["n"] or 0) >= RESUME_LINKS_PER_WINDOW
+
+
+def _store_resume_token(execute: Callable, participant_ref: str, digest: str) -> None:
+    """Retire any live link (one live link per participant), then store the
+    new hash with a RESUME_LINK_MINUTES expiry."""
     execute(f"UPDATE {RESUME_TOKENS_TABLE} SET used = 1 WHERE participant_ref = %s AND used = 0",
             (participant_ref,))
     execute(f"INSERT INTO {RESUME_TOKENS_TABLE} (participant_ref, token_hash, expires_at) "
             f"VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL {RESUME_LINK_MINUTES} MINUTE))",
             (participant_ref, digest))
+
+
+def send_resume_link(execute: Callable, query_one: Callable, participant_ref: str,
+                     send: Callable[[str], object], logger, where: str) -> Optional[bool]:
+    """Mail a one-time resume link, and store it only once the mail went out.
+
+    `send(raw)` mails the link that carries the raw token and answers True
+    once the mail server took it, False when nothing was sent (None, from a
+    sender that does not say, counts as sent). Only then is the earlier link
+    retired and the new one stored, so a mail that never left keeps the
+    earlier link working: the rule `withdrawal_kit.send_fresh_links` follows
+    for deletion links (TO DO FL-104, 26 October 2026). Until then the link
+    was stored first and a failed send left the participant with no working
+    link at all. A failed send also no longer counts against the throttle,
+    which counts stored links.
+
+    Answers None when throttled (nothing sent), True when the link was mailed
+    and stored, False otherwise. Never raises for a failed send or store: the
+    caller shows the same page either way, so this logs it. `where` names the
+    session and the recipient DOMAIN (`emails.recipient_domain`), never the
+    address (FL-022).
+    """
+    if _resume_throttled(query_one, participant_ref):
+        return None
+    raw, digest = new_token()
+    try:
+        sent = send(raw)
+    except Exception:  # noqa: BLE001 - the page reads the same either way; logged with the traceback
+        logger.exception("Resume link for %s failed; the earlier link still works", where)
+        return False
+    if sent is False:
+        logger.warning("Resume link for %s not sent; the earlier link still works", where)
+        return False
+    try:
+        _store_resume_token(execute, participant_ref, digest)
+    except Exception:  # noqa: BLE001 - logged with the traceback; the mailed link cannot work
+        logger.exception("Resume link for %s sent but not stored; the earlier link still "
+                         "works, the mailed one does not", where)
+        return False
+    return True
+
+
+def issue_resume_token(execute: Callable, query_one: Callable, participant_ref: str) -> Optional[str]:
+    """Mint and store a one-time resume token; None if throttled.
+
+    Stores before the caller sends, which `send_resume_link` replaced in
+    1.89.0. Kept until every tool's live commit calls `send_resume_link`:
+    a release's verify runs the live commits against it (TO DO FL-104).
+    """
+    if _resume_throttled(query_one, participant_ref):
+        return None
+    raw, digest = new_token()
+    _store_resume_token(execute, participant_ref, digest)
     return raw
 
 

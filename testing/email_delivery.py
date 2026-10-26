@@ -39,7 +39,7 @@ from pathlib import Path
 # The canonical brand list lives with the sample-mail harness, which is what
 # puts a brand name into a real message; re-exported here because this contract
 # is where the leak check reads it.
-from phronon_common.mail_diagnostics import FLEET_TOOL_NAMES  # noqa: F401
+from phronon_common.mail_diagnostics import FLEET_TOOL_NAMES, TEST_RECIPIENT  # noqa: F401
 
 
 def other_fleet_names(tool_name: str) -> list[str]:
@@ -440,3 +440,56 @@ class LiveDelivery(_EmailContract):
             str(len(results)) + " sample e-mail(s):\n  " + "\n  ".join(failures)
         )
         return None
+
+
+# ── A sample whose sender says "not sent" fails (TO DO FL-104, 26 October 2026)
+# The shared harness counts a sample as delivered unless it raises. Since
+# 1.89.0 these five shared senders answer False when nothing was sent, and
+# each tool's sample hands the answer to mail_diagnostics.raise_if_not_sent.
+# Before, they answered None either way, so on a machine without SMTP their
+# samples were reported as delivered.
+
+#: sample key (as every tool's SAMPLES names it) -> the phronon_common.emails
+#: function behind it.
+ANSWERING_SAMPLES = {
+    "email_change_confirm": "send_email_change_confirm",
+    "email_change_notice": "send_email_change_notice",
+    "two_factor_reset": "send_two_factor_reset_notice",
+    "two_factor_confirmation": "send_two_factor_confirmation",
+    "participant_resume": "send_participant_resume",
+}
+
+
+def answering_samples(project_root: Path | str) -> list[str]:
+    """The keys of ANSWERING_SAMPLES this tool has a sample for."""
+    have = {key for key, _label, _fn in load_sender_module(project_root).SAMPLES}
+    return sorted(key for key in ANSWERING_SAMPLES if key in have)
+
+
+def run_sample(monkeypatch, project_root: Path | str, key: str, answer,
+               module=None, name: str | None = None):
+    """Run one sample with its sender answering `answer`; nothing is mailed.
+
+    The stand-in replaces `module.name`, by default the shared function in
+    phronon_common.emails, so the answer travels through the tool's own
+    services/email.py wrapper as it does in production: a wrapper that drops
+    it fails the check too. A tool whose sender is its own passes its module
+    and name. Returns (how often the stand-in was asked, the exception the
+    sample raised or None).
+    """
+    from phronon_common import emails as shared
+
+    monkeypatch.delenv("SMTP_PASSWORD", raising=False)  # a safety belt: nothing can be mailed
+    calls = []
+
+    def stand_in(*args, **kwargs):
+        calls.append(args)
+        return answer
+
+    monkeypatch.setattr(module or shared, name or ANSWERING_SAMPLES[key], stand_in)
+    sample = {k: fn for k, _label, fn in load_sender_module(project_root).SAMPLES}[key]
+    try:
+        sample(TEST_RECIPIENT)
+    except Exception as exc:  # noqa: BLE001 - the caller asserts on it
+        return len(calls), exc
+    return len(calls), None

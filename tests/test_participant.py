@@ -145,6 +145,79 @@ def test_resume_link_is_one_live_link_one_use_and_throttled():
     assert not any(s.startswith("INSERT") for s in throttled.statements)
 
 
+# ── send_resume_link: send first, store after (TO DO FL-104, 26 October 2026) ─
+
+class _Log:
+    def __init__(self):
+        self.lines = []
+
+    def warning(self, msg, *args):
+        self.lines.append(("warning", msg % args))
+
+    def exception(self, msg, *args):
+        self.lines.append(("exception", msg % args))
+
+
+def _sender(answer, mailed):
+    def send(raw):
+        mailed.append(raw)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+    return send
+
+
+def test_a_mailed_resume_link_works_and_retires_the_earlier_one():
+    db, log, mailed = _Db(), _Log(), []
+    assert p.send_resume_link(db.execute, db.query_one, "pid", _sender(True, mailed), log, "s1") is True
+    assert p.send_resume_link(db.execute, db.query_one, "pid", _sender(True, mailed), log, "s1") is True
+    first, second = mailed
+    assert p.peek_resume_token(db.query_one, first) is None, "a new link retires the old one"
+    assert p.peek_resume_token(db.query_one, second)["participant_ref"] == "pid"
+    assert not log.lines
+
+
+@pytest.mark.parametrize("answer", [False, OSError("refused")], ids=["not-sent", "send-raised"])
+def test_a_resume_link_that_was_not_sent_leaves_the_earlier_one_working(answer):
+    db, log, mailed = _Db(), _Log(), []
+    p.send_resume_link(db.execute, db.query_one, "pid", _sender(True, mailed), log, "s1")
+    statements = len(db.statements)
+
+    assert p.send_resume_link(db.execute, db.query_one, "pid", _sender(answer, mailed), log,
+                              "session s1 (@example.org)") is False
+    assert p.peek_resume_token(db.query_one, mailed[0]), "the earlier link must still work"
+    assert p.peek_resume_token(db.query_one, mailed[1]) is None, "the unsent link was never stored"
+    assert not [s for s in db.statements[statements:] if s.startswith(("INSERT", "UPDATE"))]
+    assert log.lines and "session s1 (@example.org)" in log.lines[0][1]
+    assert "earlier link still works" in log.lines[0][1]
+
+
+def test_a_sender_that_does_not_say_counts_as_sent():
+    """A tool wrapper that drops the shared sender's answer returns None after
+    a send. Reading that as "not sent" would store no link ever."""
+    db, log, mailed = _Db(), _Log(), []
+    assert p.send_resume_link(db.execute, db.query_one, "pid", _sender(None, mailed), log, "s1") is True
+    assert p.peek_resume_token(db.query_one, mailed[0])
+
+
+def test_a_throttled_resume_request_mails_nothing():
+    db, log, mailed = _Db(recent=p.RESUME_LINKS_PER_WINDOW), _Log(), []
+    assert p.send_resume_link(db.execute, db.query_one, "pid", _sender(True, mailed), log, "s1") is None
+    assert not mailed and not any(s.startswith("INSERT") for s in db.statements)
+
+
+def test_a_resume_link_sent_but_not_stored_is_logged():
+    db, log, mailed = _Db(), _Log(), []
+
+    def broken_execute(sql, params):
+        raise RuntimeError("database gone")
+
+    assert p.send_resume_link(broken_execute, db.query_one, "pid", _sender(True, mailed), log,
+                              "s1") is False
+    assert mailed and log.lines[0][0] == "exception"
+    assert "sent but not stored" in log.lines[0][1]
+
+
 def test_the_table_ddl_has_the_hash_unique_and_never_a_raw_token():
     ddl = p.RESUME_TOKENS_DDL
     assert "token_hash" in ddl and "UNIQUE KEY" in ddl and "raw" not in ddl.lower()

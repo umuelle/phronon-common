@@ -235,6 +235,23 @@ def record_full_send(project_root: Path, today: str | None = None) -> None:
         pass
 
 
+def raise_if_not_sent(answer, what: str = "this sample") -> None:
+    """Turn a sender's False into a failed sample.
+
+    `send_all` counts a sample as delivered unless it raises, and the fleet's
+    senders answer True once the mail server took the mail and False when
+    nothing was sent: SMTP is not configured, or (the two-factor confirmation,
+    which never raises) the mail server refused it. None is what a sender that does
+    not say answers after a send (the shared senders before 1.85.0 and 1.89.0,
+    some tools' own still), so it counts as sent. One copy since 26 October
+    2026, where seven tools each had their own (TO DO FL-096, FL-104).
+    """
+    if answer is False:
+        raise RuntimeError(f"Not sent: the sender reports that {what} was not sent "
+                           f"(SMTP is not configured on this machine, or the mail "
+                           f"server refused it; the log says which).")
+
+
 def send_all(samples, recipient: str = TEST_RECIPIENT, *, project_root=None) -> list:
     """Send the samples. Returns [(key, label, error_or_None), ...].
 

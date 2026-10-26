@@ -5,6 +5,40 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.89.0 — 2026-10-26
+
+TO DO FL-104: mail that can fail without saying so. Every change keeps the
+live tools working as they are (each answer is new, each parameter optional);
+the tools adopt them in their own commits.
+
+- **`emails`: five more senders say whether the mail left.**
+  `send_email_change_confirm`, `send_email_change_notice`,
+  `send_two_factor_reset_notice`, `send_two_factor_confirmation` and
+  `send_participant_resume` answer True once the mail server took the mail and
+  False when SMTP is not configured (the two-factor confirmation also after a
+  failed send, which it logs and never raises). They answered None either way,
+  so their test-mail samples counted as delivered on a machine without SMTP.
+  Tests: `tests/test_every_sender_says_whether_it_sent.py`.
+- **`participant.send_resume_link`: a resume link is stored only once its
+  mail went out.** The rule `withdrawal_kit.send_fresh_links` follows for
+  deletion links. `issue_resume_token` stored the link first, so a failed
+  send retired the participant's earlier link and left them none that worked.
+  It answers None when throttled, True when mailed and stored, False
+  otherwise, and logs each failure with the caller's `where` (recipient
+  domain, never the address). `issue_resume_token` stays until every tool's
+  live commit uses the new function. Tests in `tests/test_participant.py`.
+- **`rate_limit.RateLimitMiddleware(limited_response=...)`.** A refused
+  request gets the tool's own page, status 429 and Retry-After, instead of a
+  line of JSON. Without it, or when the page fails (logged), the JSON answer
+  goes out as before. Tests in `tests/test_rate_limit.py`.
+- **`mail_diagnostics.raise_if_not_sent`**, the one copy of the check seven
+  tools each had in their test-mail script: False fails the sample, True and
+  None count as sent.
+- **Test kit:** `testing.email_delivery.run_sample` and `answering_samples`
+  (a sample fails only when its sender says nothing was sent, checked through
+  the tool's own wrapper) and `testing.rate_limit_page` (a refused request
+  gets the tool's page).
+
 ## 1.88.0 — 2026-10-25
 
 One published sentence pair, no code change.

@@ -316,17 +316,20 @@ def email_change_confirm_bodies(tool_name: str, confirm_url: str, hours: str = "
 
 
 def send_email_change_confirm(tool_name: str, default_from: str, to_email: str,
-                              confirm_url: str, subject_prefix: str = "") -> None:
-    """Send the confirm-your-new-address link. No-op (logs) without SMTP."""
+                              confirm_url: str, subject_prefix: str = "") -> bool:
+    """Send the confirm-your-new-address link. True once the mail server took
+    it; False without SMTP (logged), as `send_password_reset` answers (TO DO
+    FL-104, 26 October 2026; None before)."""
     hours = str(EMAIL_CHANGE_HOURS)
     if not os.getenv("SMTP_PASSWORD"):
         _unsendable("e-mail address confirmation", to_email, confirm_url)
-        return
+        return False
     sender = _sender_address(default_from)
     text, html = email_change_confirm_bodies(tool_name, confirm_url, hours)
     _smtp_send(sender, to_email, _multipart(
         f"{subject_prefix}{tool_name} — confirm your new e-mail address",
         sender, to_email, text, html))
+    return True
 
 
 def email_change_notice_bodies(tool_name: str, new_email: str):
@@ -360,16 +363,18 @@ def email_change_notice_bodies(tool_name: str, new_email: str):
 
 
 def send_email_change_notice(tool_name: str, default_from: str, to_email: str,
-                             new_email: str, subject_prefix: str = "") -> None:
-    """Tell the CURRENT address that a change was requested. No link inside."""
+                             new_email: str, subject_prefix: str = "") -> bool:
+    """Tell the CURRENT address that a change was requested. No link inside.
+    True once sent; False without SMTP."""
     if not os.getenv("SMTP_PASSWORD"):
         _unsendable("e-mail address change notice", to_email)
-        return
+        return False
     sender = _sender_address(default_from)
     text, html = email_change_notice_bodies(tool_name, new_email)
     _smtp_send(sender, to_email, _multipart(
         f"{subject_prefix}{tool_name} — a change of e-mail address was requested",
         sender, to_email, text, html))
+    return True
 
 
 def two_factor_reset_bodies(tool_name: str, account_url: str):
@@ -402,20 +407,22 @@ def two_factor_reset_bodies(tool_name: str, account_url: str):
 
 
 def send_two_factor_reset_notice(tool_name: str, default_from: str, to_email: str,
-                                 account_url: str, subject_prefix: str = "") -> None:
+                                 account_url: str, subject_prefix: str = "") -> bool:
     """Tell an account that an administrator cleared its second factor.
+    True once sent; False without SMTP.
 
     `account_url` is a plain page address behind the login, not a credential —
     it is logged with the rest of the line when SMTP is missing.
     """
     if not os.getenv("SMTP_PASSWORD"):
         _unsendable("two-factor reset notice", to_email)
-        return
+        return False
     sender = _sender_address(default_from)
     text, html = two_factor_reset_bodies(tool_name, account_url)
     _smtp_send(sender, to_email, _multipart(
         f"{subject_prefix}{tool_name} — two-factor login was reset",
         sender, to_email, text, html))
+    return True
 
 
 # ── Two-factor confirmation (2 October 2026) ────────────────────────────────
@@ -503,19 +510,20 @@ def two_factor_confirmation_bodies(tool_name: str, account_url: str,
 
 def send_two_factor_confirmation(tool_name: str, default_from: str, to_email: str,
                                  account_url: str, event: str = "enabled",
-                                 subject_prefix: str = "") -> None:
+                                 subject_prefix: str = "") -> bool:
     """Confirm a two-factor change the account holder just made.
 
     `event` is a key of TWO_FACTOR_EVENTS. A failed send is logged, never
     raised: the change itself has already been saved, and the user is looking
-    at their codes. `account_url` is a plain page behind the login, not a
-    credential.
+    at their codes. The answer says what happened instead: True once the mail
+    server took the mail, False without SMTP or after a failed send.
+    `account_url` is a plain page behind the login, not a credential.
     """
     if event not in TWO_FACTOR_EVENTS:
         raise ValueError(f"unknown two-factor event {event!r}")
     if not os.getenv("SMTP_PASSWORD"):
         _unsendable("two-factor confirmation", to_email)
-        return
+        return False
     sender = _sender_address(default_from)
     text, html = two_factor_confirmation_bodies(tool_name, account_url, event)
     subject_tail = TWO_FACTOR_EVENTS[event][0]
@@ -526,6 +534,8 @@ def send_two_factor_confirmation(tool_name: str, default_from: str, to_email: st
     except Exception:
         logger.exception("two-factor confirmation to %s failed",
                          recipient_domain(to_email))
+        return False
+    return True
 
 
 # ── Participant resume and withdrawal links (3 September 2026) ──────────────
@@ -553,15 +563,19 @@ def participant_resume_bodies(tool_name: str, resume_url: str, minutes: int = 30
 
 def send_participant_resume(tool_name: str, default_from: str, to_email: str,
                             resume_url: str, minutes: int = 30,
-                            subject_prefix: str = "") -> None:
+                            subject_prefix: str = "") -> bool:
+    """True once the mail server took the mail; False when SMTP is not
+    configured and nothing was sent. `participant.send_resume_link` stores the
+    link only after a True. A refused SMTP conversation raises."""
     if not os.getenv("SMTP_PASSWORD"):
         _unsendable("participant resume link", to_email, resume_url)
-        return
+        return False
     sender = _sender_address(default_from)
     text, html = participant_resume_bodies(tool_name, resume_url, minutes)
     msg = _multipart(f"{subject_prefix}{tool_name} — continue your session", sender, to_email,
                      text, branded_html(tool_name, html))
     _smtp_send(sender, to_email, msg)
+    return True
 
 
 def withdrawal_link_bodies(tool_name: str, withdraw_url: str, deadline: str = "",
