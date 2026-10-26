@@ -91,7 +91,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app, csrf_protection: CSRFProtection,
                  session_cookie: str = "backoffice", exempt_paths: list = None,
-                 exempt_exact=None):
+                 exempt_exact=None, session_id_of=None):
         """
         Args:
             session_cookie: Cookie whose value tokens are bound to. Pass ``None``
@@ -99,10 +99,16 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 cookie on every response (a rolling value would never match).
             exempt_paths: Path PREFIXES exempt from CSRF. Never ``"/"``.
             exempt_exact: Exact paths exempt from CSRF. Use this for ``"/"``.
+            session_id_of: ``callable(request) -> str | None`` naming the
+                session a token is bound to, for a tool whose session cookie
+                rolls: it returns the cookie's stable part (the account and its
+                session epoch, say), or ``None`` for a visitor. When given, it
+                is used instead of ``session_cookie`` (1.93.0, TO DO FL-090 (b)).
         """
         super().__init__(app)
         self.csrf = csrf_protection
         self.session_cookie = session_cookie
+        self.session_id_of = session_id_of
         self.EXEMPT_PATHS = ["/static/"] + list(exempt_paths or [])
         self.EXEMPT_EXACT = frozenset(exempt_exact or ())
 
@@ -163,9 +169,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         if not csrf_token:
             csrf_token = request.headers.get("X-CSRF-Token")
 
-        session_id = (
-            request.cookies.get(self.session_cookie) if self.session_cookie else None
-        )
+        session_id = _session_id(request, self.session_cookie, self.session_id_of)
         if not csrf_token or not self.csrf.validate_token(csrf_token, session_id):
             logger.warning(f"CSRF validation failed for {request.method} {path}")
             if "application/json" in request.headers.get("accept", ""):
@@ -181,13 +185,20 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+def _session_id(request: Request, session_cookie, session_id_of):
+    """What a token is bound to: ``session_id_of(request)`` when a tool gives
+    one, else the ``session_cookie`` value, else nothing."""
+    if session_id_of is not None:
+        return session_id_of(request) or None
+    return request.cookies.get(session_cookie) if session_cookie else None
+
+
 def get_csrf_token(request: Request, csrf_protection: CSRFProtection,
-                   session_cookie: str = None) -> str:
+                   session_cookie: str = None, session_id_of=None) -> str:
     """Token for use in templates.
 
-    Pass the same ``session_cookie`` the middleware was given, or leave it
-    ``None`` when the middleware runs unbound — the two must agree or every
-    token fails validation.
+    Pass the same ``session_cookie`` (or ``session_id_of``) the middleware was
+    given, or neither when the middleware runs unbound — the two must agree or
+    every token fails validation.
     """
-    session_id = request.cookies.get(session_cookie) if session_cookie else None
-    return csrf_protection.generate_token(session_id)
+    return csrf_protection.generate_token(_session_id(request, session_cookie, session_id_of))

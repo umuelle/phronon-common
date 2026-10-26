@@ -5,6 +5,20 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.93.0 — 2026-10-26
+
+One optional argument; nothing a tool calls today changes (TO DO FL-090 (b)).
+
+- **`csrf`: `session_id_of=`** on `CSRFMiddleware` and `get_csrf_token`, a
+  `callable(request) -> str | None` naming what a token is bound to. For a
+  tool whose session cookie rolls on every response, so binding to the raw
+  cookie (`session_cookie=`) could never match: it returns the cookie's stable
+  part, the account and its session epoch, or `None` for a visitor. When
+  given it is used instead of `session_cookie`; without it nothing changes.
+  Controversy Generator, unbound until now, is the first user. Tests:
+  `tests/test_csrf.py`, the four `session_id_of` tests.
+
+
 ## 1.92.0 — 2026-10-26
 
 Two new modules and a chart export (TO DO FL-098 points 6 to 8); nothing a

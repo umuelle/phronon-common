@@ -172,6 +172,53 @@ def test_get_csrf_token_matches_what_the_middleware_expects():
     assert not protection.validate_token(token, "other-session")
 
 
+# ── Binding to the stable part of a rolling cookie (1.93.0, TO DO FL-090 (b)) ──
+#
+# Controversy Generator's session cookie is "<account>:<expiry>:<epoch>-<sig>"
+# and its expiry is rewritten on every response, so binding to the raw value
+# never matched and the tool ran unbound. session_id_of lets it bind to the
+# part that stays: the account and its epoch.
+
+def _account_of(request):
+    raw = request.cookies.get("backoffice")
+    if not raw:
+        return None
+    account, _expiry, epoch = raw.split(":")
+    return f"{account}:{epoch}"
+
+
+def test_session_id_of_survives_the_cookie_rolling():
+    client, protection = _build(session_cookie=None, session_id_of=_account_of)
+    client.cookies.set("backoffice", "7:1000:0")
+    token = protection.generate_token("7:0")
+    client.cookies.set("backoffice", "7:2000:0")       # the next response rolled it
+    assert client.post("/backoffice", data={"csrf_token": token}).status_code == 200
+
+
+def test_session_id_of_refuses_a_token_minted_for_another_account_or_epoch():
+    client, protection = _build(session_cookie=None, session_id_of=_account_of)
+    client.cookies.set("backoffice", "7:1000:0")
+    for other in ("8:0", "7:1", None):
+        token = protection.generate_token(other)
+        assert client.post("/backoffice", data={"csrf_token": token}).status_code == 403, other
+
+
+def test_session_id_of_leaves_a_visitor_unbound():
+    client, protection = _build(session_cookie=None, session_id_of=_account_of)
+    assert client.post("/backoffice", data={"csrf_token": protection.generate_token(None)}).status_code == 200
+
+
+def test_get_csrf_token_with_session_id_of_matches_the_middleware():
+    from starlette.requests import Request
+
+    protection = CSRFProtection(secret_key=SECRET)
+    request = Request({"type": "http", "method": "GET", "path": "/",
+                       "headers": [(b"cookie", b"backoffice=7:1000:3")]})
+    token = get_csrf_token(request, protection, session_id_of=_account_of)
+    assert protection.validate_token(token, "7:3")
+    assert not protection.validate_token(token, None)
+
+
 # ── Failure mode ─────────────────────────────────────────────────────────────
 
 def test_failure_is_a_403_not_a_500():
