@@ -5,6 +5,19 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.90.0 — 2026-10-26
+
+TO DO FL-109: one function removed, nothing added.
+
+- **`participant.issue_resume_token` is gone.** It stored a resume link
+  before the caller sent it, so a failed send left the participant without a
+  working link. 1.89.0 added `send_resume_link`, which stores only after the
+  send, and kept the old function because the tools' live commits still
+  called it. Since 26 October 2026 every tool that mails a resume link runs
+  `send_resume_link`, and the deploy gate's participant check asks for it.
+  `test_resume_link_is_one_live_link_one_use_and_throttled` now goes through
+  `send_resume_link`; `test_the_store_first_function_is_gone` keeps it gone.
+
 ## 1.89.0 — 2026-10-26
 
 TO DO FL-104: mail that can fail without saying so. Every change keeps the

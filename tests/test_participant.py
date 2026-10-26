@@ -129,9 +129,10 @@ class _Db:
 
 
 def test_resume_link_is_one_live_link_one_use_and_throttled():
-    db = _Db()
-    first = p.issue_resume_token(db.execute, db.query_one, "pid")
-    second = p.issue_resume_token(db.execute, db.query_one, "pid")
+    db, mailed = _Db(), []
+    for _ in range(2):
+        assert p.send_resume_link(db.execute, db.query_one, "pid", mailed.append, _Log(), "s1")
+    first, second = mailed
     assert first and second and first != second
     assert p.peek_resume_token(db.query_one, first) is None, "issuing a new link must kill the old one"
     row = p.peek_resume_token(db.query_one, second)
@@ -141,8 +142,15 @@ def test_resume_link_is_one_live_link_one_use_and_throttled():
     assert not p.spend_resume_token(db.execute, row["id"]), "a token spends once"
     assert p.peek_resume_token(db.query_one, second) is None
     throttled = _Db(recent=p.RESUME_LINKS_PER_WINDOW)
-    assert p.issue_resume_token(throttled.execute, throttled.query_one, "pid") is None
+    assert p.send_resume_link(throttled.execute, throttled.query_one, "pid", mailed.append,
+                              _Log(), "s1") is None
     assert not any(s.startswith("INSERT") for s in throttled.statements)
+
+
+def test_the_store_first_function_is_gone():
+    """TO DO FL-109: issue_resume_token stored a link before its mail went
+    out. Every tool sends through send_resume_link since 1.89.0."""
+    assert not hasattr(p, "issue_resume_token")
 
 
 # ── send_resume_link: send first, store after (TO DO FL-104, 26 October 2026) ─

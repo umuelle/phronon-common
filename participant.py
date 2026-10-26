@@ -242,19 +242,6 @@ def send_resume_link(execute: Callable, query_one: Callable, participant_ref: st
     return True
 
 
-def issue_resume_token(execute: Callable, query_one: Callable, participant_ref: str) -> Optional[str]:
-    """Mint and store a one-time resume token; None if throttled.
-
-    Stores before the caller sends, which `send_resume_link` replaced in
-    1.89.0. Kept until every tool's live commit calls `send_resume_link`:
-    a release's verify runs the live commits against it (TO DO FL-104).
-    """
-    if _resume_throttled(query_one, participant_ref):
-        return None
-    raw, digest = new_token()
-    _store_resume_token(execute, participant_ref, digest)
-    return raw
-
 
 def peek_resume_token(query_one: Callable, raw: Optional[str]) -> Optional[dict]:
     """The live row for a raw token, WITHOUT spending it (the GET confirm page)."""
