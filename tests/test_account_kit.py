@@ -487,8 +487,8 @@ def test_a_wrong_code_counts_towards_the_lockout(world):
 
 def _assert_locked_for(row, seconds):
     """The lock runs `seconds` from now (the column rounds to the second)."""
-    from datetime import datetime, timedelta
-    remaining = row["locked_until"] - datetime.utcnow()
+    from datetime import datetime, timedelta, timezone
+    remaining = row["locked_until"] - datetime.now(timezone.utc).replace(tzinfo=None)
     assert timedelta(seconds=seconds - 5) < remaining <= timedelta(seconds=seconds + 1), remaining
 
 

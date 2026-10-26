@@ -7,7 +7,7 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## 1.90.0 — 2026-10-26
 
-TO DO FL-109: one function removed, nothing added.
+TO DO FL-109 and the last line of FL-097. Nothing a tool calls is added.
 
 - **`participant.issue_resume_token` is gone.** It stored a resume link
   before the caller sent it, so a failed send left the participant without a
@@ -17,6 +17,10 @@ TO DO FL-109: one function removed, nothing added.
   `send_resume_link`, and the deploy gate's participant check asks for it.
   `test_resume_link_is_one_live_link_one_use_and_throttled` now goes through
   `send_resume_link`; `test_the_store_first_function_is_gone` keeps it gone.
+- **`lockout` no longer calls `datetime.utcnow()`**, which warns from Python
+  3.12 on (TO DO FL-097, the fleet's move off 3.10). `_utcnow()` gives the
+  same naive UTC value, because the `locked_until` columns hold naive UTC.
+  Test: `tests/test_lockout_clock.py` (fails with utcnow back).
 
 ## 1.89.0 — 2026-10-26
 
