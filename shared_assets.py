@@ -44,6 +44,8 @@ ASSETS = {
     "recovery-codes.js":       "static/js/recovery-codes.js",
     "passkeys.js":             "static/js/passkeys.js",
     "country-other.js":        "static/js/country-other.js",
+    "flow-preview.js":         "static/js/flow-preview.js",
+    "flow-preview-frame.js":   "static/js/flow-preview-frame.js",
 }
 
 # WHY A TOOL CARRIES FEWER (the lists themselves are in each ops/tool.json).
@@ -70,6 +72,16 @@ ASSETS = {
 #     only the tools that ask a country, Drawbridge, Inequality, Layoff, Moral
 #     Mirror, Polarity Profiler and Whiteout; each adopts it with the shared
 #     scheme (demographics.py).
+#   * flow-preview.js and flow-preview-frame.js (the educator's preview of the
+#     participant screens, FL-041): only the tools that have the preview,
+#     Drawbridge, Inequality, Moral Mirror and Whiteout. Copies until
+#     26 October 2026 (TO DO FL-098 point 3): flow-preview.js was identical in
+#     all four, and the frame script's two versions differed only in comments.
+#
+# LOOK SHARED, ARE NOT (checked 26 October 2026, FL-098 point 3): Polarity
+# Profiler's and Whiteout's session-tabs.js and lang-switcher.js, and Moral
+# Mirror's and Whiteout's confirm-submit.js, share a name but not their code;
+# each is the tool's own script for its own pages.
 
 
 def master_path(asset: str) -> Path:

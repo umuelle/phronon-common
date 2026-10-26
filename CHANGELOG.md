@@ -7,7 +7,7 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## 1.90.0 — 2026-10-26
 
-TO DO FL-109 and the last line of FL-097. Nothing a tool calls is added.
+TO DO FL-109, the last line of FL-097 and FL-098 point 3. Nothing a tool calls is added.
 
 - **`participant.issue_resume_token` is gone.** It stored a resume link
   before the caller sent it, so a failed send left the participant without a
@@ -21,6 +21,14 @@ TO DO FL-109 and the last line of FL-097. Nothing a tool calls is added.
   3.12 on (TO DO FL-097, the fleet's move off 3.10). `_utcnow()` gives the
   same naive UTC value, because the `locked_until` columns hold naive UTC.
   Test: `tests/test_lockout_clock.py` (fails with utcnow back).
+- **Two shared masters: `flow-preview.js` and `flow-preview-frame.js`**, the
+  educator's preview of the participant screens (FL-041) in Drawbridge,
+  Inequality, Moral Mirror and Whiteout. They were per-tool copies outside the
+  drift check (TO DO FL-098 point 3): the first identical in all four, the
+  second in two versions that differed only in comments. A tool's copy is
+  compared once its `ops/tool.json` names it; the four do so in their own
+  commits after this release is active. `shared_assets.py` also names the
+  three scripts that share a name across two tools but not their code.
 
 ## 1.89.0 — 2026-10-26
 
