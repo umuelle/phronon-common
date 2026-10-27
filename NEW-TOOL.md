@@ -49,8 +49,11 @@ belongs in your tool.
    `<Folder>/` as a git repository with one commit: the code built from the
    example (the tool's key, its own `legal_content/notice.json`, `db.py`,
    templates and a backoffice sign-in at the fleet addresses) in the standard
-   layout, `app.py` building the app, `config.py`, `core.py`, a stub
-   `retention.py` and the seven `routes_*.py`, `schema.sql`
+   layout with an explicit start (27 October 2026): `config.py` reads and
+   checks every setting once into `config.SETTINGS`, `app.create_app()`
+   builds the app, and its lifespan starts and stops the background clock
+   `retention.CLOCK` (no job yet), all three held by `tests/test_startup.py`;
+   `core.py` and the seven `routes_*.py`, `schema.sql`
    and `migrations/001`, `ops/tool.json` (the facts server-ops reads, see
    below), a stub `ops/browser_journey.py`, the test kit's wrappers and the
    tool's own tests, `.github/workflows/ci.yml` on the two central actions,
