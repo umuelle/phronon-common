@@ -5,7 +5,7 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
-## 1.96.0 — not released yet (the version line stays 1.95.0 until Whiteout's and Moral Mirror's test changes are live)
+## 1.96.0 — 2026-10-27
 
 The account gate denies by default (an external review of 27 October 2026,
 after OWASP's "deny by default").
