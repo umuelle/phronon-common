@@ -1,5 +1,5 @@
 name: CI
-# Runs weekly, on request and on PRs (Python 3.10, matching the server):
+# Runs weekly, on request and on PRs (Python 3.14, what the server runs since 26 October 2026):
 #   1. py_compile every tracked .py     — syntax
 #   2. parse every Jinja template        — template syntax
 #   3. install deps + the shared phronon_common package, then pytest
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.14"
       - name: Compile every tracked .py (syntax)
         run: |
           files=$(git ls-files '*.py')
