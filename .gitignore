@@ -12,3 +12,4 @@ venv/
 .claude/
 node_modules/
 htmlcov/
+*.egg-info/
