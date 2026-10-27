@@ -5,6 +5,29 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.95.0 — 2026-10-27
+
+The privacy pages say how long backups really last (TO DO FL-110, owner's
+wording of 27 October 2026). One template, `legal_templates/_processors.html`,
+in English and German; it is rendered by every tool's privacy page.
+
+- **The OneDrive copies are daily** (the page said weekly; daily since
+  26 October 2026).
+- **The erasure paragraph names what can keep an off-site copy longer:** "up
+  to 14 days" on the server and "normally up to 30 days" off-site, then the
+  two cases. If new backups stop reaching the off-site copy, the existing ones
+  stay until new ones replace them; and Microsoft keeps a deleted file in its
+  recycle bin for up to 93 days and in its own backups for up to 14 days more
+  (a work or school OneDrive, per Microsoft's support pages), encrypted
+  throughout.
+- The two numbers now hold: server-ops' deletion jobs delete one day earlier
+  (the server job kept copies 15 to 16 days, the Mac's pull 31), and
+  `server-ops/tests/test_backup_retention_matches_the_privacy_page.py` ties
+  the published numbers to both jobs.
+- A template change, so a code release: `verify`, then `refresh` restarts
+  the nine services onto it.
+
+
 ## 1.94.0 — 2026-10-27
 
 One chart routine instead of two (TO DO FL-098 point 1); a front-end master

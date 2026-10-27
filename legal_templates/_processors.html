@@ -5,7 +5,14 @@
    review pointed out that server-ops/BACKUPS.md already named them and said
    they belonged here. Encryption is a security measure; it does not remove a
    processor relationship or the duty to disclose it. If a backup destination
-   or monitoring service changes, change it HERE in the same commit. #}
+   or monitoring service changes, change it HERE in the same commit.
+
+   THE RETENTION NUMBERS are the deletion jobs' (27 October 2026, TO DO FL-110):
+   14 days = RETENTION_DAYS in server-ops/phronon-backup.sh, 30 days =
+   KEEP_DAYS in server-ops/fetch_offsite.sh; 93 + 14 days are Microsoft's for a
+   work or school OneDrive (recycle bin from deletion, then its own backups).
+   server-ops/tests/test_backup_retention_matches_the_privacy_page.py holds the
+   two sides together. #}
 {% if lang == 'de' %}
 <p>Wir setzen keine Dritten für Werbung, Analyse oder Tracking ein und
 verkaufen oder teilen keine personenbezogenen Daten zu Marketingzwecken.
@@ -15,7 +22,7 @@ Art. 28 DSGVO:</p>
 <ul>
   <li><strong>IONOS SE</strong> (Deutschland) — Hosting und E-Mail-Versand.</li>
   <li><strong>Microsoft Ireland Operations Ltd. (OneDrive)</strong> — Ablage
-    der wöchentlichen Sicherungskopien außerhalb des Servers. Diese
+    der täglichen Sicherungskopien außerhalb des Servers. Diese
     Sicherungen sind <strong>vor dem Hochladen verschlüsselt</strong>; der
     private Schlüssel liegt ausschließlich auf einem Rechner des Betreibers,
     niemals beim Anbieter. Microsoft speichert also ausschließlich
@@ -38,9 +45,16 @@ Störungsprüfung, keine Teilnehmenden- oder Inhaltsdaten.</p>
 <p><strong>Auswirkung auf die Löschung:</strong> Wird ein Datensatz gelöscht,
 kann er noch in den Sicherungskopien enthalten sein, bis diese turnusmäßig
 auslaufen: <strong>bis zu 14 Tage</strong> in den Sicherungen auf dem Server
-und <strong>bis zu 30 Tage</strong> in den verschlüsselten Kopien außer Haus. Sicherungen werden ausschließlich zur
-Wiederherstellung nach einem Ausfall verwendet, nie zur normalen
-Datenverarbeitung.</p>
+und <strong>in der Regel bis zu 30 Tage</strong> in den verschlüsselten Kopien
+außer Haus. In zwei Fällen kann eine Kopie außer Haus länger bestehen bleiben.
+Kommen außer Haus keine neuen Sicherungen mehr an, etwa während eines Ausfalls,
+bleiben die vorhandenen Kopien erhalten, bis neue sie ersetzen, damit sich der
+Dienst weiterhin wiederherstellen lässt. Und läuft eine Kopie außer Haus aus,
+bewahrt Microsoft die gelöschte Datei noch <strong>bis zu 93 Tage</strong> in
+seinem Papierkorb auf und danach <strong>bis zu 14 weitere Tage</strong> in
+seinen eigenen Sicherungen; sie bleibt dabei verschlüsselt. Sicherungen werden
+ausschließlich zur Wiederherstellung nach einem Ausfall verwendet, nie zur
+normalen Datenverarbeitung.</p>
 {% else %}
 <p>We use no third parties for advertising, analytics or tracking, and we do
 not sell or share personal data for marketing purposes. The following
@@ -49,7 +63,7 @@ agreement pursuant to Art. 28 GDPR:</p>
 <ul>
   <li><strong>IONOS SE</strong> (Germany) — hosting and outgoing e-mail.</li>
   <li><strong>Microsoft Ireland Operations Ltd. (OneDrive)</strong> — storage
-    of the weekly off-site backup copies. Those backups are
+    of the daily off-site backup copies. Those backups are
     <strong>encrypted before they leave the server</strong>, and the private
     key exists only on the operator's own machine — never at the provider. So
     Microsoft holds ciphertext it cannot read.</li>
@@ -67,8 +81,13 @@ but receives only status pings from the backup run and the alert check:
 no participant data and no content.</p>
 <p><strong>What this means for erasure:</strong> when a record is deleted, a
 copy may remain inside backups until those expire: <strong>up to 14 days</strong>
-in the backups held on the server, and <strong>up to 30 days</strong> in the
-encrypted off-site copies.
-Backups are used only to restore the service after a failure, never for
-ordinary processing.</p>
+in the backups held on the server, and <strong>normally up to 30 days</strong>
+in the encrypted off-site copies. Two things can keep an off-site copy longer.
+If new backups stop reaching it, for example during an outage, the existing
+copies are kept until new ones replace them, so that the service can still be
+restored. And when an off-site copy expires, Microsoft keeps the deleted file
+in its recycle bin for <strong>up to 93 days</strong>, and in its own backups
+for <strong>up to 14 days</strong> after that; it remains encrypted
+throughout. Backups are used only to restore the service after a failure,
+never for ordinary processing.</p>
 {% endif %}
