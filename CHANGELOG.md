@@ -24,6 +24,8 @@ only, so the release is assets-only.
   without it a chart is skipped and the report still comes out. Test:
   `tests/test_pdf_report_browser.py`, the picture compared with the engine's
   pixel for pixel in Chromium and WebKit, and a page without the engine.
+- The same test finds whichever jsPDF the tools carry (`jspdf-*.umd.min.js`
+  in their `static/vendor/`), so it keeps running when they move past 2.5.1.
 
 
 ## 1.93.0 — 2026-10-26

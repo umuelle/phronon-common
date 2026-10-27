@@ -44,9 +44,12 @@ from pathlib import Path
 PACKAGE = Path(__file__).resolve().parent.parent
 BUILDER = PACKAGE / "pdf-report.js"
 ENGINE = PACKAGE / "svg-charts.js"
-JSPDF_NAME = "jspdf-2.5.1.umd.min.js"
-JSPDF_CANDIDATES = [PACKAGE.parent / tool / "static" / "vendor" / JSPDF_NAME
-                    for tool in ("Whiteout", "Layoff-Exercise", "polarity-profiler")]
+# Whichever jsPDF the tools carry: the file name holds its version, and a
+# test that named one version would skip without a word the day the tools
+# move to the next.
+JSPDF_GLOB = "jspdf-*.umd.min.js"
+JSPDF_DIRS = [PACKAGE.parent / tool / "static" / "vendor"
+              for tool in ("Whiteout", "Layoff-Exercise", "polarity-profiler")]
 BROWSER_VENV_PY = Path.home() / ".local/phronon-browser/venv/bin/python"
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
@@ -180,7 +183,7 @@ window.__probe = (async function () {
 
 
 def _jspdf() -> Path | None:
-    return next((p for p in JSPDF_CANDIDATES if p.exists()), None)
+    return next((p for d in JSPDF_DIRS for p in sorted(d.glob(JSPDF_GLOB))), None)
 
 
 class _Handler(BaseHTTPRequestHandler):
