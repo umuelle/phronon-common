@@ -74,7 +74,12 @@ class SplitApp:
                 f"{name} from the module that defines it (app.py is only the composition root)")
 
     def __getattr__(self, name):
-        self._refuse_runtime_caller(name)
+        # A module's own dunders (__spec__, __name__, ...) are what the import
+        # system reads: Python 3.14 reads app.__spec__ when a function does
+        # `import app`, so refusing them stopped the import before the read the
+        # guard exists for (27 October 2026). Only names the tool defines count.
+        if not (name.startswith("__") and name.endswith("__")):
+            self._refuse_runtime_caller(name)
         for m in self._modules:
             if name in vars(m):
                 return vars(m)[name]

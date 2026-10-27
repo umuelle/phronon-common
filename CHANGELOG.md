@@ -24,6 +24,13 @@ in English and German; it is rendered by every tool's privacy page.
   (the server job kept copies 15 to 16 days, the Mac's pull 31), and
   `server-ops/tests/test_backup_retention_matches_the_privacy_page.py` ties
   the published numbers to both jobs.
+- **`testing.split_app` lets a module's own dunders through its guard.** The
+  test view refuses a read of a tool's names from the tool's runtime code; on
+  Python 3.14, which the release check now uses for this package as for the
+  tools, `import app` inside a function reads `app.__spec__` first, so the
+  refusal named `__spec__` instead of the name it exists for. Dunders pass;
+  every name the tool defines is still refused. Tests only (the view exists
+  in tests); `tests/test_split_app.py` has the case.
 - A template change, so a code release: `verify`, then `refresh` restarts
   the nine services onto it.
 

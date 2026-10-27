@@ -167,6 +167,19 @@ def test_runtime_code_may_not_read_through_the_view(tmp_path, monkeypatch):
         m["retention"].score()
 
 
+def test_the_import_systems_own_reads_pass_the_guard(tmp_path, monkeypatch):
+    # Python 3.14 reads app.__spec__ during a lazy `import app`; the guard is
+    # for names the tool defines, so a module dunder is not one of its refusals.
+    files = dict(FILES, retention="""
+        def name():
+            import app
+            return app.__name__
+    """)
+    root, m = _tool(tmp_path, monkeypatch, files)
+    split_app.install(m["app"], root)
+    assert m["retention"].name() == "app"
+
+
 def test_install_on_import_hands_out_the_view_on_first_import(tmp_path, monkeypatch):
     (tmp_path / "core.py").write_text("LIMIT = 5\n")
     (tmp_path / "app.py").write_text("from core import LIMIT\nTITLE = 'Tool'\n")
