@@ -5,6 +5,31 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.96.0 — 2026-10-27
+
+The account gate denies by default (an external review of 27 October 2026,
+after OWASP's "deny by default").
+
+- **A failed account lookup refuses the request.** `account_gate` answered a
+  lookup that raised by letting the request through, on the reasoning that
+  every page checks the session again. A page checks who is signed in, not the
+  temporary password or the missing authenticator the gate enforces, so a
+  lookup that failed in the gate and succeeded on the page let either pass for
+  that request. Now: 503 with a short "Temporarily unavailable" page
+  (`GATE_UNAVAILABLE_HTML`, `Retry-After: 30`, `no-store`), and the traceback
+  in the tool's logger (`kit.logger`).
+- **Paths open under both restrictions are not looked up:** sign-in, sign-out
+  and the reset and verify links answer the same whoever is signed in, so the
+  login page still shows its form while the database is down.
+- **The lookup runs in a worker thread** (`run_in_threadpool`): it is a
+  blocking database call, and the gate runs on the event loop of every
+  backoffice request.
+- Tests: the gate refuses and logs; the review's sequence (the first lookup
+  fails, the second would succeed) never reaches the page; the login page needs
+  no lookup; the lookup is off the main thread. Whiteout's and Moral Mirror's
+  suites were changed first where they leaned on the old fail-open.
+
+
 ## 1.95.0 — 2026-10-27
 
 The privacy pages say how long backups really last (TO DO FL-110, owner's

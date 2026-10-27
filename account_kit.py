@@ -86,8 +86,9 @@ from typing import Any, Callable, Optional
 import jinja2
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.routing import APIRoute
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from starlette.background import BackgroundTask
+from starlette.concurrency import run_in_threadpool
 
 from . import account as account_mod
 from . import lockout
@@ -155,6 +156,16 @@ MUST_CHANGE_OPEN = (ACCOUNT_URL, LOGOUT_URL, LOGIN_URL, RESET_URL, VERIFY_URL)
 #: Paths an administrator without an authenticator may still reach. Enrolling
 #: is the one thing such an account may do.
 ENROLMENT_OPEN = (TWO_FACTOR_URL, LOGOUT_URL, LOGIN_URL, RESET_URL, VERIFY_URL)
+
+#: What the gate answers when it cannot tell who is signed in (27 October 2026).
+GATE_UNAVAILABLE_HTML = (
+    '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+    '<meta name="viewport" content="width=device-width, initial-scale=1">'
+    "<title>Temporarily unavailable</title></head><body><main>"
+    "<h1>Temporarily unavailable</h1>"
+    "<p>This page could not be loaded just now. Please try again in a moment.</p>"
+    "</main></body></html>")
+
 
 def _opens(path: str, open_paths: tuple) -> bool:
     """Is `path` one of `open_paths` or below one? A bare prefix test let any
@@ -1450,9 +1461,16 @@ def account_gate(kit: AccountKit):
     a temporary password and no authenticator changes the password first,
     then enrols.
 
-    A failed lookup lets the request through (fail OPEN): a database hiccup
-    must not lock the whole backoffice out, and every page checks the session
-    again itself.
+    A failed lookup REFUSES the request (27 October 2026, external review):
+    503 with a short "temporarily unavailable" page and the traceback in the
+    tool's log. Until then it let the request through, on the reasoning that
+    every page checks the session again; but a page checks who is signed in,
+    not these two restrictions, so a lookup that failed here and succeeded on
+    the page let a temporary password or a missing authenticator pass for that
+    request. A path both restrictions leave open (sign-in, sign-out, the reset
+    and verify links) needs no lookup at all, so the login page still answers
+    while the database is down. The lookup runs in a worker thread: it is a
+    blocking database call, and this middleware runs on the event loop.
     """
     must_change_open = MUST_CHANGE_OPEN
     if kit.legacy_password_path:
@@ -1463,11 +1481,15 @@ def account_gate(kit: AccountKit):
 
     async def gate(request: Request, call_next):
         path = request.url.path
-        if path.startswith(kit.gated_prefixes):
+        if path.startswith(kit.gated_prefixes) and not (
+                _opens(path, must_change_open) and _opens(path, ENROLMENT_OPEN)):
             try:
-                row = who(request)
-            except Exception:  # noqa: BLE001 — fail open, see above
-                row = None
+                row = await run_in_threadpool(who, request)
+            except Exception:
+                kit.logger.exception("account gate: the signed-in account could not be looked up "
+                                     "for %s; refused with 503", path)
+                return HTMLResponse(GATE_UNAVAILABLE_HTML, status_code=503,
+                                    headers={"Retry-After": "30", "Cache-Control": "no-store"})
             if row and row.get("must_change_password"):
                 if not _opens(path, must_change_open):
                     return RedirectResponse(kit.must_change_url, status_code=303)

@@ -1354,7 +1354,7 @@ def test_the_enrolment_gate_covers_the_account_page(world):
     assert c.get("/backoffice/account").headers["location"] == "/backoffice/two-factor"
 
 
-def test_the_gate_asks_whom_the_tool_says_and_fails_open(world):
+def test_the_gate_asks_whom_the_tool_says_and_refuses_when_it_cannot(world, caplog):
     asked = []
 
     def gate_row(request):
@@ -1364,13 +1364,66 @@ def test_the_gate_asks_whom_the_tool_says_and_fails_open(world):
     r = w.client().get("/backoffice/elsewhere")                # nobody signed in at all
     assert r.headers["location"] == "/backoffice/account" and asked == ["/backoffice/elsewhere"]
 
+    # Deny by default (27 October 2026): a lookup that fails is a refusal,
+    # with the traceback in the tool's log; until then the request went on.
     def broken(request):
         raise RuntimeError("database unreachable")
     w = world(gate_account=broken)
-    assert w.client().get("/backoffice/elsewhere").text == "ELSEWHERE"
+    with caplog.at_level("ERROR"):
+        r = w.client().get("/backoffice/elsewhere")
+    assert r.status_code == 503 and "Temporarily unavailable" in r.text and "ELSEWHERE" not in r.text
+    assert r.headers["retry-after"] == "30" and r.headers["cache-control"] == "no-store"
+    assert any("could not be looked up for /backoffice/elsewhere" in rec.getMessage() and rec.exc_info
+               for rec in caplog.records)
     w = world()
     w.lookup_fails = True
+    assert w.client().get("/backoffice/elsewhere").status_code == 503
+
+
+def test_a_lookup_that_fails_once_never_lets_a_restriction_slip(world):
+    """The sequence the review named: the gate's lookup fails, the page's own
+    would succeed. The page checks who is signed in, not the restrictions,
+    so the gate must not hand the request on."""
+    calls = []
+
+    def flaky(request):
+        calls.append(request.url.path)
+        if len(calls) == 1:
+            raise RuntimeError("database hiccup")
+        return {"must_change_password": 1, "role": "admin", "totp_enabled": 0}
+    w = world(gate_account=flaky)
+    c = w.client()
+    first = c.get("/backoffice/elsewhere")
+    assert first.status_code == 503 and "ELSEWHERE" not in first.text
+    second = c.get("/backoffice/elsewhere")
+    assert second.status_code == 303 and second.headers["location"] == "/backoffice/account"
+
+
+def test_paths_open_under_both_restrictions_need_no_lookup(world):
+    # Sign-in, sign-out and the reset links answer whatever the account says,
+    # so they are not asked about, and the login page outlives an outage.
+    asked = []
+
+    def broken(request):
+        asked.append(request.url.path)
+        raise RuntimeError("database unreachable")
+    w = world(gate_account=broken)
+    r = w.client().get("/backoffice/login")
+    assert r.status_code == 200 and r.text.startswith("TOOL SIGN-IN") and asked == []
+
+
+def test_the_gate_looks_up_in_a_worker_thread(world):
+    # The lookup is a blocking database call; on the event loop it would stall
+    # every other request the worker serves.
+    import threading
+    seen = []
+
+    def who(request):
+        seen.append(threading.current_thread() is threading.main_thread())
+        return None
+    w = world(gate_account=who)
     assert w.client().get("/backoffice/elsewhere").text == "ELSEWHERE"
+    assert seen == [False]
 
 
 # ── an administrator resets another account's two-factor ─────────────────────
