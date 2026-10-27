@@ -5,6 +5,38 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.97.0 — 2026-10-27
+
+A passkey sign-in asks the browser at once (owner, 27 October 2026: in
+Safari the fingerprint prompt took a long time to appear), and the first
+sixteen modules are type-checked.
+
+- **`passkeys.js`: the button uses a challenge the page already holds.** A
+  click used to ask the server for a challenge and only then ask the browser,
+  a round trip after the click; Safari ties a passkey request to the click
+  that starts it. Every challenge request replaces the one in the server's
+  cookie, so the page now keeps the options of the latest one (the autofill
+  request's, or in the passkey-first view one fetched from
+  `data-autofill-url` for the button, renewed on the same four-minute clock)
+  and asks the browser inside the click. A ready challenge is used once and
+  only while it has more than a minute left; without one the click fetches a
+  challenge first, as before, and never while another is on its way. A
+  browser without the autofill offer keeps a challenge ready too. No server
+  change: same routes, cookie, budgets and one-use rule.
+- Tests: `tests/test_passkeys_browser.py` drives the master in Chromium and
+  WebKit under a strict CSP with a stand-in for the browser's dialog (the
+  normal page, the passkey-first page, no ready challenge, a cancelled
+  prompt); against the 1.96.0 script it fails on "the browser was asked after
+  the click".
+- **Type checking starts** (the third review of 27 October 2026): sixteen
+  interface modules pass mypy's strict flags (`[tool.mypy]` in
+  `pyproject.toml`, `tests/test_typed_interfaces.py`, mypy pinned in
+  `requirements-test.txt`). Annotations only, plus a cast on `once()`'s row
+  count and on the rate limiter's 429 page, and lockout's "no lock" test
+  written as `is not None`. The other nine modules follow (TO DO FL-112).
+- `.gitignore` ignores `*.egg-info/`.
+
+
 ## 1.96.0 — 2026-10-27
 
 The account gate denies by default (an external review of 27 October 2026,

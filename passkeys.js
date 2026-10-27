@@ -50,6 +50,17 @@
  *   (it holds a link, "Use e-mail and password instead", which brings the
  *   form back for this visit). Each tool's cookie table lists the marker.
  *
+ *   Since 1.97.0 (owner, 27 October 2026: in Safari the fingerprint prompt
+ *   took a long time to appear): the button asks the browser at once, inside
+ *   the click, with a challenge the page fetched before. Every challenge
+ *   request replaces the one in the server's cookie, so the page keeps the
+ *   options of the latest one: the autofill request's, or in the
+ *   passkey-first view a challenge fetched from data-autofill-url only for the
+ *   button, renewed on the same four-minute clock. A ready challenge is used
+ *   once, and only while it has more than a minute left, the prompt's own
+ *   timeout. Without one (the page has just opened, or the last one was used)
+ *   the click fetches a challenge first, as before.
+ *
  * Both blocks start `hidden` and are shown only when the browser can do
  * passkeys at all, so nobody is offered a button that cannot work. The server
  * answers every POST with JSON: options, {"ok": true}, {"redirect": url} or
@@ -206,9 +217,47 @@
     var waiting = null;      // the AbortController of the autofill request
     var renew = null;
     var reoffers = 2;        // after a refused passkey; never a loop of requests
+    var ready = null;        // the latest challenge's options, as JSON text
+    var readyAt = 0;
+    var inFlight = null;     // the challenge request on its way, if any
     box.hidden = false;
 
     function say(msg) { if (status) status.textContent = msg; }
+
+    // The server keeps one challenge per browser (its cookie), the latest one
+    // it handed out, so `ready` always holds the latest options that arrived.
+    function fetchChallenge(url) {
+      var req = post(url, { csrf_token: csrf });
+      inFlight = req;
+      return req.then(function (options) {
+        if (inFlight === req) inFlight = null;
+        ready = JSON.stringify(options);
+        readyAt = Date.now();
+        return options;
+      }, function (err) {
+        if (inFlight === req) inFlight = null;
+        throw err;
+      });
+    }
+
+    // Used once, and only while it outlives the prompt by a margin (RENEW_MS
+    // is the five-minute challenge less the prompt's one-minute timeout).
+    function takeReady() {
+      var options = ready && Date.now() - readyAt < RENEW_MS ? JSON.parse(ready) : null;
+      ready = null;
+      return options;
+    }
+
+    // No ready challenge: wait for the one on its way, else fetch one. Never
+    // two at once, or the cookie could end up holding the other challenge.
+    function challengeForButton() {
+      var pending = inFlight ? inFlight.then(null, function () { return null; })
+                             : Promise.resolve(null);
+      return pending.then(function () {
+        return takeReady() || fetchChallenge(box.getAttribute('data-options-url'))
+          .then(function () { return takeReady(); });
+      });
+    }
 
     function signIn(cred) {
       return post(box.getAttribute('data-submit-url'),
@@ -226,15 +275,17 @@
 
     function offerInAutofill() {
       var url = box.getAttribute('data-autofill-url');
-      if (!url || !field || !PublicKeyCredential.isConditionalMediationAvailable) return;
+      if (!url) return;
+      // No autofill offer in this browser: still keep a challenge ready.
+      if (!field || !PublicKeyCredential.isConditionalMediationAvailable) { keepReady(); return; }
       PublicKeyCredential.isConditionalMediationAvailable().then(function (available) {
-        if (!available) return;
+        if (!available) { keepReady(); return; }
         stopWaiting();
         var ctrl = new AbortController();
         var picked = false;
         waiting = ctrl;
         renew = setTimeout(offerInAutofill, RENEW_MS);
-        post(url, { csrf_token: csrf })
+        fetchChallenge(url)
           .then(function (options) {
             if (ctrl.signal.aborted) return null;
             return navigator.credentials.get({
@@ -244,6 +295,7 @@
           .then(function (cred) {
             if (!cred || ctrl.signal.aborted) return null;
             picked = true;
+            ready = null;            // this challenge is spent
             stopWaiting();
             say('Signing in…');
             return signIn(cred);
@@ -253,17 +305,32 @@
             say(friendly(err));      // a passkey was picked and refused
             if (reoffers-- > 0) offerInAutofill();
           });
-      }).catch(function () { /* no autofill offer; the button remains */ });
+      }).catch(function () { keepReady(); });   // no autofill offer; the button remains
+    }
+
+    // The passkey-first view shows no e-mail field to offer the passkey in, so
+    // it only keeps a challenge ready for the button, on the autofill budget
+    // and the autofill clock.
+    function keepReady() {
+      var url = box.getAttribute('data-autofill-url');
+      if (!url) return;
+      stopWaiting();
+      renew = setTimeout(keepReady, RENEW_MS);
+      fetchChallenge(url).catch(function () { /* the button fetches its own */ });
     }
 
     function askForPasskey(afterFailure) {
       stopWaiting();
       if (start) start.disabled = true;
       say('Waiting for your passkey…');
-      post(box.getAttribute('data-options-url'), { csrf_token: csrf })
-        .then(function (options) {
-          return navigator.credentials.get({ publicKey: requestOptions(options) });
-        })
+      var options = takeReady();
+      var asked = options
+        // Still inside the click, as Safari wants it: no round trip first.
+        ? navigator.credentials.get({ publicKey: requestOptions(options) })
+        : challengeForButton().then(function (fetched) {
+          return navigator.credentials.get({ publicKey: requestOptions(fetched) });
+        });
+      asked
         .then(signIn)
         .catch(function (err) {
           say(afterFailure || friendly(err));
@@ -303,7 +370,8 @@
       });
     }
 
-    if (!passkeyFirst) offerInAutofill();
+    if (passkeyFirst) keepReady();
+    else offerInAutofill();
   }
 
   function init() {
