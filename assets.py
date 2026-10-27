@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from typing import Callable, Union
 
 # path -> (mtime_ns, size, digest). Bounded by the number of static files a
 # tool serves, which is dozens.
@@ -45,7 +46,7 @@ def _digest(file_path: Path) -> str:
     return h.hexdigest()[:8]
 
 
-def asset_url(base_dir):
+def asset_url(base_dir: Union[str, Path]) -> Callable[[str], str]:
     """Return an ``asset(path)`` function rooted at this tool's directory.
 
     ``base_dir`` is the directory holding ``static/`` — the same one the app

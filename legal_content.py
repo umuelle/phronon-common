@@ -37,6 +37,7 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+from typing import Any, Union
 
 SCHEMA_VERSION = 1
 
@@ -131,7 +132,7 @@ def check_config(raw: dict, tool_key: str) -> list[str]:
     return out
 
 
-def _check_cookies(rows, field: str) -> list[str]:
+def _check_cookies(rows: Any, field: str) -> list[str]:
     out = []
     if not rows:
         return [f"{field!r} is empty: every tool sets at least one cookie"]
@@ -158,7 +159,7 @@ def finish(raw: dict) -> dict:
     return cfg
 
 
-def load_legal_config(tool_key: str, path) -> dict:
+def load_legal_config(tool_key: str, path: Union[str, Path]) -> dict:
     """Read, check and finish a tool's legal content. Raises LegalConfigError."""
     path = Path(path)
     try:

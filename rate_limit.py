@@ -31,11 +31,16 @@ import logging
 import threading
 import time
 from collections import defaultdict, deque
-from typing import Callable, Iterable, Optional, Sequence
+from typing import TYPE_CHECKING, Callable, Iterable, Optional, Sequence, cast
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
+
+if TYPE_CHECKING:
+    from starlette.middleware.base import RequestResponseEndpoint
+    from starlette.responses import Response
+    from starlette.types import ASGIApp
 
 # Defined in request_ip (no web framework needed to answer it); re-exported
 # here because every tool imports them from rate_limit.
@@ -140,12 +145,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     the JSON answer below goes out as before.
     """
 
-    def __init__(self, app, config: Optional[RateLimitConfig] = None,
+    def __init__(self, app: ASGIApp, config: Optional[RateLimitConfig] = None,
                  rules: Optional[Iterable[tuple]] = None,
                  window: Optional[SlidingWindow] = None,
                  trusted_proxies: Optional[Sequence[str]] = None,
                  limited_methods: Optional[Iterable[str]] = None,
-                 limited_response: Optional[Callable] = None):
+                 limited_response: Optional[Callable] = None) -> None:
         super().__init__(app)
         if config is None:
             if rules is None:
@@ -164,7 +169,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return method in self.limited_methods
         return method not in SAFE_METHODS
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if not self._applies(request.method):
             return await call_next(request)
 
@@ -190,7 +195,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                         page = await page
                     page.status_code = 429
                     page.headers["Retry-After"] = str(retry_after)
-                    return page
+                    return cast("Response", page)
                 except Exception:  # noqa: BLE001 - logged with the traceback; the JSON answer still goes out
                     logger.exception("Rate limited on %s: the tool's own page failed",
                                      request.url.path)

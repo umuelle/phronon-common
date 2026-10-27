@@ -57,3 +57,14 @@ webauthn==3.0.1
 # a real MySQL. CI provides one since 3 October 2026 and sets
 # PHRONON_REQUIRE_DB=1, so a missing connector FAILS there instead of skipping.
 mysql-connector-python==9.7.0
+
+# The type checker for the typed interfaces (tests/test_typed_interfaces.py,
+# 27 October 2026). Pinned exact like the rest: a checker that upgrades itself
+# can turn the gate red on code nobody touched. Its own dependencies are named
+# for the audit, which reads the resolved graph (tomli only below Python 3.11).
+mypy==1.19.1
+mypy_extensions==1.1.0
+librt==0.16.0
+pathspec==1.1.1
+typing_extensions==4.16.0
+tomli==2.5.0; python_version < "3.11"

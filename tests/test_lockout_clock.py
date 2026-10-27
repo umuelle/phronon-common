@@ -33,3 +33,17 @@ def test_the_lock_runs_from_now_in_naive_utc(monkeypatch):
     for _ in range(lockout.MAX_ATTEMPTS):
         memory.register_failure("a@example.org")
     assert memory.is_locked("a@example.org")
+
+
+def test_no_lock_and_a_past_lock_hold_nobody():
+    """An account that was never locked has NULL in locked_until; one whose
+    lock ran out has a time in the past. Neither is locked, and neither has
+    seconds left (the None check became explicit for the type checker,
+    27 October 2026)."""
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    for until in (None, now - timedelta(seconds=5)):
+        assert lockout.is_locked(until, now) is False
+        assert lockout.seconds_remaining(until, now) == 0
+    later = now + timedelta(seconds=90)
+    assert lockout.is_locked(later, now) is True
+    assert lockout.seconds_remaining(later, now) == 90

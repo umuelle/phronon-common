@@ -16,6 +16,8 @@ Changing this invalidates existing sessions once, which is the intended effect.
 """
 from __future__ import annotations
 
+from typing import Any
+
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from .sessions import MAX_SESSION_AGE
@@ -38,10 +40,10 @@ class CookieSigner:
         self._serializer = URLSafeTimedSerializer(secret_key, salt=salt)
         self._max_age = max_age
 
-    def dumps(self, data) -> str:
+    def dumps(self, data: Any) -> str:
         return self._serializer.dumps(data)
 
-    def loads(self, raw: str | None, max_age: int | None = None):
+    def loads(self, raw: str | None, max_age: int | None = None) -> Any:
         """Return the payload, or None if missing, tampered with, or too old.
 
         `max_age=0` means "do not enforce an age" — used only for cookies that

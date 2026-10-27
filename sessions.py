@@ -154,7 +154,7 @@ def session_age_ok(signer: Any, raw: str, role: Any) -> bool:
     return signer.loads(raw, max_age=limit) is not None
 
 
-def cookie_payload(admin_id: Any, epoch: int, **extra) -> dict:
+def cookie_payload(admin_id: Any, epoch: int, **extra: Any) -> dict:
     """The payload to sign into an admin session cookie.
 
     Kept as a dict with named keys so a tool can carry its own extras (a role,

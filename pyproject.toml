@@ -46,6 +46,20 @@ qr = [
     "qrcode>=7.4",
 ]
 
+[tool.mypy]
+# Gradual type checking (27 October 2026, the third review): the modules
+# tests/test_typed_interfaces.py lists are checked with these flags, every
+# function annotated and no Any handed back where a type is promised. The rest
+# of the package joins module by module (TO DO FL-112 names each and its count).
+python_version = "3.10"
+follow_imports = "silent"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_return_any = true
+no_implicit_optional = true
+warn_unused_ignores = true
+
 [tool.setuptools]
 packages = ["phronon_common", "phronon_common.testing"]
 package-dir = { "phronon_common" = ".", "phronon_common.testing" = "testing" }

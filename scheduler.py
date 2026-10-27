@@ -124,7 +124,7 @@ class Scheduler:
         self.skip_env = (skip_env,) if isinstance(skip_env, str) else tuple(skip_env)
         self.skip_under_pytest = skip_under_pytest
         self.clock = clock
-        self.jobs: dict = {}
+        self.jobs: dict[str, Job] = {}
         self._thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
 

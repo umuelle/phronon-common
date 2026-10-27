@@ -31,7 +31,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Mapping, Optional, Sequence
 
 logger = logging.getLogger(__name__)
 
@@ -260,12 +260,15 @@ class AuditRecorder:
 
     __slots__ = ("_get_conn", "_trusted_proxies")
 
-    def __init__(self, get_conn, trusted_proxies=None):
+    def __init__(self, get_conn: Callable[[], Any],
+                 trusted_proxies: Optional[Sequence[str]] = None) -> None:
         self._get_conn = get_conn
         self._trusted_proxies = trusted_proxies
 
-    def __call__(self, action: str, *, admin=None, request=None, subject=None,
-                 details=None, admin_id=None, admin_email=None) -> None:
+    def __call__(self, action: str, *, admin: Optional[Mapping[str, Any]] = None,
+                 request: Any = None, subject: Optional[str] = None,
+                 details: Optional[dict] = None, admin_id: Optional[int] = None,
+                 admin_email: Optional[str] = None) -> None:
         """Write one row. Never raises — `record()` guarantees that."""
         if admin is not None:
             # get_current_admin() and friends return a mapping with id/email.

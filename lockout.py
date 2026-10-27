@@ -59,11 +59,11 @@ def register_failure(failed_logins_before: int, now: datetime | None = None) -> 
 
 
 def is_locked(locked_until: datetime | None, now: datetime | None = None) -> bool:
-    return bool(locked_until) and locked_until > (now or _utcnow())
+    return locked_until is not None and locked_until > (now or _utcnow())
 
 
 def seconds_remaining(locked_until: datetime | None, now: datetime | None = None) -> int:
-    if not is_locked(locked_until, now):
+    if locked_until is None or not is_locked(locked_until, now):
         return 0
     return max(0, int((locked_until - (now or _utcnow())).total_seconds()))
 

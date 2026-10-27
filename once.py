@@ -54,7 +54,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Callable, Optional, Sequence, Union
+from typing import Any, Callable, Optional, Sequence, Union, cast
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ def _run(get_db: Callable, sql: str, params: list) -> int:
         try:
             cur.execute(sql, params)
             conn.commit()
-            return cur.rowcount
+            return cast(int, cur.rowcount)
         finally:
             cur.close()
     finally:

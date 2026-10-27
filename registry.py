@@ -70,7 +70,7 @@ class ToolIdentity:
     legacy_domains: tuple[str, ...] = ()   #: 301 to canonical_domain, never served
     short_name: str = ""          #: where a card needs fewer words; defaults to display_name
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.short_name:
             object.__setattr__(self, "short_name", self.display_name)
 
