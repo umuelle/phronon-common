@@ -35,6 +35,9 @@ sixteen modules are type-checked.
   count and on the rate limiter's 429 page, and lockout's "no lock" test
   written as `is not None`. The other nine modules follow (TO DO FL-112).
 - `.gitignore` ignores `*.egg-info/`.
+- `requirements-test.txt` pins `pytest==9.1.1`, as the nine tools do. It was
+  unpinned, so the release matrix's fresh environment took pytest 9.2.0, under
+  which `tests/test_split_app.py` fails (TO DO FL-114).
 
 
 ## 1.96.0 — 2026-10-27
