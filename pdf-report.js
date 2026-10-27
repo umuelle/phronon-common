@@ -14,7 +14,8 @@
  *
  *   PhrononPdf.ready()                 is jsPDF loaded?
  *   PhrononPdf.safe(text)              text jsPDF's built-in fonts can print
- *   PhrononPdf.svgCanvas(svg, scale)   an inline SVG chart as a canvas
+ *   PhrononPdf.svgCanvas(svg, scale)   an inline SVG chart as a canvas, drawn by
+ *                                      the chart engine (svg-charts.js)
  *   PhrononPdf.revealPanels(selector)  show hidden tab panels; returns restore()
  *   PhrononPdf.report(options)         a report: the page cursor and its writers
  *
@@ -29,7 +30,7 @@
  *   r.text(t, x, y, o)   one text at a place, wrapped to o.maxW; returns its height
  *   r.write(t, o)        a paragraph at the cursor, flowed across pages
  *   r.image(src, o)      a canvas or data URL, fitted, at the cursor
- *   r.svg(el, o)         a chart: rasterised, then r.image (a Promise)
+ *   r.svg(el, o)         a chart: svgCanvas, then r.image (a Promise)
  *   r.dom(el, o)         page markup via html2canvas, then r.image (a Promise)
  *   r.table(el, o)       an HTML table as text columns
  *   r.eachPage(fn, o)    fn(doc, page, total) on pages o.from..o.to, after the build
@@ -80,38 +81,37 @@
     return !!(global.jspdf && global.jspdf.jsPDF);
   }
 
-  /* An inline SVG as a canvas at `scale` (default 2: a 1x raster looks soft
-   * on paper). Sized from the viewBox, so a chart in a hidden tab works; on
-   * white; read as a base64 data URL, which a page whose CSP allows img-src
-   * data: but not blob: still loads. Resolves {canvas, width, height}, the
+  /* An inline SVG chart as a canvas at `scale` (default 2: a 1x raster looks
+   * soft on paper). The picture is the chart engine's own
+   * (PhrononCharts.chartPng in svg-charts.js), so a chart prints exactly as it
+   * saves: on white, sized from its viewBox (a chart in a hidden tab works), in
+   * the font the page showed it in, read through a data URL, which a page whose
+   * CSP allows img-src data: but not blob: still loads. A page that prints
+   * charts loads svg-charts.js; it is looked up at call time, so a report
+   * without charts does not need it. Resolves {canvas, width, height}, the
    * width and height in the SVG's own units. */
   function svgCanvas(svg, scale) {
+    var C = global.PhrononCharts;
+    if (!C || !C.chartPng) {
+      return Promise.reject(new Error('the chart engine (svg-charts.js) is not loaded'));
+    }
     scale = scale || 2;
-    return new Promise(function (resolve, reject) {
-      var box = svg.viewBox && svg.viewBox.baseVal;
-      var w = box && box.width ? box.width : svg.clientWidth;
-      var h = box && box.height ? box.height : svg.clientHeight;
-      if (!w || !h) { reject(new Error('the chart has no size')); return; }
-      var clone = svg.cloneNode(true);
-      clone.setAttribute('width', w);
-      clone.setAttribute('height', h);
-      clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-      clone.style.background = '#ffffff';
-      var b64 = btoa(unescape(encodeURIComponent(new XMLSerializer().serializeToString(clone))));
-      var img = new Image();
-      img.onload = function () {
-        var canvas = document.createElement('canvas');
-        canvas.width = w * scale;
-        canvas.height = h * scale;
-        var ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve({ canvas: canvas, width: w, height: h });
-      };
-      img.onerror = function () { reject(new Error('could not rasterise a chart')); };
-      img.src = 'data:image/svg+xml;base64,' + b64;
-    });
+    return C.chartPng(svg, { scale: scale, background: '#ffffff' })
+      .then(C.blobDataUrl)
+      .then(function (url) {
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.onload = function () {
+            var canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            resolve({ canvas: canvas, width: canvas.width / scale, height: canvas.height / scale });
+          };
+          img.onerror = function () { reject(new Error('could not rasterise a chart')); };
+          img.src = url;
+        });
+      });
   }
 
   /* A report covers every tab, whichever one is open, and nothing can be

@@ -16,6 +16,10 @@ What would go red:
   * a paragraph that runs past the bottom limit instead of starting a page;
   * a chart in a hidden tab coming out empty, or a broken chart, an empty
     canvas or a missing html2canvas costing the whole document;
+  * a chart printing differently from how the chart engine saves it: since
+    27 October 2026 (FL-098 point 1) the PDF's picture of a chart is
+    PhrononCharts.chartPng's, pixel for pixel, in the font the page showed;
+    and a page without the engine losing more than its charts;
   * a table cell cut to one line, or a table without a <thead> failing;
   * page numbers on the wrong pages; hidden panels left open afterwards;
   * a CSP violation, or output that is not a PDF.
@@ -39,6 +43,7 @@ from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parent.parent
 BUILDER = PACKAGE / "pdf-report.js"
+ENGINE = PACKAGE / "svg-charts.js"
 JSPDF_NAME = "jspdf-2.5.1.umd.min.js"
 JSPDF_CANDIDATES = [PACKAGE.parent / tool / "static" / "vendor" / JSPDF_NAME
                     for tool in ("Whiteout", "Layoff-Exercise", "polarity-profiler")]
@@ -58,6 +63,9 @@ PAGE = """<!doctype html>
   <div class="tab-panel" id="away" hidden><svg id="hidden-chart" viewBox="0 0 300 300">
     <circle cx="150" cy="150" r="120" fill="#d14836"/></svg></div>
   <div class="tab-panel" id="styled" style="display:none"></div>
+  <div id="fonted" style="font-family: monospace"><svg id="fonted-chart" viewBox="0 0 300 80">
+    <rect x="0" y="0" width="300" height="80" fill="#ffffff"/>
+    <text x="10" y="52" font-size="32">Mmm iii 123</text></svg></div>
   <table id="t">
     <thead><tr><th>Group</th><th>Score</th><th>Note</th></tr></thead>
     <tbody>
@@ -68,6 +76,7 @@ PAGE = """<!doctype html>
   <table id="headless"><tbody><tr><td>x</td><td>y</td></tr></tbody></table>
   <table id="empty"><thead><tr><th>Nothing</th></tr></thead><tbody></tbody></table>
   <script src="/jspdf.js"></script>
+  <script src="/svg-charts.js"></script>
   <script src="/pdf-report.js"></script>
   <script src="/probe.js"></script>
 </body></html>
@@ -93,6 +102,23 @@ window.__probe = (async function () {
   restore();
   out.restored = [document.getElementById('away').hidden,
                   document.getElementById('styled').style.display];
+
+  // The PDF's picture of a chart is the chart engine's picture (FL-098
+  // point 1): drawn in the font the page showed (monospace here; an image of
+  // an SVG knows no page font, so a routine of its own prints serif).
+  var fonted = document.getElementById('fonted-chart');
+  var mine = await P.svgCanvas(fonted, 2);
+  var png = await window.PhrononCharts.chartPng(fonted, { scale: 2, background: '#ffffff' });
+  var bmp = await createImageBitmap(png);
+  var ref = document.createElement('canvas');
+  ref.width = bmp.width; ref.height = bmp.height;
+  ref.getContext('2d').drawImage(bmp, 0, 0);
+  var px = function (c) { return c.getContext('2d').getImageData(0, 0, c.width, c.height).data; };
+  var a = px(mine.canvas), b = px(ref), differ = 0;
+  if (a.length !== b.length) differ = -1;
+  else for (var i = 0; i < a.length; i++) { if (Math.abs(a[i] - b[i]) > 8) differ++; }
+  out.engineSame = { size: [mine.canvas.width, mine.canvas.height, ref.width, ref.height],
+                     units: [mine.width, mine.height], differ: differ };
 
   var r = P.report({ orientation: 'portrait', margin: 14, bottom: 18 });
   out.page = [r.W, r.H, r.usable];
@@ -124,6 +150,12 @@ window.__probe = (async function () {
   blank.width = 0; blank.height = 0;
   out.imageEmpty = r.image({ canvas: blank, width: 10, height: 10 });
   out.domWithoutLibrary = await r.dom(document.body);
+  // A page that prints charts loads the engine; without it a chart is
+  // skipped, and the report still comes out.
+  var engine = window.PhrononCharts;
+  window.PhrononCharts = undefined;
+  out.svgWithoutEngine = await r.svg(fonted);
+  window.PhrononCharts = engine;
 
   r.page();
   out.table = r.table(document.getElementById('t'));
@@ -157,6 +189,7 @@ class _Handler(BaseHTTPRequestHandler):
             "/": (PAGE.encode(), "text/html; charset=utf-8"),
             "/jspdf.js": (_jspdf().read_bytes(), "text/javascript; charset=utf-8"),
             "/pdf-report.js": (BUILDER.read_bytes(), "text/javascript; charset=utf-8"),
+            "/svg-charts.js": (ENGINE.read_bytes(), "text/javascript; charset=utf-8"),
             "/probe.js": (PROBE_JS.encode(), "text/javascript; charset=utf-8"),
         }
         body, ctype = files.get(self.path, (b"not found", "text/plain"))
@@ -263,6 +296,13 @@ def _check(report: dict) -> None:
         assert r["svgHidden"] is True and abs(r["yAfterHidden"] - (r["yAfterSvg"] + 60)) < 1e-6, key
         assert r["svgBroken"] is False and r["imageEmpty"] is False, key
         assert r["domWithoutLibrary"] is False, key
+        assert r["svgWithoutEngine"] is False, key
+
+        # The chart's picture is the engine's, pixel for pixel, at the asked
+        # scale, with the SVG's own units for the proportions.
+        same = r["engineSame"]
+        assert same["size"] == [600, 160, 600, 160] and same["units"] == [300, 80], (key, same)
+        assert same["differ"] == 0, (key, "the PDF draws charts unlike the engine", same)
 
         # Tables: the long cell wrapped to two lines and cut with '..'; the
         # arrows made safe; a table without <thead> laid out; an empty one skipped.

@@ -5,6 +5,27 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.94.0 — 2026-10-27
+
+One chart routine instead of two (TO DO FL-098 point 1); a front-end master
+only, so the release is assets-only.
+
+- **`pdf-report.js`: `PhrononPdf.svgCanvas` draws through the chart engine.**
+  It used to rasterise a chart with its own code; it now returns the canvas of
+  `PhrononCharts.chartPng` (svg-charts.js), so a chart in Layoff's results
+  report and in Whiteout's session report and ZIP prints as the engine saves
+  it: from its viewBox, on white, in the font the page showed. Same contract,
+  `{canvas, width, height}`, and the same pictures: ten chart types drawn by
+  the engine came out identical, pixel for pixel, through the old routine and
+  the new one in Chromium and WebKit. Only an SVG whose text has no font of
+  its own would change (an image of an SVG knows no page font, so the old
+  routine printed it in the browser's serif); none of the three reports has one.
+  A page that prints charts must load svg-charts.js (all three already do);
+  without it a chart is skipped and the report still comes out. Test:
+  `tests/test_pdf_report_browser.py`, the picture compared with the engine's
+  pixel for pixel in Chromium and WebKit, and a page without the engine.
+
+
 ## 1.93.0 — 2026-10-26
 
 One optional argument; nothing a tool calls today changes (TO DO FL-090 (b)).
