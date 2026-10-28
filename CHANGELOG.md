@@ -5,6 +5,18 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## Unreleased
+
+- **`registry.py`: OrgDesignSim's card describes the game a session starts in**
+  (OD-003, owner, 28 October 2026). It said "~60 min" and "Across 52
+  simulated weeks they restructure it, week by week", the Legacy sandbox;
+  since OD-008 a new session starts in the 12-month studio. Now: "10–30 min
+  + debrief" (OrgDesignSim's welcome page states 10 to 30 minutes), six or
+  twelve simulated months played round by round, and "creates a session".
+  Seen on the hub's /about and /llms.txt once the hub runs the release.
+  Test: `tests/test_orgsim_card.py` (all three fail on 1.97.0).
+
+
 ## 1.97.0 — 2026-10-27
 
 A passkey sign-in asks the browser at once (owner, 27 October 2026: in
