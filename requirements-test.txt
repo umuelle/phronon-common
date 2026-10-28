@@ -10,9 +10,10 @@ fastapi==0.139.2
 starlette==1.3.1
 # The test runner, pinned exact like the nine tools' (README §3, since 12 August
 # 2026). Unpinned here until 27 October 2026: the release matrix then built a
-# fresh environment, got pytest 9.2.0, and tests/test_split_app.py went red. On
-# 9.2, undoing a monkeypatch made through split_app's view deletes the name from
-# every module that holds it instead of restoring it (TO DO FL-114).
+# fresh environment, got pytest 9.2.0, and tests/test_split_app.py went red
+# (split_app's view lost patched names on 9.2; fixed 28 October 2026, FL-114).
+# Move this pin together with the nine tools' pins, after a release with that
+# fix is active.
 pytest==9.1.1
 # 2.9.1 → 2.12.0 on 10 September 2026: CI's pip-audit turned red on six
 # advisories against 2.9.1 (PYSEC-2026-3845…3849) and its httpcore2

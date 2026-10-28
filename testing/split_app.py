@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import re
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 #: Standard module names (README §9); app.py comes first wherever it matters.
@@ -45,6 +46,26 @@ def runtime_files(root) -> list[Path]:
 
 def runtime_source(root) -> str:
     return "\n\n".join(p.read_text(encoding="utf-8") for p in runtime_files(root))
+
+
+class _Names(Mapping):
+    """The split app's names, read-only, the first module that defines one
+    winning (as SplitApp.__getattr__ finds it). What `view.__dict__` returns."""
+
+    def __init__(self, modules):
+        self._modules = modules
+
+    def __getitem__(self, name):
+        for m in self._modules:
+            if name in vars(m):
+                return vars(m)[name]
+        raise KeyError(name)
+
+    def __iter__(self):
+        return iter(dict.fromkeys(n for m in self._modules for n in vars(m)))
+
+    def __len__(self):
+        return sum(1 for _ in self)
 
 
 class SplitApp:
@@ -107,6 +128,17 @@ class SplitApp:
         for m in held:
             delattr(m, name)
         self._deleted[name] = held
+
+    @property
+    def __dict__(self):
+        """The tool's names as the view's own namespace. pytest 9.2 reads the
+        value a monkeypatch undo puts back from the target's __dict__; the
+        view's real one holds none of the tool's names, so 9.2 found nothing
+        and undid the patch by deleting the name from every module (TO DO
+        FL-114, 28 October 2026). mock.patch.object reads it the same way. The
+        view's own attributes still live in its real __dict__ (object.__setattr__
+        in __init__); dir() ignores this one, as it is no dict."""
+        return _Names(object.__getattribute__(self, "_modules"))
 
     @property
     def modules(self) -> tuple:

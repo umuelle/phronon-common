@@ -7,6 +7,7 @@ real tool's modules in sys.modules.
 import importlib.util
 import sys
 import textwrap
+from collections.abc import Mapping
 
 import pytest
 
@@ -88,6 +89,22 @@ def test_a_patch_reaches_every_module_that_holds_the_name(tmp_path, monkeypatch)
         assert m["core"].send(1) == m["app"].send(1) == "fake"
     assert m["routes_site"].page() == "real", "undo restores every module"
     assert m["core"].send is m["app"].send is m["routes_site"].send
+
+
+def test_the_view_holds_its_names_where_pytest_9_2_reads_the_old_value(tmp_path, monkeypatch):
+    """pytest 9.2's monkeypatch takes the value an undo puts back from the
+    target's __dict__ (9.1 used getattr). With none of the tool's names there,
+    9.2 undid every patch on the view by deleting the name from every module
+    (TO DO FL-114). This checks what 9.2 reads, on whichever pytest runs it."""
+    root, m = _tool(tmp_path, monkeypatch, FILES)
+    view = split_app.view(m["app"], root)
+    names = view.__dict__
+    assert isinstance(names, Mapping)
+    assert names.get("send") is m["core"].send and names["TITLE"] == "Tool"
+    assert names.get("nothing", "absent") == "absent"
+    assert {"send", "LIMIT", "page", "TITLE"} <= set(vars(view))
+    with pytest.raises(TypeError):
+        names["send"] = None  # read-only: a patch goes through the view
 
 
 def test_a_module_that_rebound_the_name_is_left_alone(tmp_path, monkeypatch):

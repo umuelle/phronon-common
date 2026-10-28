@@ -15,6 +15,18 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
   twelve simulated months played round by round, and "creates a session".
   Seen on the hub's /about and /llms.txt once the hub runs the release.
   Test: `tests/test_orgsim_card.py` (all three fail on 1.97.0).
+- **`testing/split_app.py`: the view works on pytest 9.2** (TO DO FL-114,
+  28 October 2026). pytest 9.2 takes the value a monkeypatch undo puts back
+  from the target's `__dict__`, where 9.1 used `getattr`; the view's own
+  `__dict__` held none of the tool's names, so on 9.2 every undo deleted the
+  patched name from every module. `view.__dict__` now returns the tool's
+  names (read-only), so the undo restores them on either version. Tests only;
+  nothing a tool runs in production changes. Test:
+  `tests/test_split_app.py::test_the_view_holds_its_names_where_pytest_9_2_reads_the_old_value`
+  (red on 1.97.0 under any pytest), and the existing
+  `test_a_patch_reaches_every_module_that_holds_the_name` now passes on 9.2.0.
+  The fleet stays on `pytest==9.1.1`; moving it is safe once a release with
+  this fix is active.
 
 
 ## 1.97.0 — 2026-10-27
