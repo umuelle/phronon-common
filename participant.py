@@ -38,9 +38,22 @@ from __future__ import annotations
 import hashlib
 import re
 import secrets
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from .signing import CookieSigner
+
+if TYPE_CHECKING:
+    import logging
+    from collections.abc import Iterable
+    from typing import TypeGuard
+
+    from starlette.requests import Request
+    from starlette.responses import Response
+
+    #: The tool's DB callables, as the module docstring states their contract.
+    #: The parameters stay open: the nine tools' helpers take them differently.
+    Execute = Callable[..., int]
+    QueryOne = Callable[..., Optional[dict[str, Any]]]
 
 # ── The numbers ─────────────────────────────────────────────────────────────
 PARTICIPANT_ID_BYTES = 16
@@ -84,17 +97,19 @@ def new_token() -> tuple[str, str]:
     return raw, hash_token(raw)
 
 
-def plausible_token(raw: Optional[str]) -> bool:
+def plausible_token(raw: Optional[str]) -> TypeGuard[str]:
     """Shape check before touching the database: length floor and alphabet.
 
     Refusing short or odd strings early keeps the hashed lookup from being a
     free oracle for junk, and keeps `token=` garbage out of the logs.
     """
-    return bool(raw) and TOKEN_MIN_LENGTH <= len(raw) <= TOKEN_MAX_LENGTH \
+    if not raw:
+        return False
+    return TOKEN_MIN_LENGTH <= len(raw) <= TOKEN_MAX_LENGTH \
         and _TOKEN_RE.fullmatch(raw) is not None
 
 
-def confirm_word_ok(typed: Optional[str], extra_words=()) -> bool:
+def confirm_word_ok(typed: Optional[str], extra_words: Iterable[str] = ()) -> bool:
     """The participant typed the confirmation word (any accepted locale)."""
     word = (typed or "").strip().upper()
     return bool(word) and (word in WITHDRAW_CONFIRM_WORDS or word in {w.upper() for w in extra_words})
@@ -110,7 +125,7 @@ class ParticipantCookie:
     plain-HTTP request mint a non-Secure cookie in two tools.
     """
 
-    def __init__(self, secret_key, name: str, *, secure: bool,
+    def __init__(self, secret_key: str | bytes, name: str, *, secure: bool,
                  max_age: int = PARTICIPANT_COOKIE_MAX_AGE, salt: str = "participant"):
         self.name = name
         self.secure = bool(secure)
@@ -128,18 +143,18 @@ class ParticipantCookie:
         """
         return self._signer.dumps(participant_id)
 
-    def set(self, response, participant_id: str) -> None:
+    def set(self, response: Response, participant_id: str) -> None:
         response.set_cookie(
             self.name, self.mint(participant_id),
             max_age=self.max_age, httponly=True, samesite="lax",
             secure=self.secure, path="/",
         )
 
-    def read(self, request) -> Optional[str]:
+    def read(self, request: Request) -> Optional[str]:
         value = self._signer.loads(request.cookies.get(self.name))
         return value if isinstance(value, str) and value else None
 
-    def clear(self, response) -> None:
+    def clear(self, response: Response) -> None:
         response.delete_cookie(self.name, path="/")
 
 
@@ -182,17 +197,19 @@ RESUME_TOKENS_DDL = f"""CREATE TABLE IF NOT EXISTS `{RESUME_TOKENS_TABLE}` (
 ) ENGINE=InnoDB"""
 
 
-def _resume_throttled(query_one: Callable, participant_ref: str) -> bool:
+def _resume_throttled(query_one: QueryOne, participant_ref: str) -> bool:
     """Three links per fifteen minutes per participant, so a stranger who
     knows an address cannot flood a mailbox."""
     recent = query_one(
         f"SELECT COUNT(*) AS n FROM {RESUME_TOKENS_TABLE} WHERE participant_ref = %s "
         f"AND created_at > DATE_SUB(NOW(), INTERVAL {RESUME_LINK_WINDOW_MINUTES} MINUTE)",
         (participant_ref,))
-    return bool(recent) and int(recent["n"] or 0) >= RESUME_LINKS_PER_WINDOW
+    if not recent:
+        return False
+    return int(recent["n"] or 0) >= RESUME_LINKS_PER_WINDOW
 
 
-def _store_resume_token(execute: Callable, participant_ref: str, digest: str) -> None:
+def _store_resume_token(execute: Execute, participant_ref: str, digest: str) -> None:
     """Retire any live link (one live link per participant), then store the
     new hash with a RESUME_LINK_MINUTES expiry."""
     execute(f"UPDATE {RESUME_TOKENS_TABLE} SET used = 1 WHERE participant_ref = %s AND used = 0",
@@ -202,8 +219,9 @@ def _store_resume_token(execute: Callable, participant_ref: str, digest: str) ->
             (participant_ref, digest))
 
 
-def send_resume_link(execute: Callable, query_one: Callable, participant_ref: str,
-                     send: Callable[[str], object], logger, where: str) -> Optional[bool]:
+def send_resume_link(execute: Execute, query_one: QueryOne, participant_ref: str,
+                     send: Callable[[str], object], logger: logging.Logger,
+                     where: str) -> Optional[bool]:
     """Mail a one-time resume link, and store it only once the mail went out.
 
     `send(raw)` mails the link that carries the raw token and answers True
@@ -243,7 +261,7 @@ def send_resume_link(execute: Callable, query_one: Callable, participant_ref: st
 
 
 
-def peek_resume_token(query_one: Callable, raw: Optional[str]) -> Optional[dict]:
+def peek_resume_token(query_one: QueryOne, raw: Optional[str]) -> Optional[dict[str, Any]]:
     """The live row for a raw token, WITHOUT spending it (the GET confirm page)."""
     if not plausible_token(raw):
         return None
@@ -253,13 +271,13 @@ def peek_resume_token(query_one: Callable, raw: Optional[str]) -> Optional[dict]
         (hash_token(raw),))
 
 
-def spend_resume_token(execute: Callable, row_id: int) -> bool:
+def spend_resume_token(execute: Execute, row_id: int) -> bool:
     """Atomically mark one token used; False if someone else got there first."""
     return execute(
         f"UPDATE {RESUME_TOKENS_TABLE} SET used = 1 WHERE id = %s AND used = 0 AND expires_at > NOW()",
         (row_id,)) == 1
 
 
-def forget_resume_tokens(execute: Callable, participant_ref: str) -> None:
+def forget_resume_tokens(execute: Execute, participant_ref: str) -> None:
     """On withdrawal or transformation: nothing may resume a deleted pass."""
     execute(f"DELETE FROM {RESUME_TOKENS_TABLE} WHERE participant_ref = %s", (participant_ref,))

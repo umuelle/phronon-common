@@ -40,7 +40,18 @@ import hmac
 import secrets
 import struct
 import time
+from typing import TYPE_CHECKING
 from urllib.parse import quote
+
+if TYPE_CHECKING:
+    from typing import Protocol
+
+    class BcryptModule(Protocol):
+        """What the helpers use of the `bcrypt` module a tool passes in."""
+
+        def hashpw(self, password: bytes, salt: bytes) -> bytes: ...
+        def gensalt(self) -> bytes: ...
+        def checkpw(self, password: bytes, hashed_password: bytes) -> bool: ...
 
 DIGITS = 6
 PERIOD = 30           # seconds per code, per RFC 6238
@@ -109,7 +120,7 @@ def normalise_backup_code(code: str) -> str:
     return (code or "").strip().upper().replace(" ", "").replace("-", "")
 
 
-def hash_backup_codes(codes: list[str], bcrypt_module) -> list[str]:
+def hash_backup_codes(codes: list[str], bcrypt_module: BcryptModule) -> list[str]:
     """bcrypt hashes for storage. `bcrypt` is passed in so this module keeps
     importing nothing outside the standard library."""
     return [
@@ -118,7 +129,8 @@ def hash_backup_codes(codes: list[str], bcrypt_module) -> list[str]:
     ]
 
 
-def consume_backup_code(code: str, hashes: list[str], bcrypt_module):
+def consume_backup_code(code: str, hashes: list[str],
+                        bcrypt_module: BcryptModule) -> list[str] | None:
     """Check a backup code against the stored hashes.
 
     Returns the remaining hashes with the used one removed, or None if the code
@@ -152,8 +164,8 @@ def qr_svg(uri: str) -> str:
     """
     try:
         import io
-        import qrcode
-        import qrcode.image.svg
+        import qrcode  # type: ignore[import-untyped,unused-ignore]  # optional extra; untyped where installed without stubs
+        import qrcode.image.svg  # type: ignore[import-untyped,unused-ignore]  # the same package
         buf = io.BytesIO()
         qrcode.make(uri, image_factory=qrcode.image.svg.SvgPathImage).save(buf)
         return buf.getvalue().decode("utf-8")
@@ -170,7 +182,7 @@ def qr_svg(uri: str) -> str:
 REQUIRED_ROLES = ("ADMIN", "OWNER")
 
 
-def is_required(role: str) -> bool:
+def is_required(role: str | None) -> bool:
     """Is a second factor MANDATORY for this account?
 
     Admins and owners yes, educators no (the owner's decision, 29 July 2026):
@@ -183,7 +195,8 @@ def is_required(role: str) -> bool:
     return str(role or "").strip().upper() in REQUIRED_ROLES
 
 
-def check_code(secret: str, code: str, stored_hashes, bcrypt_module):
+def check_code(secret: str | None, code: str, stored_hashes: list[str] | None,
+               bcrypt_module: BcryptModule) -> tuple[bool, list[str] | None]:
     """Verify a login code — a TOTP code first, then a recovery code.
 
     Returns (ok, remaining_hashes_or_None). `remaining` is not None only when a

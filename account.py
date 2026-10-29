@@ -82,7 +82,7 @@ def normalise_email(value) -> str:
     return str(value or "").strip().lower()
 
 
-def validate_email(value, *, current: str = "") -> tuple[str, str | None]:
+def validate_email(value, *, current: str | None = "") -> tuple[str, str | None]:
     """Return `(normalised_address, error_or_None)`.
 
     `current` is the address the account has now: changing nothing is reported

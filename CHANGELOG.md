@@ -7,6 +7,28 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## Unreleased
 
+- **Nine more modules pass the type checker** (TO DO FL-112, 29 October
+  2026): `account_kit`, `countries`, `csrf`, `participant`, `routing`,
+  `security_headers`, `translations`, `twofactor` and `withdrawal_kit` join
+  `TYPED` in `tests/test_typed_interfaces.py`, which now checks 25 modules.
+  Annotations only, plus a few narrowing lines (`assert`, `cast`) where the
+  code already guarantees the value, each with its reason beside it. The
+  kits' routes are annotated `-> Response`, which FastAPI reads as "no
+  response model", as before: the routes, their parameters and the OpenAPI
+  schema are identical before and after (compared). New shared types:
+  `twofactor.BcryptModule` (what the helpers use of `bcrypt`, now the type
+  of `AccountKit.bcrypt`) and `participant.Execute` / `QueryOne` (the DB
+  callables' documented contract), all for the checker only.
+  `twofactor.is_required` and `account.validate_email(current=)` now say
+  they accept None, which they always handled. One defect the checker
+  found is fixed: `withdrawal_kit`'s two POST routes read `request.form()`
+  and called `.strip()` on whatever came back, so a hand-made multipart
+  request with a file under `token`, `confirm`, `code` or `email` answered
+  500. They now keep text fields only, and a file counts as an empty
+  field. Test:
+  `tests/test_withdrawal_kit.py::test_a_file_sent_in_place_of_a_text_field_is_no_value`
+  (red without the fix).
+
 - **`registry.py`: OrgDesignSim's card describes the game a session starts in**
   (OD-003, owner, 28 October 2026). It said "~60 min" and "Across 52
   simulated weeks they restructure it, week by week", the Legacy sandbox;

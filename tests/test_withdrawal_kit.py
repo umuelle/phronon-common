@@ -180,3 +180,17 @@ def test_a_pasted_link_finds_its_token():
     assert _page(c.get("/withdraw", params={"token": link}))["state"] == "confirm"
     assert withdrawal_kit.token_from(f"  {tool.raw} ") == tool.raw
     assert withdrawal_kit.token_from("withdraw?token=abc") == "abc"
+
+
+def test_a_file_sent_in_place_of_a_text_field_is_no_value():
+    """A hand-made multipart request with a file under a field's name reached
+    `.strip()` with the upload and answered 500 (found by the type checker,
+    FL-112, 29 October 2026). The file now counts as an empty field."""
+    tool = _Tool()
+    c = _client(tool)
+    r = c.post("/withdraw", data={"confirm": "DELETE"}, files={"token": ("t.txt", b"x" * 40)})
+    assert r.status_code == 200 and _page(r)["state"] == "not_found"
+    r = c.post("/withdraw", data={"token": tool.raw}, files={"confirm": ("t.txt", b"DELETE")})
+    assert r.status_code == 200 and _page(r)["error"] == "confirm" and tool.deletes == []
+    r = c.post("/withdrawal-link", data={"code": "AB12"}, files={"email": ("t.txt", b"p@example.org")})
+    assert r.status_code == 200 and _page(r)["error"] == "fields" and tool.mail == []

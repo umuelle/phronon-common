@@ -4,15 +4,23 @@ The session cookie name used to bind tokens is configurable so each tool can kee
 its own cookie name while sharing this code.
 """
 
+from __future__ import annotations
+
 import time
 import hmac
 import hashlib
 import secrets
 import logging
+from typing import TYPE_CHECKING, Callable, Iterable, Optional
 from urllib.parse import parse_qs
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
+
+if TYPE_CHECKING:
+    from starlette.middleware.base import RequestResponseEndpoint
+    from starlette.responses import Response
+    from starlette.types import ASGIApp, Message
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +28,13 @@ logger = logging.getLogger(__name__)
 class CSRFProtection:
     """Generate and validate CSRF tokens using HMAC-SHA256."""
 
-    def __init__(self, secret_key: bytes, token_expiry: int = 3600):
+    def __init__(self, secret_key: str | bytes, token_expiry: int = 3600):
         if isinstance(secret_key, str):
             secret_key = secret_key.encode("utf-8")
         self.secret_key = secret_key
         self.token_expiry = token_expiry
 
-    def generate_token(self, session_id: str = None) -> str:
+    def generate_token(self, session_id: Optional[str] = None) -> str:
         random_part = secrets.token_urlsafe(32)
         timestamp = str(int(time.time()))
         data_to_sign = f"{random_part}:{timestamp}"
@@ -37,7 +45,7 @@ class CSRFProtection:
         ).hexdigest()
         return f"{random_part}:{timestamp}:{signature}"
 
-    def validate_token(self, token: str, session_id: str = None) -> bool:
+    def validate_token(self, token: Optional[str], session_id: Optional[str] = None) -> bool:
         if not token:
             return False
         try:
@@ -89,9 +97,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     #: Entries that would match every path on the site.
     _CATCH_ALL = ("", "/")
 
-    def __init__(self, app, csrf_protection: CSRFProtection,
-                 session_cookie: str = "backoffice", exempt_paths: list = None,
-                 exempt_exact=None, session_id_of=None):
+    def __init__(self, app: ASGIApp, csrf_protection: CSRFProtection,
+                 session_cookie: Optional[str] = "backoffice",
+                 exempt_paths: Optional[Iterable[str]] = None,
+                 exempt_exact: Optional[Iterable[str]] = None,
+                 session_id_of: Optional[Callable[[Request], Optional[str]]] = None):
         """
         Args:
             session_cookie: Cookie whose value tokens are bound to. Pass ``None``
@@ -120,7 +130,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 f"root really does accept a POST, pass exempt_exact={{'/'}} instead."
             )
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if request.method not in self.PROTECTED_METHODS:
             return await call_next(request)
 
@@ -157,7 +167,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
             sent = False
 
-            async def receive_with_cached_body():
+            async def receive_with_cached_body() -> Message:
                 nonlocal sent
                 if not sent:
                     sent = True
@@ -185,7 +195,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-def _session_id(request: Request, session_cookie, session_id_of):
+def _session_id(request: Request, session_cookie: Optional[str],
+                session_id_of: Optional[Callable[[Request], Optional[str]]]) -> Optional[str]:
     """What a token is bound to: ``session_id_of(request)`` when a tool gives
     one, else the ``session_cookie`` value, else nothing."""
     if session_id_of is not None:
@@ -194,7 +205,8 @@ def _session_id(request: Request, session_cookie, session_id_of):
 
 
 def get_csrf_token(request: Request, csrf_protection: CSRFProtection,
-                   session_cookie: str = None, session_id_of=None) -> str:
+                   session_cookie: Optional[str] = None,
+                   session_id_of: Optional[Callable[[Request], Optional[str]]] = None) -> str:
     """Token for use in templates.
 
     Pass the same ``session_cookie`` (or ``session_id_of``) the middleware was

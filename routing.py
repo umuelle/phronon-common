@@ -22,8 +22,30 @@ itself declares.
 """
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, TypeVar, cast
 
-def answer_head(routes_owner, unsafe_paths=frozenset()):
+if TYPE_CHECKING:
+    from collections.abc import Container, Iterable
+    from typing import Protocol
+
+    from fastapi.routing import APIRoute, APIRouter
+    from starlette.requests import Request
+    from starlette.responses import Response
+    from starlette.routing import BaseRoute
+    from starlette.types import Scope
+
+    class _HasRoutes(Protocol):
+        """An APIRouter, or the app (FastAPI) for its own routes."""
+
+        @property
+        def routes(self) -> list[BaseRoute]: ...
+
+    _Handler = Callable[[Request], Coroutine[Any, Any, Response]]
+
+_Owner = TypeVar("_Owner", bound="_HasRoutes")
+
+
+def answer_head(routes_owner: _Owner, unsafe_paths: Iterable[str] = frozenset()) -> _Owner:
     """Let every GET route of `routes_owner` (an APIRouter, or the app for its
     own routes) answer HEAD too, except the paths in `unsafe_paths`: GETs that
     write. Returns `routes_owner`, so it can wrap an `include_router` argument."""
@@ -31,8 +53,11 @@ def answer_head(routes_owner, unsafe_paths=frozenset()):
 
     unsafe = frozenset(unsafe_paths)
     for route in routes_owner.routes:
-        if isinstance(route, APIRoute) and "GET" in route.methods and route.path not in unsafe:
-            route.methods.add("HEAD")
+        # An APIRoute always holds a set of methods (FastAPI fills in GET when
+        # none is named); the None in the type is Starlette's plain Route.
+        if isinstance(route, APIRoute) and "GET" in cast("set[str]", route.methods) \
+                and route.path not in unsafe:
+            cast("set[str]", route.methods).add("HEAD")
     return routes_owner
 
 
@@ -53,7 +78,7 @@ def answer_head(routes_owner, unsafe_paths=frozenset()):
 # query string; an unknown language is a 404. The twin's endpoint is the base
 # handler itself, so FastAPI binds the same form and query fields to both.
 
-def lang_prefix(lang: str, locales, canonical: str = "en") -> str:
+def lang_prefix(lang: str, locales: Container[str], canonical: str = "en") -> str:
     """The URL prefix for `lang`: '' for the canonical language and for any
     language the tool does not speak, '/de', ... for the others. `lang` often
     arrives unchecked from a query string; a value like '/evil.example' used
@@ -62,14 +87,15 @@ def lang_prefix(lang: str, locales, canonical: str = "en") -> str:
     return f"/{lang}" if lang in locales and lang != canonical else ""
 
 
-def locale_prefixes(locales) -> tuple:
+def locale_prefixes(locales: Iterable[str]) -> tuple[str, ...]:
     """Every prefix a request may arrive with: '' and '/<lang>' for each
     language, the canonical one included (`/en/x` is served for a POST). For
     per-path lists such as rate-limit rules, which match literally."""
     return ("",) + tuple(f"/{lang}" for lang in locales)
 
 
-def add_language_twins(router, locales, paths, *, keep_prefix=(), canonical: str = "en") -> list:
+def add_language_twins(router: APIRouter, locales: Iterable[str], paths: Iterable[str], *,
+                       keep_prefix: Iterable[str] = (), canonical: str = "en") -> list[str]:
     """Register `/{lang}` + path for each listed route of `router`, in the
     order the routes were registered, appended to `router` (call it at the
     bottom of the module, after the base routes). Returns the twin paths.
@@ -95,7 +121,8 @@ def add_language_twins(router, locales, paths, *, keep_prefix=(), canonical: str
         if twin in existing:
             raise ValueError(f"add_language_twins: {twin} already exists (a hand-written twin?)")
         router.add_api_route(
-            twin, base.endpoint, methods=sorted(base.methods), name=f"{base.name}_lang",
+            twin, base.endpoint, methods=sorted(cast("set[str]", base.methods)),
+            name=f"{base.name}_lang",
             response_class=base.response_class, status_code=base.status_code,
             dependencies=list(base.dependencies), include_in_schema=base.include_in_schema,
             route_class_override=_twin_route_class(locales, canonical, base.path in keep))
@@ -103,7 +130,8 @@ def add_language_twins(router, locales, paths, *, keep_prefix=(), canonical: str
     return made
 
 
-def _twin_route_class(locales, canonical, keep_prefix):
+def _twin_route_class(locales: tuple[str, ...], canonical: str,
+                      keep_prefix: bool) -> type[APIRoute]:
     from fastapi import HTTPException
     from fastapi.routing import APIRoute
     from starlette.responses import RedirectResponse
@@ -111,7 +139,7 @@ def _twin_route_class(locales, canonical, keep_prefix):
     from starlette.routing import Match
 
     class LanguageTwin(APIRoute):
-        def matches(self, scope):
+        def matches(self, scope: Scope) -> tuple[Match, Scope]:
             # A first segment that is no language of this tool is no match, so
             # routing goes on to the routes after this one. Answering 404 here
             # shadowed every later path of the same shape: Polarity Profiler's
@@ -123,10 +151,10 @@ def _twin_route_class(locales, canonical, keep_prefix):
                     return Match.NONE, {}
             return match, child
 
-        def get_route_handler(self):
+        def get_route_handler(self) -> _Handler:
             inner = super().get_route_handler()
 
-            async def handler(request):
+            async def handler(request: Request) -> Response:
                 lang = request.path_params.get("lang", "")
                 if lang == canonical and not keep_prefix and request.method in ("GET", "HEAD"):
                     tail = request.url.path[len(lang) + 1:] or "/"
@@ -140,7 +168,8 @@ def _twin_route_class(locales, canonical, keep_prefix):
     return LanguageTwin
 
 
-def guard_query_lang(router, locales, paths=None):
+def guard_query_lang(router: _Owner, locales: Iterable[str],
+                     paths: Iterable[str] | None = None) -> _Owner:
     """Answer 404 when a route's `?lang=` names a language outside `locales`.
 
     A base page takes `lang` as an optional query parameter (FastAPI exposes
@@ -160,15 +189,15 @@ def guard_query_lang(router, locales, paths=None):
         if not isinstance(route, APIRoute) or (chosen is not None and route.path not in chosen):
             continue
 
-        def guarded_handler(_build=route.get_route_handler):
+        def guarded_handler(_build: Callable[[], _Handler] = route.get_route_handler) -> _Handler:  # type: ignore[attr-defined]  # an APIRoute here; mypy drops the isinstance() above in a default
             inner = _build()
 
-            async def handler(request):
+            async def handler(request: Request) -> Response:
                 if any(v not in locales for v in request.query_params.getlist("lang")):
                     raise HTTPException(status_code=404)
                 return await inner(request)
             return handler
 
-        route.get_route_handler = guarded_handler
+        route.get_route_handler = guarded_handler  # type: ignore[method-assign]  # wrapped per route on purpose (docstring)
         route.app = request_response(guarded_handler())
     return router

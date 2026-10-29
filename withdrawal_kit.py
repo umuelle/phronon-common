@@ -42,7 +42,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+# Response is a runtime import: FastAPI reads the routes' return annotations.
+from fastapi.responses import HTMLResponse, Response
 from starlette.background import BackgroundTask
 
 from . import participant as _participant
@@ -81,14 +82,14 @@ class WithdrawalKit:
     delete: Callable[[dict], int]
     #: (request, response, row) -> clear the participant cookie on `response`
     #: when it names this row's participant. None: the tool sets none.
-    forget_browser: Optional[Callable[[Any, Any, dict], None]] = None
+    forget_browser: Optional[Callable[[Request, Response, dict], None]] = None
     #: row -> extra page context for it (the session's title, ...).
     describe: Callable[[dict], dict] = lambda row: {}
 
     # ── recovery by rotation (tools that hold an address) ───────────────────
     #: (CODE, email) -> the rows to mail a fresh link for. None: the tool
     #: holds no address and serves no /withdrawal-link.
-    link_rows: Optional[Callable[[str, str], list]] = None
+    link_rows: Optional[Callable[[str, str], list[dict]]] = None
     #: (row, new token hash) -> store it. Called only after the mail went out.
     store_token: Optional[Callable[[dict, str], None]] = None
     #: (raw token, lang) -> the absolute link the mail carries.
@@ -100,11 +101,11 @@ class WithdrawalKit:
     # ── pages ───────────────────────────────────────────────────────────────
     #: (request, template, context, lang, status_code) -> the response, rendered
     #: as the tool renders its participant pages (with its CSRF field).
-    render: Callable[..., Any]
+    render: Callable[..., Response]
     #: lang -> the word the page asks for ("DELETE", "LÖSCHEN", ...). Any word
     #: in participant.WITHDRAW_CONFIRM_WORDS is accepted whatever is shown.
     confirm_word: Callable[[str], str] = lambda lang: "DELETE"
-    pages: dict = field(default_factory=lambda: dict(PAGES))
+    pages: dict[str, str] = field(default_factory=lambda: dict(PAGES))
     #: lang -> the URL prefix ('' for the canonical language): routing.lang_prefix.
     prefix: Callable[[str], str] = lambda lang: ""
 
@@ -112,30 +113,30 @@ class WithdrawalKit:
     #: (request, submitted token) -> may this POST proceed? A tool whose CSRF
     #: check already runs before any route (middleware, app dependency)
     #: answers True; its own check has refused a bad token by then.
-    csrf_ok: Callable[[Any, str], bool] = lambda request, token: True
+    csrf_ok: Callable[[Request, str], bool] = lambda request, token: True
     #: request -> the address the rate limits are keyed on.
-    client_ip: Optional[Callable[[Any], str]] = None
+    client_ip: Optional[Callable[[Request], str]] = None
     #: The tool's logger, so the line lands where its other lines do.
     logger: logging.Logger = field(default=logger)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         recovery = (self.link_rows, self.store_token, self.link_url, self.send_link)
         if any(recovery) and not all(recovery):
             raise ValueError("withdrawal kit: link_rows, store_token, link_url and send_link "
                              "go together (recovery by rotation needs all four)")
 
 
-def _ip(kit: WithdrawalKit, request) -> str:
+def _ip(kit: WithdrawalKit, request: Request) -> str:
     from .request_ip import client_ip
     return (kit.client_ip or client_ip)(request)
 
 
-def _allowed(kit: WithdrawalKit, request, name: str, limit) -> bool:
+def _allowed(kit: WithdrawalKit, request: Request, name: str, limit: tuple[int, int]) -> bool:
     from .rate_limit import is_allowed
     return is_allowed(f"{name}:{_ip(kit, request)}", max_requests=limit[0], window_seconds=limit[1])
 
 
-def _context(kit: WithdrawalKit, lang: str, **extra) -> dict:
+def _context(kit: WithdrawalKit, lang: str, **extra: Any) -> dict[str, Any]:
     p = kit.prefix(lang)
     return {"lang": lang, "confirm_word": kit.confirm_word(lang),
             "withdraw_url": f"{p}/withdraw",
@@ -143,7 +144,9 @@ def _context(kit: WithdrawalKit, lang: str, **extra) -> dict:
             **extra}
 
 
-def _withdraw_page(kit, request, lang, state, *, token="", row=None, error=None, status=200):
+def _withdraw_page(kit: WithdrawalKit, request: Request, lang: str, state: str, *,
+                   token: str = "", row: Optional[dict] = None, error: Optional[str] = None,
+                   status: int = 200) -> Response:
     ctx = _context(kit, lang, state=state, token=token, error=error,
                    kind=kit.kind(row) if row else None, **(kit.describe(row) if row else {}))
     return kit.render(request, kit.pages["withdraw"], ctx, lang, status)
@@ -168,14 +171,14 @@ def _find(kit: WithdrawalKit, token: str) -> Optional[dict]:
     return kit.lookup(_participant.hash_token(token))
 
 
-def build_withdrawal_router(kit: WithdrawalKit):
+def build_withdrawal_router(kit: WithdrawalKit) -> APIRouter:
     """The routes: GET/POST /withdraw, and GET/POST /withdrawal-link when the
     tool holds an address. Each takes `lang` as a query parameter, so the
     tool's language twins (routing.add_language_twins) answer with them."""
     router = APIRouter()
 
     @router.get("/withdraw", response_class=HTMLResponse)
-    def withdraw_page(request: Request, token: str = "", lang: str = "en"):
+    def withdraw_page(request: Request, token: str = "", lang: str = "en") -> Response:
         token = token_from(token)
         if not token:
             return _withdraw_page(kit, request, lang, "ask")
@@ -187,8 +190,10 @@ def build_withdrawal_router(kit: WithdrawalKit):
         return _withdraw_page(kit, request, lang, "confirm", token=token, row=row)
 
     @router.post("/withdraw", response_class=HTMLResponse)
-    async def withdraw_submit(request: Request, lang: str = "en"):
-        form = await request.form()
+    async def withdraw_submit(request: Request, lang: str = "en") -> Response:
+        # Text fields only: a file sent under a field's name is no value
+        # (it reached .strip() and answered 500; FL-112, 29 October 2026).
+        form = {k: v for k, v in (await request.form()).items() if isinstance(v, str)}
         token = token_from(form.get("token") or "")
         if not kit.csrf_ok(request, form.get("csrf_token") or ""):
             return _withdraw_page(kit, request, lang, "csrf", token=token, status=400)
@@ -214,17 +219,19 @@ def build_withdrawal_router(kit: WithdrawalKit):
     if kit.link_rows is None:
         return router
 
-    def link_form(request, lang, *, code="", email="", error=None, status=200):
+    def link_form(request: Request, lang: str, *, code: str = "", email: str = "",
+                  error: Optional[str] = None, status: int = 200) -> Response:
         ctx = _context(kit, lang, prefill_code=code, prefill_email=email, error=error)
         return kit.render(request, kit.pages["withdrawal_link"], ctx, lang, status)
 
     @router.get("/withdrawal-link", response_class=HTMLResponse)
-    def withdrawal_link_page(request: Request, code: str = "", lang: str = "en"):
+    def withdrawal_link_page(request: Request, code: str = "", lang: str = "en") -> Response:
         return link_form(request, lang, code=code.strip().upper())
 
     @router.post("/withdrawal-link", response_class=HTMLResponse)
-    async def withdrawal_link_submit(request: Request, lang: str = "en"):
-        form = await request.form()
+    async def withdrawal_link_submit(request: Request, lang: str = "en") -> Response:
+        # Text fields only, as in withdraw_submit.
+        form = {k: v for k, v in (await request.form()).items() if isinstance(v, str)}
         code = (form.get("code") or "").strip().upper()
         email = (form.get("email") or "").strip().lower()
         if not kit.csrf_ok(request, form.get("csrf_token") or ""):
@@ -248,14 +255,14 @@ def send_fresh_links(kit: WithdrawalKit, code: str, email: str, lang: str) -> in
 
     sent = 0
     try:
-        rows = list(kit.link_rows(code, email))[:LINK_ROWS_MAX]
+        rows = list(kit.link_rows(code, email))[:LINK_ROWS_MAX]  # type: ignore[misc]  # set: the router mails only then, and __post_init__ wants all four
     except Exception:  # noqa: BLE001 - the answer is already out; say why here
         kit.logger.exception("withdrawal link: looking up the rows failed")
         return 0
     for row in rows:
         raw, digest = _participant.new_token()
         try:
-            ok = kit.send_link(row, email, kit.link_url(raw, lang), lang)
+            ok = kit.send_link(row, email, kit.link_url(raw, lang), lang)  # type: ignore[misc]  # set with link_rows (__post_init__)
         except Exception:  # noqa: BLE001
             ok = False
             kit.logger.exception("withdrawal link to %s failed", recipient_domain(email))
@@ -264,7 +271,7 @@ def send_fresh_links(kit: WithdrawalKit, code: str, email: str, lang: str) -> in
                                recipient_domain(email))
             continue
         try:
-            kit.store_token(row, digest)
+            kit.store_token(row, digest)  # type: ignore[misc]  # set with link_rows (__post_init__)
             sent += 1
         except Exception:  # noqa: BLE001
             kit.logger.exception("withdrawal link to %s sent but not stored; the old link "

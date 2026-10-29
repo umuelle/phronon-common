@@ -81,7 +81,7 @@ import secrets
 from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, cast
 
 import jinja2
 from fastapi import APIRouter, Form, HTTPException, Request
@@ -97,6 +97,14 @@ from . import passkeys
 from . import passwords as pw_policy
 from . import twofactor
 from .rate_limit import is_allowed
+
+if TYPE_CHECKING:
+    from starlette.middleware.base import RequestResponseEndpoint
+
+    from .twofactor import BcryptModule
+
+# The routes' return annotations name `Response`, imported above at run time:
+# FastAPI reads them (a Response subclass means no response model, as before).
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +175,7 @@ GATE_UNAVAILABLE_HTML = (
     "</main></body></html>")
 
 
-def _opens(path: str, open_paths: tuple) -> bool:
+def _opens(path: str, open_paths: tuple[str, ...]) -> bool:
     """Is `path` one of `open_paths` or below one? A bare prefix test let any
     future `/backoffice/accounts...` or `/backoffice/login-as` through
     (review, 5 October 2026)."""
@@ -256,7 +264,7 @@ class AccountTables:
     #: The kit's pages read the value as `account.display_name` whatever it is.
     name_column: str = "display_name"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         for name in (self.accounts, self.passkeys, self.passkey_owner, self.reset_tokens,
                      self.reset_token_owner, self.reset_token_spent, self.password_column,
                      self.name_column):
@@ -369,7 +377,7 @@ class AccountKit:
     #: The tool's phronon_common.audit.AuditRecorder.
     audit: Callable[..., Any]
     #: The bcrypt module (passed in: this package declares no bcrypt).
-    bcrypt: Any
+    bcrypt: BcryptModule
     #: request -> the address sign-in and reset requests are rate-limited by.
     #: Moral Mirror's is proxy-aware (phronon_common.rate_limit.client_ip);
     #: Drawbridge's is the connection's own address, as its login had it.
@@ -405,7 +413,7 @@ class AccountKit:
     #: Password-change fields (other than the CSRF token) a request must carry
     #: or be refused with FastAPI's 422. Moral Mirror declared current and new
     #: password required. Only a hand-made request can tell.
-    password_form_required: tuple = ()
+    password_form_required: tuple[str, ...] = ()
     #: Declare the `csrf_token` field required on the sign-in, sign-out,
     #: password-reset and password-change forms, so a request without it is
     #: FastAPI's 422 rather than a refused token (Drawbridge). Moral Mirror's
@@ -437,7 +445,7 @@ class AccountKit:
     strip_passwords: bool = False
     #: Path prefixes the gate guards (must-change, forced enrolment). Layoff's
     #: administrators also work under /admin.
-    gated_prefixes: tuple = ("/backoffice",)
+    gated_prefixes: tuple[str, ...] = ("/backoffice",)
 
     #: request -> the row the gate judges (needs must_change_password, role,
     #: totp_enabled), or None. None here means `current_account`. Drawbridge's
@@ -468,7 +476,7 @@ def install_templates(env: jinja2.Environment) -> None:
     kit_loader = jinja2.PrefixLoader(
         {TEMPLATE_PREFIX: jinja2.FileSystemLoader(str(TEMPLATE_DIR))})
     env.loader = jinja2.ChoiceLoader([env.loader, kit_loader]) if env.loader else kit_loader
-    env._account_kit_installed = True
+    env._account_kit_installed = True  # type: ignore[attr-defined]  # the kit's own marker on the tool's environment
 
 
 def template(name: str) -> str:
@@ -494,7 +502,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     # The tool's cookie helpers, with the request when the tool asks for it
     # (`cookie_setters_take_request`, FL-090 (c)).
-    def with_request(request: Request) -> tuple:
+    def with_request(request: Request) -> tuple[Request, ...]:
         return (request,) if kit.cookie_setters_take_request else ()
 
     def set_pending_cookie(resp: Response, account_id: int, request: Request) -> None:
@@ -517,20 +525,24 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         "dashboard_url": DASHBOARD_URL,
     }
 
-    def mail(name: str) -> Callable:
-        return getattr(importlib.import_module(kit.mail_module), name)
+    def mail(name: str) -> Callable[..., Any]:
+        sender: Callable[..., Any] = getattr(importlib.import_module(kit.mail_module), name)
+        return sender
 
-    def page(request, name, *, status_code=200, csrf_for=None, preauth=False, **context):
+    def page(request: Request, name: str, *, status_code: int = 200,
+             csrf_for: Optional[dict] = None, preauth: bool = False,
+             **context: Any) -> Response:
         context["account_kit"] = page_kit
         return kit.render(request, template(name), context, status_code=status_code,
                           csrf_for=csrf_for, preauth=preauth)
 
-    def tool_page(request, path, *, status_code=200, **context):
+    def tool_page(request: Request, path: str, *, status_code: int = 200,
+                  **context: Any) -> Response:
         """One of the tool's own pre-sign-in pages (sign-in, reset)."""
         return kit.render(request, path, context, status_code=status_code, csrf_for=None,
                           preauth=True)
 
-    def csrf_field():
+    def csrf_field() -> Any:
         """The CSRF field, declared required where the tool declared it so."""
         return Form(...) if kit.csrf_field_required else Form("")
 
@@ -550,7 +562,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return BackgroundTask(mail("send_two_factor_confirmation"), account["email"],
                               f"{kit.base_url()}{ACCOUNT_URL}", event)
 
-    dummy: list = []
+    dummy: list[bytes] = []
 
     def dummy_hash() -> bytes:
         """A bcrypt hash of nothing anybody knows, made once per router."""
@@ -563,7 +575,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     def clean(password: str) -> str:
         return (password or "").strip() if kit.strip_passwords else (password or "")
 
-    def password_ok(password: str, row) -> bool:
+    def password_ok(password: str, row: Optional[dict]) -> bool:
         """The password against the row's hash. No row: a throwaway bcrypt
         check, so an unknown address takes as long as a wrong password."""
         if not row:
@@ -586,11 +598,11 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             return account
         return {**account, "display_name": account.get(NAME)}
 
-    def later(response, func: Callable, *args):
+    def later(response: Response, func: Callable[..., Any], *args: Any) -> Response:
         """Run func(*args) after the response is sent (FL-083 (e): an answer
         that waits for the mail server tells an observer that the address
         exists). Never raises into the request; failures are logged."""
-        def safe():
+        def safe() -> None:
             try:
                 func(*args)
             except Exception:  # noqa: BLE001
@@ -606,12 +618,13 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             response.background = both
         return response
 
-    def backup_hashes(row) -> list:
+    def backup_hashes(row: Optional[dict]) -> list[str]:
         raw = (row or {}).get("totp_backup_codes")
         if not raw:
             return []
         try:
-            return json.loads(raw)
+            hashes: list[str] = json.loads(raw)
+            return hashes
         except (ValueError, TypeError):
             return []
 
@@ -641,13 +654,14 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     def landing(row: dict) -> str:
         return kit.must_change_url if row.get("must_change_password") else DASHBOARD_URL
 
-    def passkeys_of(account_id) -> list:
+    def passkeys_of(account_id: Optional[int]) -> list:
         if not account_id:
             return []
         return qall(f"SELECT id, name, created_at, last_used_at FROM {PK} "
                     f"WHERE {OWNER}=%s ORDER BY created_at", (account_id,)) or []
 
-    def account_page(request, account: dict, *, error=None, status_code=200):
+    def account_page(request: Request, account: dict, *, error: Optional[str] = None,
+                     status_code: int = 200) -> Response:
         if error is None:
             error = ACCOUNT_ERRORS.get(request.query_params.get("err", ""))
         return page(request, "account.html", status_code=status_code, csrf_for=account,
@@ -660,22 +674,25 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                     error=error,
                     password_hint=pw_policy.PASSWORD_HINT)
 
-    def two_factor_page(request, account, *, status_code=200, **context):
-        values = {"enabled": False, "required": twofactor.is_required(account.get("role")),
-                  "secret": None, "qr_svg": None, "codes": None, "error": None,
-                  "replacing": False, "back_url": ACCOUNT_URL}
+    def two_factor_page(request: Request, account: dict, *, status_code: int = 200,
+                        **context: Any) -> Response:
+        values: dict[str, Any] = {
+            "enabled": False, "required": twofactor.is_required(account.get("role")),
+            "secret": None, "qr_svg": None, "codes": None, "error": None,
+            "replacing": False, "back_url": ACCOUNT_URL}
         values.update(context)
         return page(request, "two_factor.html", status_code=status_code, csrf_for=account,
                     **values)
 
     # ── signing in with a password, and signing out ──────────────────────────
 
-    def sign_in_page(request, *, error=None, notice=None, status_code=200):
+    def sign_in_page(request: Request, *, error: Optional[str] = None,
+                     notice: Optional[str] = None, status_code: int = 200) -> Response:
         return tool_page(request, LOGIN_TEMPLATE, status_code=status_code,
                          error=error, notice=notice)
 
     @router.get(LOGIN_URL)
-    def sign_in_form(request: Request):
+    def sign_in_form(request: Request) -> Response:
         # Signed in already: the form has nothing to offer, so go to the
         # dashboard (fleet entry-address rule, 3 October 2026). Looking the
         # session up needs the database, and this page must still render when
@@ -703,7 +720,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     @router.post(LOGIN_URL)
     def sign_in(request: Request, csrf_token: str = csrf_field(),
-                email: str = Form(""), password: str = Form("")):
+                email: str = Form(""), password: str = Form("")) -> Response:
         # (c) the budget first, then the token, then the account.
         if not sign_in_allowed(request):
             raise HTTPException(429, "Too many login attempts")
@@ -731,6 +748,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                 kit.audit("login_failed", request=request, admin_id=row["id"],
                           admin_email=row["email"])
             return sign_in_page(request, error=SIGN_IN_REFUSED)
+        assert row is not None  # password_ok() is False without a row
         # A1: the password was right, but no session is granted yet while a
         # code is owed: a pending cookie that no guarded page accepts. The
         # failure count is NOT cleared here, only by a right code: clearing it
@@ -747,7 +765,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return resp
 
     @router.get(LOGOUT_URL)
-    def sign_out_page(request: Request):
+    def sign_out_page(request: Request) -> Response:
         """A link to the sign-out address (an old tab, a bookmark, a GET "Log
         out" link from before 6 October 2026) gets the button that signs out.
         The GET itself signs nobody out, since a page on another site could send
@@ -758,7 +776,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return page(request, "sign_out.html", csrf_for=account, account=named(account))
 
     @router.post(LOGOUT_URL)
-    def sign_out(request: Request, csrf_token: str = csrf_field()):
+    def sign_out(request: Request, csrf_token: str = csrf_field()) -> Response:
         # (e) A session, and a token minted for it: otherwise any page on the
         # web could sign a person out.
         account = kit.current_account(request)
@@ -780,11 +798,12 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     # link. A tool's own "send a reset link" (an administrator's button) mints
     # tokens of the same shape, which is why `reset_token_hash` is public.
 
-    def reset_page(request, *, token="", error=None, success=False, message=None):
+    def reset_page(request: Request, *, token: str = "", error: Optional[str] = None,
+                   success: bool = False, message: Optional[str] = None) -> Response:
         return tool_page(request, RESET_TEMPLATE, token=token, error=error, success=success,
                          message=message)
 
-    def issue_reset_token(account_id) -> str:
+    def issue_reset_token(account_id: int) -> str:
         raw = secrets.token_urlsafe(32)
         if kit.tables.clock is None:
             run(f"INSERT INTO {RT} ({RT_OWNER}, token_hash, expires_at) "
@@ -797,13 +816,13 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return raw
 
     @router.get(RESET_URL)
-    def password_reset_form(request: Request, token: str = ""):
+    def password_reset_form(request: Request, token: str = "") -> Response:
         return reset_page(request, token=token)
 
     @router.post(RESET_URL)
     def password_reset(request: Request, csrf_token: str = csrf_field(),
                        email: str = Form(""), token: str = Form(""),
-                       new_password: str = Form("")):
+                       new_password: str = Form("")) -> Response:
         limit, window = RESET_LIMIT                      # (d) each request can send a mail
         if not is_allowed(f"pwreset:{kit.client_ip(request)}", max_requests=limit,
                           window_seconds=window):
@@ -864,7 +883,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     # ── the code prompt after a right password ───────────────────────────────
 
-    def code_prompt_locked(request, row):
+    def code_prompt_locked(request: Request, row: dict) -> Response:
         """(a) The lock holds at the code prompt too: a locked account's code is
         not checked, and a right one does not sign it in."""
         kit.audit("login_locked", request=request, admin_id=row["id"],
@@ -873,7 +892,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                     error=lockout.LOCKED_MESSAGE)
 
     @router.get("/backoffice/verify")
-    def two_factor_verify_page(request: Request):
+    def two_factor_verify_page(request: Request) -> Response:
         row = kit.pending_account(request)
         if not row:
             return redirect(LOGIN_URL)
@@ -883,7 +902,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     @router.post("/backoffice/verify")
     def two_factor_verify_submit(request: Request, code: str = Form(""),
-                                 csrf_token: str = Form("")):
+                                 csrf_token: str = Form("")) -> Response:
         if not kit.csrf_ok(request, csrf_token, None):
             return redirect(LOGIN_URL)
         row = kit.pending_account(request)
@@ -916,7 +935,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     # ── setting up, replacing and switching off the authenticator ────────────
 
     @router.get("/backoffice/two-factor")
-    def two_factor_setup(request: Request, replace: int = 0):
+    def two_factor_setup(request: Request, replace: int = 0) -> Response:
         account = kit.current_account(request)
         if not account:
             return kit.signed_out(request)
@@ -937,7 +956,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     @router.post("/backoffice/two-factor")
     def two_factor_setup_submit(request: Request, action: str = Form("enable"),
-                                code: str = Form(""), csrf_token: str = Form("")):
+                                code: str = Form(""), csrf_token: str = Form("")) -> Response:
         account = kit.current_account(request)
         if not account:
             return kit.signed_out(request)
@@ -1000,7 +1019,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return passkeys.cookie_kwargs(secure=secure_cookies(request))
 
     @router.post("/backoffice/passkeys/options")
-    def passkey_register_options(request: Request, csrf_token: str = Form("")):
+    def passkey_register_options(request: Request, csrf_token: str = Form("")) -> Response:
         account = kit.current_account(request)
         if not account:
             return json_error("Please sign in again.", 401)
@@ -1025,7 +1044,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     @router.post("/backoffice/passkeys")
     def passkey_register(request: Request, csrf_token: str = Form(""),
-                         credential: str = Form(""), name: str = Form("")):
+                         credential: str = Form(""), name: str = Form("")) -> Response:
         account = kit.current_account(request)
         if not account:
             return json_error("Please sign in again.", 401)
@@ -1061,7 +1080,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return resp
 
     @router.post("/backoffice/passkeys/{pid}/delete")
-    def passkey_delete(request: Request, pid: int, csrf_token: str = Form("")):
+    def passkey_delete(request: Request, pid: int, csrf_token: str = Form("")) -> Response:
         account = kit.current_account(request)
         if not account:
             return kit.signed_out(request)
@@ -1079,14 +1098,14 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         resp.background = two_factor_mail(account, "passkey_removed")
         return resp
 
-    def sign_in_allowed(request) -> bool:
+    def sign_in_allowed(request: Request) -> bool:
         """(c) One budget per address for the password form and the passkey."""
         limit, window = SIGN_IN_LIMIT
         return is_allowed(f"login:{kit.client_ip(request)}", max_requests=limit,
                           window_seconds=window)
 
     @router.post("/backoffice/login/passkey/options")
-    def passkey_login_options(request: Request, csrf_token: str = Form("")):
+    def passkey_login_options(request: Request, csrf_token: str = Form("")) -> Response:
         # The password form is throttled by nginx (an EXACT match on
         # /backoffice/login that does not cover these paths), so it is done here.
         if not sign_in_allowed(request):
@@ -1100,7 +1119,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return resp
 
     @router.post(AUTOFILL_OPTIONS_URL)
-    def passkey_autofill_options(request: Request, csrf_token: str = Form("")):
+    def passkey_autofill_options(request: Request, csrf_token: str = Form("")) -> Response:
         """The same sign-in challenge for the browser's autofill (passkeys.js
         asks with mediation "conditional" as the page opens), on a budget of
         its own: on the shared one, every page view would leave the password
@@ -1118,7 +1137,8 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return resp
 
     @router.post("/backoffice/login/passkey")
-    def passkey_login(request: Request, csrf_token: str = Form(""), credential: str = Form("")):
+    def passkey_login(request: Request, csrf_token: str = Form(""),
+                      credential: str = Form("")) -> Response:
         if not sign_in_allowed(request):
             return json_error("Too many sign-in attempts. Wait a minute.", 429)
         if not kit.csrf_ok(request, csrf_token, None):
@@ -1174,7 +1194,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     # else, and the name and address handlers refuse outright.
 
     @router.get("/backoffice/account")
-    def account_get(request: Request):
+    def account_get(request: Request) -> Response:
         account = kit.current_account(request)
         if not account:
             return kit.signed_out(request)
@@ -1182,7 +1202,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     @router.post("/backoffice/account/name")
     def account_name(request: Request, csrf_token: str = Form(""),
-                     display_name: str = Form("")):
+                     display_name: str = Form("")) -> Response:
         account = kit.current_account(request)
         if not account:
             return kit.signed_out(request)
@@ -1201,7 +1221,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     @router.post("/backoffice/account/email")
     def account_email(request: Request, csrf_token: str = Form(""),
-                      new_email: str = Form(""), current_password: str = Form("")):
+                      new_email: str = Form(""), current_password: str = Form("")) -> Response:
         """Ask for an address change. Writes nothing — see phronon_common.account."""
         account = kit.current_account(request)
         if not account:
@@ -1245,7 +1265,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         later(resp, mail("send_email_change_notice"), account["email"], email)
         return resp
 
-    def read_email_change(token: str):
+    def read_email_change(token: str) -> tuple[Optional[dict], Optional[dict], Optional[str]]:
         """(payload, row, error) for a confirmation link, checked against the row."""
         payload = email_signer.loads(token)
         row = (q1(f"SELECT * FROM {T} WHERE id=%s", (payload["id"],))
@@ -1254,7 +1274,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return payload, row, error
 
     @router.get("/backoffice/account/email/confirm")
-    def account_email_confirm_page(request: Request, token: str = ""):
+    def account_email_confirm_page(request: Request, token: str = "") -> Response:
         """Show what the link would do. READ-ONLY — opening it writes nothing.
 
         NO LOGIN IS REQUIRED: the link proves the new mailbox is reachable and is
@@ -1268,7 +1288,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     @router.post("/backoffice/account/email/confirm")
     def account_email_confirm(request: Request, csrf_token: str = Form(""),
-                              token: str = Form("")):
+                              token: str = Form("")) -> Response:
         # A pre-sign-in form: whoever opens this link is not signed in.
         if not kit.csrf_ok(request, csrf_token, None):
             raise bad_csrf()
@@ -1276,6 +1296,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         if error:
             return page(request, "account_confirm_email.html", status_code=RESHOWN,
                         error=error, payload=None, token="")
+        assert payload is not None and row is not None  # no error: the link and its row were found
         # The epoch bump is not bookkeeping: the address IS the login, so every
         # session opened under the old one ends here, on every device.
         # One conditional UPDATE decides: the link names the OLD address, so a
@@ -1299,7 +1320,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         gone.delete_cookie(kit.session_cookie)
         return gone
 
-    def form_field(name: str):
+    def form_field(name: str) -> Any:
         """Form(...) where the tool declared this field required, else Form("")."""
         return Form(...) if name in kit.password_form_required else Form("")
 
@@ -1308,7 +1329,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                          csrf_token: str = csrf_field(),
                          current_password: str = form_field("current_password"),
                          new_password: str = form_field("new_password"),
-                         confirm_password: str = form_field("confirm_password")):
+                         confirm_password: str = form_field("confirm_password")) -> Response:
         account = kit.current_account(request)
         if not account:
             return kit.signed_out(request)
@@ -1342,7 +1363,8 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     # The path spelled out (it is ADMIN_TWO_FACTOR_RESET_URL): the fleet's
     # account-page contract finds this handler by its decorator.
     @router.post("/backoffice/users/{user_id}/reset-two-factor")
-    def reset_two_factor_by_admin(request: Request, user_id: int, csrf_token: str = Form("")):
+    def reset_two_factor_by_admin(request: Request, user_id: int,
+                                  csrf_token: str = Form("")) -> Response:
         """Clear another account's second factor, so it can enrol again.
 
         The lost-phone case: recovery codes are the first line, but somebody
@@ -1380,7 +1402,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                      f"{kit.base_url()}{ACCOUNT_URL}")
 
     if kit.legacy_password_path:
-        def legacy_password_page():
+        def legacy_password_page() -> Response:
             """The old address. Kept as a redirect: bookmarks, and the fleet's probes."""
             return redirect(ACCOUNT_URL)
 
@@ -1393,8 +1415,9 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     # tools add HEAD in a loop over app.routes, which on FastAPI 0.139 never
     # reaches the routes of an included router, so the kit adds it here.
     for route in router.routes:
-        if isinstance(route, APIRoute) and "GET" in route.methods:
-            route.methods.add("HEAD")
+        # An APIRoute always holds a set of methods (routing.answer_head says why).
+        if isinstance(route, APIRoute) and "GET" in cast("set[str]", route.methods):
+            cast("set[str]", route.methods).add("HEAD")
     return router
 
 
@@ -1431,7 +1454,7 @@ def reset_token_hash(raw: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
 
-def reset_token_hashes(raw: str) -> tuple:
+def reset_token_hashes(raw: str) -> tuple[str, str]:
     """Both shapes a stored reset token can have: the kit's 32 digits, and
     the full SHA-256 that Layoff, Polarity Profiler and Controversy
     Generator stored before adopting the kit, so their links mailed before
@@ -1442,7 +1465,8 @@ def reset_token_hashes(raw: str) -> tuple:
 
 # ── the gate ─────────────────────────────────────────────────────────────────
 
-def account_gate(kit: AccountKit):
+def account_gate(kit: AccountKit) -> Callable[[Request, RequestResponseEndpoint],
+                                              Awaitable[Response]]:
     """The middleware that holds two kinds of signed-in account to the pages
     they may use. Install it where the tool's own gate was, so the middleware
     order does not change:
@@ -1472,14 +1496,14 @@ def account_gate(kit: AccountKit):
     while the database is down. The lookup runs in a worker thread: it is a
     blocking database call, and this middleware runs on the event loop.
     """
-    must_change_open = MUST_CHANGE_OPEN
+    must_change_open: tuple[str, ...] = MUST_CHANGE_OPEN
     if kit.legacy_password_path:
         must_change_open += (kit.legacy_password_path,)
     if kit.must_change_allows_two_factor:
         must_change_open += (TWO_FACTOR_URL,)
     who = kit.gate_account or kit.current_account
 
-    async def gate(request: Request, call_next):
+    async def gate(request: Request, call_next: RequestResponseEndpoint) -> Response:
         path = request.url.path
         if path.startswith(kit.gated_prefixes) and not (
                 _opens(path, must_change_open) and _opens(path, ENROLMENT_OPEN)):

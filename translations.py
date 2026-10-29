@@ -81,7 +81,10 @@ import json
 import logging
 import threading
 from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Mapping, Optional
+
+if TYPE_CHECKING:
+    import os
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +93,7 @@ _FORMAT_ERRORS = (KeyError, IndexError, ValueError, AttributeError, TypeError)
 
 # Keys already reported as missing, so a missing string logs once per process,
 # not once per page view. Bounded: a key built from data must not grow it.
-_reported: set = set()
+_reported: set[str] = set()
 _REPORT_LIMIT = 1000
 
 
@@ -139,13 +142,13 @@ def make_translator(translations: Mapping, *, fallback: Optional[Mapping] = None
     if html:
         from markupsafe import Markup
     else:
-        Markup = None
+        Markup = None  # type: ignore[misc,assignment]  # read only when html is True
 
-    def _format(text: str, values: dict):
+    def _format(text: str, values: dict[str, Any]) -> str:
         template = Markup(text) if html else text
         return template.format(**values) if values else template
 
-    def t(key: str, **values):
+    def t(key: str, **values: Any) -> Any:
         value = lookup(translations, key, _MISSING)
         if value is _MISSING and fallback is not None:
             value = lookup(fallback, key, _MISSING)
@@ -177,7 +180,7 @@ class Catalog:
     first one, or ``default``, is canonical and must exist.
     """
 
-    def __init__(self, directory, languages: Iterable[str] = ("en",), *,
+    def __init__(self, directory: str | os.PathLike[str], languages: Iterable[str] = ("en",), *,
                  default: Optional[str] = None):
         self.directory = Path(directory)
         self.languages = tuple(languages)
@@ -187,8 +190,8 @@ class Catalog:
         if self.default not in self.languages:
             raise ValueError("default language %r is not in %r"
                              % (self.default, self.languages))
-        self._cache: dict = {}
-        self._json: dict = {}
+        self._cache: dict[str, dict[str, Any]] = {}
+        self._json: dict[str, str] = {}
         self._lock = threading.Lock()
 
     def language(self, lang: Optional[str]) -> str:
@@ -238,7 +241,8 @@ class Catalog:
 
     def load(self, lang: Optional[str]) -> dict:
         """The language's strings over English, as a copy the caller may edit."""
-        return json.loads(self.as_json(lang))
+        data: dict[str, Any] = json.loads(self.as_json(lang))
+        return data
 
     def translator(self, lang: Optional[str], *, html: bool = False) -> Callable[..., Any]:
         """``t()`` for one language; ``html=True`` for templates (see module doc)."""

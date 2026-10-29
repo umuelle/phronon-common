@@ -5,10 +5,10 @@ flags in pyproject.toml ([tool.mypy]). Every function is annotated, no Optional
 is implicit, and no function hands back Any where it promises a type, so a
 tool calling the clock, the mail claim, the signer, the rate limiter, the
 registry or the audit trail is checked against what they really take and give.
-A module joins TYPED when its annotations are done; TO DO FL-112 names the
-rest. mypy is pinned in requirements-test.txt, which CI and the release's
-candidate matrix install, so there it must run; on a machine without it the
-test skips and says so.
+A module joins TYPED when its annotations are done (TO DO FL-112; the nine
+it named on 27 October joined on 29 October 2026). mypy is pinned in
+requirements-test.txt, which CI and the release's candidate matrix install, so
+there it must run; on a machine without it the test skips and says so.
 """
 from __future__ import annotations
 
@@ -22,9 +22,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 TYPED = (
-    "assets", "audit", "hosts", "joincode", "kanon", "legal_content", "lockout",
-    "once", "passwords", "rate_limit", "registry", "request_ip",
-    "retention_heartbeat", "scheduler", "sessions", "signing",
+    "account_kit", "assets", "audit", "countries", "csrf", "hosts", "joincode",
+    "kanon", "legal_content", "lockout", "once", "participant", "passwords",
+    "rate_limit", "registry", "request_ip", "retention_heartbeat", "routing",
+    "scheduler", "security_headers", "sessions", "signing", "translations",
+    "twofactor", "withdrawal_kit",
 )
 
 

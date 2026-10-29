@@ -8,11 +8,21 @@ that request's nonce — this is how a tool moves to `script-src 'self'
 returned unchanged (backward compatible).
 """
 
+from __future__ import annotations
+
 import re
 import secrets
+from typing import TYPE_CHECKING
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from starlette.middleware.base import RequestResponseEndpoint
+    from starlette.responses import Response
+    from starlette.types import ASGIApp
 
 
 # ── What may be cached ───────────────────────────────────────────────────────
@@ -47,9 +57,10 @@ PUBLIC_PREFIXES = (
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses."""
 
-    def __init__(self, app, enable_hsts: bool = False, frame_options: str = "SAMEORIGIN",
-                 private_path_prefix="/backoffice", csp: str = None,
-                 public_paths=None, locales=()):
+    def __init__(self, app: ASGIApp, enable_hsts: bool = False, frame_options: str = "SAMEORIGIN",
+                 private_path_prefix: str | Iterable[str] = "/backoffice", csp: str | None = None,
+                 public_paths: tuple[Iterable[str], Iterable[str]] | None = None,
+                 locales: Iterable[str] = ()):
         super().__init__(app)
         self.enable_hsts = enable_hsts
         self.frame_options = frame_options
@@ -69,7 +80,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         )
         # Inverted mode: when `public_paths` is given, EVERYTHING is no-store
         # except the allowlist. Pass `DEFAULT_PUBLIC` for the fleet's set.
-        self.public_exact, self.public_prefixes = (None, None)
+        self.public_exact: frozenset[str] | None = None
+        self.public_prefixes: tuple[str, ...] | None = None
         if public_paths is not None:
             exact, prefixes = public_paths
             self.public_exact = frozenset(exact)
@@ -91,6 +103,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             path = self.locale_re.sub("", path) or "/"
         if path in self.public_exact:
             return False
+        assert self.public_prefixes is not None  # __init__ sets it together with public_exact
         return not path.startswith(self.public_prefixes)
 
     def _build_csp(self, nonce: str) -> str:
@@ -112,7 +125,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         ]
         return "; ".join(directives)
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         nonce = secrets.token_urlsafe(16)
         request.state.csp_nonce = nonce
 

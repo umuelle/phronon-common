@@ -381,11 +381,11 @@ _NON_MEMBERS = (
 )
 
 
-def _member(row: tuple) -> Country:
+def _member(row: tuple[str, str, str, str, str, str, str]) -> Country:
     return Country(*row, member=True)
 
 
-def _non_member(row: tuple) -> Country:
+def _non_member(row: tuple[str, str, Optional[str], str, str, tuple[str, ...]]) -> Country:
     a2, a3, num, name, region, _aliases = row
     return Country(a2, a3, num, name, name, region, None, member=False)
 
@@ -399,17 +399,18 @@ def sort_key(label: str) -> str:
 
 
 #: The 193 UN member states, in English alphabetical order.
-MEMBERS: tuple = tuple(sorted((_member(r) for r in _MEMBERS), key=lambda c: sort_key(c.name)))
+MEMBERS: tuple[Country, ...] = tuple(sorted((_member(r) for r in _MEMBERS), key=lambda c: sort_key(c.name)))
 
 #: ISO entries that are NOT members, plus Kosovo. Never offered; kept so an
 #: answer stored before the UN-only lists (or typed under Other) still finds
 #: its region and map code.
-NON_MEMBERS: tuple = tuple(_non_member(r) for r in _NON_MEMBERS)
+NON_MEMBERS: tuple[Country, ...] = tuple(_non_member(r) for r in _NON_MEMBERS)
 
 
-def _build_indexes():
-    codes: dict = {}
-    names: dict = {}
+def _build_indexes() -> tuple[dict[str, Country], dict[str, Country],
+                              list[tuple[str, Country]]]:
+    codes: dict[str, Country] = {}
+    names: dict[str, Country] = {}
 
     def add_name(label: str, country: Country) -> None:
         key = label.casefold()
@@ -441,7 +442,7 @@ def _build_indexes():
 _BY_CODE, _BY_NAME, _SPELLINGS = _build_indexes()
 
 
-def lookup(value) -> Optional[Country]:
+def lookup(value: object) -> Optional[Country]:
     """The entry a stored value names, member or not; None if none does.
 
     Codes match exactly (alpha-2 and alpha-3 in capitals, numeric as digits,
@@ -463,17 +464,17 @@ def lookup(value) -> Optional[Country]:
     return _BY_NAME.get(value.casefold())
 
 
-def member(value) -> Optional[Country]:
+def member(value: object) -> Optional[Country]:
     """Like ``lookup``, but only a UN member state."""
     found = lookup(value)
     return found if found is not None and found.member else None
 
 
-def is_member(value) -> bool:
+def is_member(value: object) -> bool:
     return member(value) is not None
 
 
-def name_of(value, lang: str = "en") -> Optional[str]:
+def name_of(value: object, lang: str = "en") -> Optional[str]:
     """Display name in ``lang`` (German for "de", English for every other
     language, as Layoff shows them today); None if ``value`` names nothing."""
     found = lookup(value)
@@ -482,7 +483,7 @@ def name_of(value, lang: str = "en") -> Optional[str]:
     return found.name_de if lang == "de" else found.name
 
 
-def region_of(value, default: Optional[str] = "Other") -> Optional[str]:
+def region_of(value: object, default: Optional[str] = "Other") -> Optional[str]:
     """The 7-bucket region for a stored value.
 
     Empty -> None (nothing answered). Other, a typed answer that names no
@@ -495,7 +496,7 @@ def region_of(value, default: Optional[str] = "Other") -> Optional[str]:
     return found.region if found is not None else default
 
 
-def subregion_of(value, *, merge_pacific: bool = False,
+def subregion_of(value: object, *, merge_pacific: bool = False,
                  default: Optional[str] = None) -> Optional[str]:
     """The UN M49 sub-region of a member state; ``default`` for anything
     else (Other, free text, a non-member). Whiteout passes
@@ -508,7 +509,7 @@ def subregion_of(value, *, merge_pacific: bool = False,
     return found.subregion
 
 
-def stored_names(region: str) -> list:
+def stored_names(region: str) -> list[str]:
     """Every spelling a name-storing tool may hold for ``region``, sorted.
 
     For a SQL ``IN (...)`` over a column that stores names: PP's class
