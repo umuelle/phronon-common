@@ -5,7 +5,11 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
-## Unreleased
+## 1.98.0 — 2026-10-29
+
+OrgDesignSim's hub card describes the game a session starts in, nine more
+modules are type-checked (which found a 500 on the deletion pages), and
+the test helper `split_app` works on pytest 9.2.
 
 - **Nine more modules pass the type checker** (TO DO FL-112, 29 October
   2026): `account_kit`, `countries`, `csrf`, `participant`, `routing`,
