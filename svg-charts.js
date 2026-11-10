@@ -73,10 +73,28 @@
   // numbers where the label and the tick disagree looks like a bug.
   function fmt(v) { return String(v).replace('-', '−'); }
 
+  /* A `style` is set through the element, declaration by declaration, and
+   * never written as an attribute. A page whose Content-Security-Policy does
+   * not allow inline styles refuses a style ATTRIBUTE (also one a script
+   * sets) and logs an error for every chart; setting the properties on the
+   * element it allows. The element carries the same declarations either way,
+   * so a page that does allow inline styles sees no difference. Found on Peak
+   * Season, the first tool with `style-src 'self'` (10 November 2026): 40
+   * errors in one browser journey, which fails a tool for a console error. */
+  function applyStyle(node, css) {
+    String(css).split(';').forEach(function (part) {
+      var at = part.indexOf(':');
+      if (at < 1) return;
+      node.style.setProperty(part.slice(0, at).trim(), part.slice(at + 1).trim());
+    });
+  }
+
   function tag(name, attrs, text) {
     var n = document.createElementNS(NS, name);
     for (var k in attrs) {
-      if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+      if (attrs[k] === null || attrs[k] === undefined) continue;
+      if (k === 'style') applyStyle(n, attrs[k]);
+      else n.setAttribute(k, attrs[k]);
     }
     if (text !== undefined) n.textContent = text;
     return n;
