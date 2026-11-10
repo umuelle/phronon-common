@@ -444,6 +444,34 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
             ),
         ),
         ToolPresentation(
+            key='peakseason',
+            tagline='Run a hotel. Share a valley.',
+            blurb=(
+                "A commons simulation: teams each run a hotel in a remote mountain "
+                "valley and decide, season by season, on prices and building. Every "
+                "guest wears on the same landscape, so what pays for one hotel can "
+                "cost the valley its guests."
+            ),
+            audience='Business students & executives',
+            # Ten seasons of five to six minutes (docs/concept in the tool).
+            duration='60 min + debrief',
+            how=(
+                'An educator creates a session and shares the join code or link.',
+                (
+                    "Participants join in the browser and are put into teams; each "
+                    "team runs one hotel."
+                ),
+                (
+                    "Season by season, the teams set prices, build or buy houses, "
+                    "and decide what to give back to the valley."
+                ),
+                (
+                    "The debrief shows what became of the valley and sets it beside "
+                    "two reference valleys played from the same start."
+                ),
+            ),
+        ),
+        ToolPresentation(
             key='whiteout',
             tagline='Survive together — or not at all.',
             blurb=(
