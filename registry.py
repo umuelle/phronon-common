@@ -200,6 +200,13 @@ TOOLS: dict[str, ToolIdentity] = {
             canonical_domain="whiteout-exercise.org", locales=("en", "de"),
         ),
         ToolIdentity(
+            key="peakseason", repo_dir="Peak-Season",
+            github_repo="peak-season", service="peak-season",
+            server_path="/var/www/peak-season", port=8011,
+            entitlement_key="peak_season", display_name="Peak Season",
+            canonical_domain="peak-season.org", locales=("en",),
+        ),
+        ToolIdentity(
             key="phronon", repo_dir="Phronon",
             github_repo="phronon", service="phronon",
             server_path="/var/www/phronon", port=8007,
