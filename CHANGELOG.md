@@ -5,6 +5,28 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.99.0 — 2026-11-10
+
+Peak Season joins the fleet as its tenth property, and the chart engine draws
+on a page that allows no inline styles.
+
+- **Peak Season in the registry**: its identity (`peakseason`,
+  peak-season.org, port 8011, repository `peak-season`) and what it says about
+  itself (`PRESENTATIONS`), from which the hub builds its card and the tool
+  its `/about`, `/llms.txt` and schema.org block. A commons simulation: teams
+  each run a hotel in a mountain valley they share.
+- **`svg-charts.js` sets a chart's styles through the element** and no longer
+  writes a `style` attribute. A page whose Content-Security-Policy has
+  `style-src 'self'` (Peak Season's, the first in the fleet) refuses that
+  attribute, also when a script sets it, and logs an error for every chart;
+  the browser journey fails a tool for a console error. The element carries
+  the same declarations as before, so the tools that allow inline styles see
+  no difference, and the PNG export, which copies the element, is unchanged.
+  `tests/test_chart_engine_under_a_strict_style_policy.py` draws under the
+  strict policy in Chromium and WebKit; it fails with the old engine. Every
+  tool that carries the engine takes the new copy with its next deploy.
+
+
 ## 1.98.0 — 2026-10-29
 
 OrgDesignSim's hub card describes the game a session starts in, nine more
