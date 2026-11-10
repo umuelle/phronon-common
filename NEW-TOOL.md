@@ -137,6 +137,65 @@ admin row, the share card and mutation-probe targets. `server-ops/tool_manifest.
 describes the format; `./tool_manifest.py --file <Folder>/ops/tool.json`
 checks a new tool's manifest before its registry entry exists.
 
+## What the tenth tool added to this guide
+
+Peak Season went from scaffold to live on 10 November 2026. Each point below
+cost a red run or a rolled-back deploy that day; server-ops README §12 tells
+the story, this is the list to work from.
+
+1. **Add the tool to server-ops' own lists in the commit that adds its
+   `fleet.conf` line**, and run server-ops' suite: the counts in its tests
+   (repositories, DMARC domains, previews), `rotate_secrets.py`'s table of
+   tools, the alert-state keys.
+2. **Commit a `requirements.lock` before the candidate matrix.** The matrix
+   builds every tool from its lock. On the Mac, from a sibling's pins:
+   `uv pip compile requirements.txt -o requirements.lock --generate-hashes
+   --python-version 3.14 --python-platform x86_64-manylinux_2_35
+   --strip-extras --no-header`.
+3. **Two test files the gates look for by name**:
+   `tests/test_classroom_journey.py` (the journey gate of `run_tests`) and
+   `tests/test_machine_facing_is_shared.py` (`fleet_testkit_check.py`).
+4. **The first address field carries the fleet's sentence**, "We do not sell
+   your address or use it for advertising.", and the tool is added to `TOOLS`
+   in Whiteout's `tests/test_email_field_says_what_we_never_do.py`. A form
+   that asks again for an address already given is listed there with its
+   reason.
+5. **The browser journey sets `BASE_URL`** to its own `http://localhost:<port>`
+   in `Tool(env=...)`: WebKit drops a Secure cookie on plain http otherwise.
+6. **A strict style policy is a test of the shared scripts.** A tool that
+   sends `style-src 'self'` without `'unsafe-inline'` is the only place a
+   shared script's `style` attribute fails. Run the journey as soon as a page
+   uses one; it fails on any console error.
+7. **`/accessibility` before the first deploy.** The smoke test asks for it
+   and for the word WCAG, and the legal router does not serve it. Write only
+   what was tested, and check each sentence against the code and the deploy
+   script: the automated check of deploy step 11 warns and keeps the deploy.
+   Give every kind of page the skip link's stylesheet rule, and press Tab once
+   in the preview to see it.
+8. **`share_card.probe_session` in `ops/tool.json`** unless the tool has a
+   sample session: the layout check needs a session to open.
+9. **`scripts/create_admin.py` with a test.** The first deploy creates no
+   account, and a live site nobody can sign in to is the result.
+10. **The first deploy.** The owner runs the tool's server set-up once
+    (`ops/first_deploy_server.sh` in Peak Season is the worked example:
+    service user, databases, `.env`, unit, nginx site, certificate; no
+    secret is shown) and sets the mailbox password with
+    `server-ops/rotate_secrets.sh mailbox <key>`. Then push the commit before
+    HEAD to the server's checkout (`git push server HEAD~1:main`), so there
+    is a live commit for the release to be verified against, and run both
+    `deploy.sh <key> --common-candidate=<tag> --fresh-venv` and the first
+    `deploy.sh <key> --fresh-venv`: the tool has no environment to copy yet.
+    The release gate wants this evidence for every line of `fleet.conf`,
+    the new one included.
+11. **The hub's card.** The picture is
+    `Phronon/static/screens/<entitlement_key>.webp` (720×450, the tool's start
+    page). The hub can be deployed with the picture before the release that
+    lists the tool: name the key in `PREVIEWS_AHEAD_OF_THE_CATALOGUE` in the
+    hub's `app.py`, and take it out again once the release is active.
+12. **Afterwards**: the tool's row in `server-ops/DELETION-JOBS.md` (it needs a
+    pass that ran on the server), its block in `OPERATIONS_REFERENCE.md`, and
+    `server-ops/nginx_mirror_check.py --write`.
+
 ## Changing the shared package because of the new tool
 
 The registry entry is always such a change. Sometimes the new tool also needs
