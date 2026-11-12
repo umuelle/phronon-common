@@ -1,0 +1,150 @@
+{# Shared by the users kit (phronon_common/users_kit.py): the page on which an
+   administrator manages the other accounts. Rendered inside the tool's own
+   backoffice/base.html. `people` holds what the page may know about each
+   account (never a hash or a secret); `account` is the signed-in
+   administrator. The rules are the owner's of 12 November 2026 (README §11,
+   "The Users page"). Edit here, not in a tool. -#}
+{% extends "backoffice/base.html" %}
+{% block title %}{{ users_kit.tool_name }} — Users{% endblock %}
+
+{% block content %}
+<div class="bo-page-header">
+  <h1>Users</h1>
+</div>
+
+{% if flash %}<div class="alert alert-success" role="status">{{ flash }}</div>{% endif %}
+{% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+
+<div class="bo-form-card">
+  <h2>Add user</h2>
+  <form method="post" action="/backoffice/users/invite" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="field-row">
+      <div class="field">
+        <label for="display_name">Name <span class="required">*</span></label>
+        <input type="text" id="display_name" name="display_name" maxlength="255" required
+               value="{{ form.display_name or '' }}">
+      </div>
+      <div class="field">
+        <label for="email">E-mail address <span class="required">*</span></label>
+        <input type="email" id="email" name="email" maxlength="255" required autocomplete="off"
+               value="{{ form.email or '' }}">
+      </div>
+      <div class="field">
+        <label for="role">Role</label>
+        <select id="role" name="role">
+          <option value="educator"{% if form.role != 'admin' %} selected{% endif %}>Educator</option>
+          <option value="admin"{% if form.role == 'admin' %} selected{% endif %}>Administrator</option>
+        </select>
+      </div>
+    </div>
+    <p class="hint">The person gets an e-mail with a link to set their own password. The link is
+      valid for {{ users_kit.invite_hours }} hours; “Send link” in the list sends a new one.</p>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Add user</button>
+    </div>
+  </form>
+</div>
+
+<h2 class="section-heading">All users</h2>
+
+<div class="bo-table-wrap"><table class="bo-table bo-table--wrappy" id="users-table"
+       data-bulk-bar="users-bulk-bar" data-bulk-count="users-bulk-count" data-csrf="{{ csrf_token }}">
+  <thead>
+    <tr>
+      <th class="col-check"><input type="checkbox" class="bulk-select-all" aria-label="Select all accounts"></th>
+      <th class="col-name">Name</th>
+      <th>E-mail address</th>
+      <th class="col-narrow">Role</th>
+      <th class="col-narrow">Status</th>
+      <th class="col-narrow">Sessions</th>
+      <th class="col-narrow">Last login</th>
+      <th class="col-actions">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in people %}
+    <tr{% if not u.is_active %} class="row-inactive"{% endif %}>
+      <td class="col-check">
+        {% if not u.is_self %}
+        <input type="checkbox" class="bulk-cb" value="{{ u.id }}" data-active="{{ '1' if u.is_active else '0' }}"
+               aria-label="Select {{ u.display_name or u.email }}">
+        {% endif %}
+      </td>
+      <td class="col-name">{{ u.display_name or '—' }}</td>
+      <td>{{ u.email }}</td>
+      <td class="col-narrow"><span class="role-badge role-badge--{{ u.role }}">{{ 'administrator' if u.role == 'admin' else 'educator' }}</span></td>
+      <td class="col-narrow">
+        {% if u.is_active %}<span class="state-badge state-badge--open">active</span>
+        {% else %}<span class="state-badge state-badge--closed">inactive</span>{% endif %}
+      </td>
+      <td class="col-narrow">{{ u.sessions }}</td>
+      <td class="col-narrow">{{ u.last_login_at.strftime('%Y-%m-%d') if u.last_login_at else 'never' }}</td>
+      <td class="col-actions">
+        <div class="row-actions">
+          {% if u.is_self %}
+          <span class="hint">(you)</span>
+          <a href="/backoffice/account" class="btn btn-sm btn-secondary">Manage account</a>
+          {% else %}
+          <a href="/backoffice/users/{{ u.id }}/edit" class="btn btn-sm btn-secondary">Edit</a>
+          {% if u.is_active %}
+          <form method="post" action="/backoffice/users/{{ u.id }}/send-link">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-sm btn-secondary"
+                    title="E-mails {{ u.email }} a link to set a password">Send link</button>
+          </form>
+          {% if u.two_factor %}
+          <form method="post" action="/backoffice/users/{{ u.id }}/reset-two-factor">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-sm btn-secondary"
+                    title="For a lost phone: clears the second factor so they can enrol again"
+                    data-confirm="Reset two-factor login for {{ u.display_name or u.email }}? They will sign in with their password alone until they set it up again, and will be told by e-mail.">Reset 2FA</button>
+          </form>
+          {% endif %}
+          {% if not u.last_admin %}
+          <form method="post" action="/backoffice/users/{{ u.id }}/deactivate">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-sm btn-secondary"
+                    data-confirm="Deactivate {{ u.display_name or u.email }}? Nobody can sign in with this account until it is activated again. Its sessions stay.">Deactivate</button>
+          </form>
+          {% endif %}
+          {% else %}
+          <form method="post" action="/backoffice/users/{{ u.id }}/activate">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-sm btn-secondary">Activate</button>
+          </form>
+          {% endif %}
+          {% if u.sessions == 0 and not u.last_admin %}
+          <form method="post" action="/backoffice/users/{{ u.id }}/delete">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-sm btn-danger"
+                    data-confirm="Permanently delete the account of {{ u.display_name or u.email }}? This cannot be undone.">Delete</button>
+          </form>
+          {% endif %}
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table></div>
+<p class="hint">An account that owns sessions cannot be deleted. Deactivate it instead: nobody can sign
+  in with it, and its sessions stay.</p>
+
+<div class="bulk-bar" id="users-bulk-bar" hidden>
+  <span class="bulk-bar__count"><span id="users-bulk-count">0</span> selected</span>
+  <div class="bulk-bar__actions">
+    <button type="button" class="btn btn-sm btn-secondary" data-bulk-url="/backoffice/users/bulk"
+            data-bulk-action="send-link" data-bulk-only-active="1"
+            data-bulk-confirm="E-mail a link to set a password to the {n} selected account(s)? Deactivated accounts get none.">Send link</button>
+    <button type="button" class="btn btn-sm btn-warning" data-bulk-url="/backoffice/users/bulk"
+            data-bulk-action="deactivate" data-bulk-only-active="1"
+            data-bulk-confirm="Deactivate the {n} selected account(s)? Nobody can sign in with them until they are activated again.">Deactivate</button>
+  </div>
+  <button class="bulk-deselect" type="button">✕ clear</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ asset('/static/js/bulk-select.js') }}" defer></script>
+{% endblock %}

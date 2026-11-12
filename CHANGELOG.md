@@ -5,6 +5,45 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.101.0 — 2026-11-12
+
+One Users page for the fleet (TO DO FL-133, from the fleet review of
+11 November 2026). New code only: a tool that does not mount it is unchanged.
+
+- **`users_kit`**: the page on which an administrator manages the other
+  accounts, built on a tool's `AccountKit`. `UsersKit(account=…,
+  session_counts=…)`, `build_users_router(…)`; templates
+  `account_kit/users.html` and `account_kit/user_edit.html`. The rules are the
+  owner's of 12 November 2026:
+  1. a new account gets a mailed link and sets its own password (72 hours,
+     can be sent again); nobody types a password for somebody else;
+  2. an account that owns sessions cannot be deleted, only deactivated;
+  3. the last active administrator cannot be deactivated, demoted or deleted
+     (a condition of the UPDATE or DELETE itself), and nobody does any of the
+     three to their own account;
+  4. a new address or role ends the account's sessions, spends its
+     outstanding links and tells the address it had;
+  5. no "set a password": the page sends a link, and a deactivated account
+     gets none;
+  6. several at once: deactivate or send links, no delete.
+  A link is stored only once the mail server has taken its mail. A successful
+  POST answers with a redirect, so a reload repeats nothing. Every handler
+  checks the administrator's role itself.
+- **Two mails** in `emails.py`: `send_account_invitation` (the link for a new
+  account) and `send_account_change_notice` (to the address an account had
+  when an administrator changed its address or role). A tool that mounts the
+  page wraps both in its mail module and adds a sample of each.
+- **`testing/manage_account.py`**: the check that the two-factor reset button
+  asks before acting reads the shared Users page where a tool has none of its
+  own.
+- Peak Season mounts the page first; it had none. The other eight keep their
+  own until each is moved over (FL-133).
+- Tests: `tests/test_users_kit.py`, one per rule and one per fault the review
+  found in the eight pages (an educator reaching the list, a link for a
+  deactivated or unknown account, an empty address, audit rows for actions
+  that did not happen, a delete that takes sessions along).
+
+
 ## 1.100.0 — 2026-11-12
 
 A change to how an account signs in asks for its password again (TO DO FL-129,

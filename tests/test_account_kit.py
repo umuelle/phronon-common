@@ -50,7 +50,7 @@ PASSWORD = "Kit-test-passphrase-2026"  # pragma: allowlist secret (test value)
 def test_there_are_templates_to_check():
     assert {p.name for p in TEMPLATES} == {
         "account.html", "account_confirm_email.html", "sign_out.html", "two_factor.html",
-        "two_factor_verify.html"}
+        "two_factor_verify.html", "users.html", "user_edit.html"}
 
 
 @pytest.mark.parametrize("tpl", TEMPLATES, ids=lambda p: p.name)

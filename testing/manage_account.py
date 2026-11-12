@@ -143,7 +143,9 @@ class AccountPageContract:
 
     @property
     def users_html(self) -> str:
-        return _read(self.tpl / "users.html")
+        # The shared Users page (users_kit, FL-133) where the tool has none of
+        # its own; a tool's own page until it adopts the shared one.
+        return _read(self._page("users.html"))
 
     def route_src(self, path: str, method: str = "post") -> str:
         """The body of the handler decorated with `@app.<method>('<path>')`

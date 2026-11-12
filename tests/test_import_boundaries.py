@@ -36,6 +36,7 @@ WEB_MODULES = {
     "legal",             # the legal-pages router
     "rate_limit",        # a middleware
     "security_headers",  # a middleware
+    "users_kit",         # the administrator's Users page: a router (FL-133)
     "withdrawal_kit",    # the participant's /withdraw routes: a router (6 Oct 2026)
 }
 
@@ -72,9 +73,9 @@ def test_only_web_plumbing_loads_a_web_framework(footprints):
 
 def test_only_passkeys_loads_webauthn(footprints):
     # account_kit serves the passkey routes, so it reaches webauthn through
-    # passkeys; nothing else may.
+    # passkeys, and users_kit is built on account_kit; nothing else may.
     assert sorted(m for m, f in footprints.items()
-                  if "webauthn" in f["roots"]) == ["account_kit", "passkeys"]
+                  if "webauthn" in f["roots"]) == ["account_kit", "passkeys", "users_kit"]
 
 
 def test_the_mail_diagnostic_is_stdlib_only(footprints):

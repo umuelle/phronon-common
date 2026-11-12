@@ -66,9 +66,9 @@ or `token`, `error`, `success`, `message` (reset), and the `csrf_token` the
 tool's `render` supplies.
 
 WHAT STAYS IN THE TOOL
-The users list and everything else an administrator does to other accounts
-(invite, edit, deactivate, delete, set a password, send a reset link), the
-participant side, and the two page templates above.
+The participant side and the two page templates above. The users list and
+everything else an administrator does to other accounts stays the tool's own
+until it mounts the shared Users page (users_kit.py, FL-133).
 """
 from __future__ import annotations
 

@@ -377,6 +377,121 @@ def send_email_change_notice(tool_name: str, default_from: str, to_email: str,
     return True
 
 
+# ── an administrator's mails about somebody else's account (users kit) ──────
+# Two mails (FL-133, 12 November 2026):
+#
+#   invitation → to a NEW account. The administrator types no password; the
+#                person sets their own from this link, which is the only way
+#                in until they have.
+#   change     → to the address an account HAD when an administrator changed
+#                its address or its role. Legitimate and routine, and also
+#                what moving an account away from its holder looks like, so
+#                the holder never learns of it only by being signed out.
+
+def account_invitation_bodies(tool_name: str, set_url: str, hours: int = 72):
+    text = (
+        "Hello,\n\n"
+        f"An administrator created a {tool_name} account for this address.\n\n"
+        f"Open the link below to set your password (valid for {hours} hours):\n\n"
+        f"{set_url}\n\n"
+        "After that you sign in with this address and your password. If the link "
+        "has expired, ask the administrator to send a new one.\n\n"
+        "If you did not expect this, you can ignore this e-mail: without the link "
+        "nobody can use the account.\n\n"
+        f"— {tool_name}\n"
+        "Part of Phronon · https://phronon.org"
+    )
+    html = branded_html(tool_name, (
+        '<p style="margin:0 0 16px;">Hello,</p>'
+        f'<p style="margin:0 0 16px;">An administrator created a <strong>{tool_name}</strong> '
+        'account for this address. Click the button below to set your password.</p>'
+        '<p style="margin:0 0 24px;text-align:center;">'
+        f'<a href="{set_url}" style="display:inline-block;background:#0F1B2D;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 28px;border-radius:6px;">Set your password</a></p>'
+        f'<p style="margin:0 0 16px;color:#555555;font-size:13px;">This link is valid for {hours} hours. '
+        'If it has expired, ask the administrator to send a new one. If the button does not work, '
+        'paste this URL into your browser:<br>'
+        f'<a href="{set_url}" style="color:#0F1B2D;word-break:break-all;">{set_url}</a></p>'
+        '<p style="margin:0;color:#555555;font-size:13px;">If you did not expect this, you can ignore '
+        'this e-mail: without the link nobody can use the account.</p>'
+    ))
+    return text, html
+
+
+def send_account_invitation(tool_name: str, default_from: str, to_email: str,
+                            set_url: str, hours: int = 72, subject_prefix: str = "") -> bool:
+    """The link on which the holder of a new account sets a password. True once
+    the mail server took it; False without SMTP (the link is a live credential
+    and is logged only under LOG_RESET_LINKS, like a reset link)."""
+    if not os.getenv("SMTP_PASSWORD"):
+        _unsendable("account invitation", to_email, set_url)
+        return False
+    sender = _sender_address(default_from)
+    text, html = account_invitation_bodies(tool_name, set_url, hours)
+    _smtp_send(sender, to_email, _multipart(
+        f"{subject_prefix}{tool_name} — set the password for your new account",
+        sender, to_email, text, html))
+    return True
+
+
+def account_change_notice_bodies(tool_name: str, new_email: str = "", new_role: str = ""):
+    """`new_email` and `new_role` ("admin" or "educator") name what changed;
+    an empty one did not change."""
+    changes = []
+    if new_email:
+        changes.append(f"The sign-in address is now: {new_email}")
+    if new_role:
+        changes.append("The role is now: "
+                       + ("administrator" if new_role == "admin" else "educator"))
+    lines = "\n".join(f"    {c}" for c in changes)
+    text = (
+        "Hello,\n\n"
+        f"An administrator of {tool_name} changed the account that signs in with "
+        "this address.\n\n"
+        f"{lines}\n\n"
+        "The account was signed out everywhere"
+        + (", and links mailed to this address no longer work. Sign in with the "
+           "new address and the same password." if new_email else
+           ". Sign in again with the same password.")
+        + "\n\n"
+        "If you did not expect this, contact the administrator of your "
+        f"{tool_name} installation.\n\n"
+        f"— {tool_name}\n"
+        "Part of Phronon · https://phronon.org"
+    )
+    items = "".join(
+        f'<p style="margin:0 0 8px;padding:12px 16px;background:#f4f5f7;border-radius:6px;'
+        f'word-break:break-all;">{c}</p>' for c in changes)
+    html = branded_html(tool_name, (
+        '<p style="margin:0 0 16px;">Hello,</p>'
+        f'<p style="margin:0 0 16px;">An administrator of <strong>{tool_name}</strong> changed '
+        'the account that signs in with this address.</p>'
+        f'{items}'
+        '<p style="margin:16px 0 16px;">The account was signed out everywhere'
+        + (', and links mailed to this address no longer work. Sign in with the new address '
+           'and the same password.' if new_email else '. Sign in again with the same password.')
+        + '</p>'
+        '<p style="margin:0;color:#555555;font-size:13px;">If you did not expect this, contact '
+        f'the administrator of your {tool_name} installation.</p>'
+    ))
+    return text, html
+
+
+def send_account_change_notice(tool_name: str, default_from: str, to_email: str,
+                               new_email: str = "", new_role: str = "",
+                               subject_prefix: str = "") -> bool:
+    """Tell the address an account HAD that an administrator changed its
+    address or role. No link inside. True once sent; False without SMTP."""
+    if not os.getenv("SMTP_PASSWORD"):
+        _unsendable("account change notice", to_email)
+        return False
+    sender = _sender_address(default_from)
+    text, html = account_change_notice_bodies(tool_name, new_email, new_role)
+    _smtp_send(sender, to_email, _multipart(
+        f"{subject_prefix}{tool_name} — an administrator changed your account",
+        sender, to_email, text, html))
+    return True
+
+
 def two_factor_reset_bodies(tool_name: str, account_url: str):
     text = (
         "Hello,\n\n"

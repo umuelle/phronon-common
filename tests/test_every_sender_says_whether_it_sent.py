@@ -27,6 +27,10 @@ SENDERS = {
         "Tool", "noreply@tool.example", "a@example.org", "https://tool.example/account"),
     "two_factor_confirmation": lambda: emails.send_two_factor_confirmation(
         "Tool", "noreply@tool.example", "a@example.org", "https://tool.example/account"),
+    "account_invitation": lambda: emails.send_account_invitation(
+        "Tool", "noreply@tool.example", "a@example.org", "https://tool.example/reset?token=x"),
+    "account_change_notice": lambda: emails.send_account_change_notice(
+        "Tool", "noreply@tool.example", "a@example.org", "new@example.org", "admin"),
     "participant_resume": lambda: emails.send_participant_resume(
         "Tool", "noreply@tool.example", "p@example.org", "https://tool.example/resume?token=x"),
 }

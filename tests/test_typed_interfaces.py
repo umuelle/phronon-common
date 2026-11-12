@@ -26,7 +26,7 @@ TYPED = (
     "kanon", "legal_content", "lockout", "once", "participant", "passwords",
     "rate_limit", "registry", "request_ip", "retention_heartbeat", "routing",
     "scheduler", "security_headers", "sessions", "signing", "translations",
-    "twofactor", "withdrawal_kit",
+    "twofactor", "users_kit", "withdrawal_kit",
 )
 
 
