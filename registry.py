@@ -424,22 +424,30 @@ PRESENTATIONS: dict[str, ToolPresentation] = {
             key='orgsim',
             tagline='Redesign the organization.',
             blurb=(
-                "Restructure a fictional company over six or twelve simulated "
-                "months, balancing performance, fairness, and finances: "
-                "sustained practical judgment about organizations under real "
-                "constraints."
+                "Redraw a fictional company's org chart over six simulated "
+                "months and see what each structure costs. Take out a level and "
+                "somebody's span of control grows: practical judgment about the "
+                "trade-offs of organizational design."
             ),
             audience='Advanced students & executives',
-            # The welcome page's range (OD-003, 27 October 2026): from the
-            # Legacy sandbox's 10 to 15 minutes to the default studio's 30.
-            duration='10–30 min + debrief',
+            # The design game, the one game a session starts in since
+            # 12 November 2026 (OD-012): OrgDesignSim's welcome page says
+            # six months and about 20 minutes.
+            duration='20 min + debrief',
             how=(
                 'An educator creates a session and shares the join code or link.',
-                'Participants take charge of a fictional company in the browser.',
-                'Round by round, over six or twelve simulated months, they reshape its structure.',
                 (
-                    "They balance performance, fairness, and finances under real "
-                    "constraints."
+                    "Participants take charge of a fictional company in the browser: "
+                    "a start-up, a turnaround, a merger or a matrix."
+                ),
+                (
+                    "Month by month, over six simulated months, a case arrives and "
+                    "they may redraw the chart first: move a box, add a manager, "
+                    "take a level out."
+                ),
+                (
+                    "The debrief puts every chart on one map of levels and spans "
+                    "of control, and asks what each one cost."
                 ),
             ),
         ),
