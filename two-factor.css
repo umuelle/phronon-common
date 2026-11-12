@@ -34,6 +34,9 @@
 .tfa-card ol li { margin-bottom: .35rem; }
 
 .tfa-muted { color: #68727d; font-size: .85rem; }
+/* The note under a form's button. A class since 1.101.0 (FL-147): it was a
+   style attribute, which a page that allows no inline styles drops. */
+.tfa-card .tfa-after-form { margin-top: .8rem; }
 
 .tfa-error {
   background: #fdecea;

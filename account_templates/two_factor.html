@@ -78,7 +78,7 @@
     {% endif %}
     <button type="submit" class="tfa-btn">{{ 'Replace the authenticator' if replacing else 'Turn two-factor on' }}</button>
   </form>
-  <p class="tfa-muted" style="margin-top:.8rem">Nothing is switched on until that
+  <p class="tfa-muted tfa-after-form">Nothing is switched on until that
     code is accepted, so a half-finished setup cannot lock you out.</p>
   {% if not required %}<p class="tfa-back"><a href="{{ back_url }}">&larr; Back</a></p>{% endif %}
   {% if required and not replacing %}

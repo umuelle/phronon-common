@@ -36,6 +36,15 @@ One Users page for the fleet (TO DO FL-133, from the fleet review of
 - **`testing/manage_account.py`**: the check that the two-factor reset button
   asks before acting reads the shared Users page where a tool has none of its
   own.
+- **No inline styles in the account pages** (FL-147). Five `style=`
+  attributes in `account.html`, `two_factor.html`, `two_factor_verify.html`
+  and `account_confirm_email.html` are classes now (`.required`, and the new
+  `.tfa-after-form` in `two-factor.css` and `.bo-form-card--narrow` in
+  `backoffice-core.css`). A page that allows no inline styles dropped them:
+  on Peak Season the star at two password fields was not red, two notes sat
+  closer to their form and the confirmation card was full width. Nine tools
+  take the two sheets' copies with their next deploy; a test refuses a
+  `style=` attribute or an inline handler in `account_templates/`.
 - Peak Season mounts the page first; it had none. The other eight keep their
   own until each is moved over (FL-133).
 - Tests: `tests/test_users_kit.py`, one per rule and one per fault the review

@@ -528,6 +528,11 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
 .pw-toggle.is-on { background: var(--bo-primary); color: #fff; }
 .pw-toggle:hover, .pw-generate:hover { background: #f0f0f0; }
 .required { color: var(--bo-danger); }
+/* A card holding one short form (the e-mail confirmation). A class since
+   1.101.0 (FL-147): it was a style attribute, which a page that allows no
+   inline styles drops. Two classes, so a tool's own .bo-form-card rule,
+   which comes later, does not undo it. */
+.bo-form-card.bo-form-card--narrow { max-width: 440px; }
 .results-toolbar { display: flex; justify-content: flex-end; margin-bottom: .85rem; }
 .row--archived a { color: #5b6473; }
 .row--archived a:hover { color: var(--bo-primary); }

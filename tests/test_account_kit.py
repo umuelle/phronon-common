@@ -63,6 +63,18 @@ def test_every_template_renders_inside_the_tools_own_layout(tpl):
     assert '{% extends "backoffice/base.html" %}' in tpl.read_text(encoding="utf-8")
 
 
+@pytest.mark.parametrize("tpl", TEMPLATES, ids=lambda p: p.name)
+def test_no_template_carries_an_inline_style_or_handler(tpl):
+    """A page that allows no inline styles (Peak Season's) drops a `style=`
+    attribute without a word: until 1.101.0 a red star, two margins and a
+    card's width were lost there (FL-147). The look belongs in the shared
+    sheets, as a class."""
+    html = tpl.read_text(encoding="utf-8")
+    assert not re.search(r"<[^>]*\sstyle\s*=", html), "a style attribute; use a class"
+    assert "<style" not in html, "a style block; use the shared sheets"
+    assert not re.search(r"<[^>]*\son[a-z]+\s*=", html), "an inline event handler"
+
+
 def test_the_password_form_states_the_shared_policy():
     page = kit_mod.TEMPLATE_DIR / "account.html"
     assert_form_asks_for_the_shared_hint(page, PKG)

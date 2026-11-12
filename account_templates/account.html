@@ -74,7 +74,7 @@
              autocomplete="current-password" required>
     </div>
     <div class="field">
-      <label for="new_password">New password <span style="color:var(--bo-danger);">*</span></label>
+      <label for="new_password">New password <span class="required">*</span></label>
       {% if account_kit.password_tools %}
       <div class="pw-input-wrap">
         <input type="password" id="new_password" name="new_password"
@@ -89,7 +89,7 @@
       <span class="hint">{{ password_hint }}</span>
     </div>
     <div class="field">
-      <label for="confirm_password">Confirm new password <span style="color:var(--bo-danger);">*</span></label>
+      <label for="confirm_password">Confirm new password <span class="required">*</span></label>
       <input type="password" id="confirm_password" name="confirm_password"
              autocomplete="new-password" required>
     </div>
