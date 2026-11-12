@@ -5,6 +5,47 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.100.0 — 2026-11-12
+
+A change to how an account signs in asks for its password again (TO DO FL-129,
+from the fleet review of 11 November 2026). Behind a switch: a tool that has
+not set it behaves as under 1.99.0.
+
+- **`AccountKit.ask_again`** (default `False`). With it on:
+  - adding a passkey (`POST /backoffice/passkeys/options`), replacing the
+    authenticator and switching two-factor off each need the account's current
+    password, as the address change always has. An open session was enough
+    until now, and a passkey is both factors, so a laptop left signed in could
+    be turned into lasting access. A first authenticator needs no password
+    again. Ten tries in fifteen minutes per account; a refusal is audited as
+    `sign_in_change_refused` (new in `audit.py`), with the change it was for.
+  - the account's own passkey signs in while wrong passwords have locked the
+    account. Refused up front, it let anyone who knew the address keep its
+    holder out. A passkey that does not verify on a locked account is still
+    answered "locked" and counts no further.
+  - `account.html` and `two_factor.html` show the password field for these
+    three steps, and the replacement's button says "Replace the authenticator".
+- **Why a switch.** A release is verified against every tool's live commit, and
+  each tool's own tests add a passkey and replace an authenticator without a
+  password. A tool sets `ask_again=True` in the deploy that also carries its
+  tests for it. Peak Season does first. The default becomes `True`, and the
+  field goes, once all ten have.
+- **`passkeys.js`** sends the value of `[data-passkey-password]` with the
+  request for the challenge and empties the field; without such a field it
+  behaves as before. **`two-factor.css`** styles the password field. Every tool
+  takes both copies with its next deploy.
+- Tests: six in `tests/test_account_kit.py` (an open session alone cannot add a
+  passkey, replace the authenticator or switch two-factor off; a first
+  authenticator needs no password; the password cannot be guessed there; a
+  tool without the switch behaves as before), and the locked-account test now
+  expects the passkey to sign in.
+- **Registry: OrgDesignSim's card describes the design game** (OD-012,
+  committed on 12 November 2026 and carried by this release): six simulated
+  months, about 20 minutes, levels and spans of control. The hub's card,
+  OrgDesignSim's /about and its llms.txt show the new text once the release
+  is active.
+
+
 ## 1.99.0 — 2026-11-10
 
 Peak Season joins the fleet as its tenth property, and the chart engine draws

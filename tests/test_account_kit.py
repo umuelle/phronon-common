@@ -287,7 +287,7 @@ class World:
                 f"USERS PAGE for {admin['email']}"),
             audit=audit, bcrypt=bcrypt,
             client_ip=lambda request: "kit-test-client", reset_token_hours=2,
-            mail_module=mail.__name__)
+            mail_module=mail.__name__, ask_again=True)
         settings.update(adapter)
         self.kit = kit_mod.AccountKit(**settings)
         app = FastAPI()
@@ -573,12 +573,14 @@ def test_every_post_refuses_when_the_tools_csrf_check_says_no(world):
 
 # setting up the authenticator
 
-def _enrol(w, c, acc, replace=False):
+def _enrol(w, c, acc, replace=False, password=PASSWORD):
     page = c.get("/backoffice/two-factor" + ("?replace=1" if replace else ""))
     secret = c.cookies.get("kit_pending_totp")
     assert secret
-    return page, c.post("/backoffice/two-factor", data={
-        "csrf_token": _tok(acc), "action": "enable", "code": twofactor.current_code(secret)})
+    data = {"csrf_token": _tok(acc), "action": "enable", "code": twofactor.current_code(secret)}
+    if replace and password is not None:        # a replacement asks for the password again
+        data["current_password"] = password
+    return page, c.post("/backoffice/two-factor", data=data)
 
 
 def test_switching_two_factor_on_replacing_it_and_new_codes(world):
@@ -624,9 +626,110 @@ def test_only_an_educator_may_switch_it_off(world):
     for role, stays in (("educator", 0), ("admin", 1)):
         acc = w.account(role=role, totp_enabled=1, totp_secret=SECRET32)
         r = w.signed_in(acc).post("/backoffice/two-factor",
-                                  data={"csrf_token": _tok(acc), "action": "disable"})
+                                  data={"csrf_token": _tok(acc), "action": "disable",
+                                        "current_password": PASSWORD})
         assert r.status_code == 303 and r.headers["location"] == "/backoffice/two-factor"
         assert w.row(acc["id"])["totp_enabled"] == stays, role
+
+
+# ── FL-129 (1.100.0): a change to HOW an account signs in asks for the password again ──
+
+def _reset_reauth(acc):
+    from phronon_common.rate_limit import _shared_window
+    _shared_window.reset(f"reauth:{acc['id']}")
+
+
+def test_an_open_session_alone_cannot_switch_two_factor_off(world):
+    """A laptop left signed in was enough until 1.100.0: no password, no code."""
+    w = world()
+    acc = w.account(totp_enabled=1, totp_secret=SECRET32)
+    _reset_reauth(acc)
+    c = w.signed_in(acc)
+    for sent in ({}, {"current_password": "not-the-password"}):
+        r = c.post("/backoffice/two-factor", data={"csrf_token": _tok(acc), "action": "disable", **sent})
+        assert r.status_code == 400 and "not your current password" in r.text
+        assert w.row(acc["id"])["totp_enabled"] == 1 and w.row(acc["id"])["totp_secret"] == SECRET32
+    assert w.audits[-1][0] == "sign_in_change_refused"
+    assert w.audits[-1][3] == {"reason": "wrong_password", "change": "two_factor_off"}
+    assert 'name="current_password"' in c.get("/backoffice/two-factor").text
+
+
+def test_an_open_session_alone_cannot_replace_the_authenticator(world):
+    w = world()
+    acc = w.account(totp_enabled=1, totp_secret=SECRET32)
+    _reset_reauth(acc)
+    c = w.signed_in(acc)
+    page, r = _enrol(w, c, acc, replace=True, password=None)
+    assert 'name="current_password"' in page.text, "the replacement page does not ask for the password"
+    assert r.status_code == 400 and "not your current password" in r.text
+    assert w.row(acc["id"])["totp_secret"] == SECRET32, "the second factor moved to another phone"
+    assert w.mails == []
+    _page, r = _enrol(w, c, acc, replace=True)
+    assert r.status_code == 200 and w.row(acc["id"])["totp_secret"] != SECRET32
+
+
+def test_a_first_authenticator_needs_no_password_again(world):
+    """Adding the second step makes the account safer; the open session is enough."""
+    w = world()
+    acc = w.account()
+    page, r = _enrol(w, w.signed_in(acc), acc)
+    assert 'name="current_password"' not in page.text
+    assert r.status_code == 200 and w.row(acc["id"])["totp_enabled"] == 1
+
+
+def test_an_open_session_alone_cannot_add_a_passkey(world):
+    """A passkey is both factors, so this was the way to turn a borrowed session
+    into lasting access."""
+    w = world()
+    acc = w.account()
+    _reset_reauth(acc)
+    c = w.signed_in(acc)
+    for sent in ({}, {"current_password": "not-the-password"}):
+        r = c.post("/backoffice/passkeys/options", data={"csrf_token": _tok(acc), **sent})
+        assert r.status_code == 403 and "not your current password" in r.json()["error"]
+        assert "passkey_challenge" not in r.headers.get("set-cookie", "")
+    assert w.all(f"SELECT id FROM {w.PK}") == []
+    assert w.audits[-1][3] == {"reason": "wrong_password", "change": "passkey_added"}
+    page = c.get("/backoffice/account").text
+    assert "data-passkey-password" in page and 'autocomplete="current-password"' in page
+
+
+def test_a_tool_that_has_not_switched_it_on_behaves_as_before(world):
+    """1.100.0 changes nothing in a tool whose adapter does not say `ask_again`:
+    the release has to pass every tool's live tests, and each tool switches the
+    rule on in the deploy that carries its own tests for it."""
+    from phronon_common.testing.soft_authenticator import SoftAuthenticator
+    w = world(ask_again=False)
+    acc = w.account(totp_enabled=1, totp_secret=SECRET32)
+    c = w.signed_in(acc)
+    page = c.get("/backoffice/account").text
+    assert "data-passkey-password" not in page
+    assert 'name="current_password"' not in c.get("/backoffice/two-factor?replace=1").text
+    opts = c.post("/backoffice/passkeys/options", data={"csrf_token": _tok(acc)})
+    assert opts.status_code == 200
+    auth = SoftAuthenticator(origin=BASE)
+    assert c.post("/backoffice/passkeys", data={"csrf_token": _tok(acc), "credential": auth.create(opts.text),
+                                                "name": "Laptop"}).status_code == 200
+    w.run(f"UPDATE {w.T} SET locked_until=DATE_ADD(UTC_TIMESTAMP(), INTERVAL 5 MINUTE) WHERE id=%s", (acc["id"],))
+    _c, r = _passkey_login(w, auth)
+    assert r.status_code == 429, "a locked account's passkey signed in although the tool has not switched this on"
+    w.run(f"UPDATE {w.T} SET locked_until=NULL WHERE id=%s", (acc["id"],))
+    r = c.post("/backoffice/two-factor", data={"csrf_token": _tok(acc), "action": "disable"})
+    assert r.status_code == 303 and w.row(acc["id"])["totp_enabled"] == 0
+
+
+def test_the_password_cannot_be_guessed_through_these_pages(world):
+    w = world()
+    acc = w.account()
+    _reset_reauth(acc)
+    c = w.signed_in(acc)
+    answers = [c.post("/backoffice/passkeys/options",
+                      data={"csrf_token": _tok(acc), "current_password": f"guess-{i}"}).status_code
+               for i in range(11)]
+    assert answers == [403] * 10 + [429]
+    r = c.post("/backoffice/passkeys/options", data={"csrf_token": _tok(acc), "current_password": PASSWORD})
+    assert r.status_code == 429, "the right password still worked after ten wrong ones"
+    _reset_reauth(acc)
 
 
 def test_pages_for_nobody_answer_what_the_tool_says(world):
@@ -647,7 +750,8 @@ def test_pages_for_nobody_answer_what_the_tool_says(world):
 # passkeys
 
 def _add_passkey(w, c, acc, auth, name="Laptop"):
-    opts = c.post("/backoffice/passkeys/options", data={"csrf_token": _tok(acc)})
+    opts = c.post("/backoffice/passkeys/options", data={"csrf_token": _tok(acc),
+                                                        "current_password": PASSWORD})
     assert opts.status_code == 200, opts.text
     return c.post("/backoffice/passkeys", data={"csrf_token": _tok(acc),
                                                 "credential": auth.create(opts.text),
@@ -699,9 +803,16 @@ def test_a_refused_passkey_counts_and_a_locked_account_is_refused(world):
     assert r.status_code == 400 and w.row(acc["id"])["failed_logins"] == 1
     w.run(f"UPDATE {w.T} SET locked_until=DATE_ADD(UTC_TIMESTAMP(), INTERVAL 5 MINUTE) "
           f"WHERE id=%s", (acc["id"],))
-    _c, r = _passkey_login(w, auth)
+    # Locked by wrong passwords: a passkey that does not verify is told so and
+    # counts no further; the account's own passkey still signs in (1.100.0,
+    # FL-129), or anyone who knows the address could keep its holder out.
+    _c, r = _passkey_login(w, auth, tamper=True)
     assert r.status_code == 429 and r.json() == {"error": lockout.LOCKED_MESSAGE}
-    assert w.audits[-1][0] == "login_locked"
+    assert w.audits[-1][0] == "login_locked" and w.row(acc["id"])["failed_logins"] == 1
+    w.reset_limits()        # the five-a-minute limit on sign-in attempts is another test's subject
+    _c, r = _passkey_login(w, auth)
+    assert r.status_code == 200 and r.json() == {"redirect": "/backoffice/dashboard"}
+    assert w.audits[-1][0] == "login_success" and w.audits[-1][3] == {"passkey": True}
 
 
 def test_passkey_sign_in_is_limited_to_five_a_minute(world):

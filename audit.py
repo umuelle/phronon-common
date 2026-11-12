@@ -77,6 +77,7 @@ ACTIONS = (
     "two_factor_disabled", "two_factor_codes_regenerated", "two_factor_reset_by_admin",
     "passkey_added", "passkey_removed",
     "account_name_changed", "email_change_requested", "email_change_refused",
+    "sign_in_change_refused",
     "email_changed",
     # Accounts administered by an admin.
     "admin_created", "admin_deleted", "admin_role_changed",

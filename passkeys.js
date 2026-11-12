@@ -14,6 +14,8 @@
  *        data-submit-url="/backoffice/passkeys"
  *        data-csrf="{{ token }}">
  *     <input data-passkey-name …>            optional label, e.g. "MacBook"
+ *     <input type="password" data-passkey-password>   the account's password,
+ *                                            asked again (1.100.0, FL-129)
  *     <button type="button" data-passkey-start>Add a passkey</button>
  *     <p data-passkey-status role="status"></p>
  *   </div>
@@ -160,6 +162,7 @@
     var start = box.querySelector('[data-passkey-start]');
     var status = box.querySelector('[data-passkey-status]');
     var nameInput = box.querySelector('[data-passkey-name]');
+    var pwInput = box.querySelector('[data-passkey-password]');
     var csrf = box.getAttribute('data-csrf') || '';
     if (!start) return;
     box.hidden = false;
@@ -167,9 +170,17 @@
     function say(msg) { if (status) status.textContent = msg; }
 
     start.addEventListener('click', function () {
+      // Since 1.100.0 (FL-129) adding a passkey asks for the account's
+      // password again: the server hands out the challenge only with it.
+      var first = { csrf_token: csrf };
+      if (pwInput) {
+        if (!pwInput.value) { say('Type your password first, to confirm it is you.'); pwInput.focus(); return; }
+        first.current_password = pwInput.value;
+        pwInput.value = '';
+      }
       start.disabled = true;
       say(mode === 'register' ? 'Follow the prompt on your device…' : 'Waiting for your passkey…');
-      post(box.getAttribute('data-options-url'), { csrf_token: csrf })
+      post(box.getAttribute('data-options-url'), first)
         .then(function (options) {
           return mode === 'register'
             ? navigator.credentials.create({ publicKey: creationOptions(options) })

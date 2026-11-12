@@ -140,3 +140,24 @@
   .tfa-card { margin: 2vh 1rem 2rem; padding: 1.4rem 1.2rem; }
   .tfa-codes { columns: 1; }
 }
+
+/* The password asked again before the authenticator is replaced or switched
+ * off (1.100.0, FL-129): a plain field, without the code field's wide spacing. */
+.tfa-password-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 1rem;
+  padding: .55rem .6rem;
+  border: 1px solid #c6ccd3;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  background: #fff;
+  color: inherit;
+}
+
+.tfa-password-input:focus {
+  outline: none;
+  border-color: #0F1B2D;
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, .15);
+}

@@ -203,6 +203,10 @@ ACCOUNT_ERRORS = {
     "bad_code": "That code is not valid. New recovery codes were not issued.",
     "too_many": ("Too many address-change requests. Try again in an hour."),
 }
+#: What the pages that change HOW an account signs in say when the password
+#: asked for again is not the account's (FL-129, 1.100.0).
+REAUTH_WRONG = "That is not your current password. Nothing was changed."
+REAUTH_TOO_MANY = "Too many attempts. Wait fifteen minutes and try again."
 
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
@@ -443,6 +447,14 @@ class AccountKit:
     #: hashing it. Controversy Generator stored its hashes that way, so an
     #: account whose password ended in a blank still signs in with it.
     strip_passwords: bool = False
+    #: Ask for the account's password again before a change to HOW it signs in
+    #: (a passkey added, the authenticator replaced, two-factor switched off),
+    #: and let the account's own passkey sign in while wrong passwords have
+    #: locked it (FL-129, 1.100.0). Off unless the tool says so, for now: a
+    #: tool switches it on in the deploy that also carries its own tests for
+    #: it, so this release changes nothing in a tool that has not. The default
+    #: becomes True, and this field goes, once all ten have (TO DO FL-129).
+    ask_again: bool = False
     #: Path prefixes the gate guards (must-change, forced enrolment). Layoff's
     #: administrators also work under /admin.
     gated_prefixes: tuple[str, ...] = ("/backoffice",)
@@ -521,6 +533,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         "back_link_while_must_change": kit.layout.back_link_while_must_change,
         "section_wrapper": kit.layout.section_wrapper,
         "password_tools": kit.layout.password_tools,
+        "ask_again": kit.ask_again,
         "logout_url": LOGOUT_URL,
         "dashboard_url": DASHBOARD_URL,
     }
@@ -588,6 +601,27 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             return kit.bcrypt.checkpw(clean(password).encode()[:72], stored.encode())
         except ValueError:      # not a bcrypt hash: no match, never a 500
             return False
+
+    def asked_again(request: Request, account: dict, current_password: str, what: str) -> Optional[str]:
+        """None when the password given is the account's own; else what to say.
+
+        Asked before a change to HOW the account signs in: a passkey added, the
+        authenticator replaced, two-factor switched off (FL-129, 1.100.0). An
+        open session was enough until then, so a laptop left signed in at the
+        lectern could be turned into lasting access: a passkey is both factors.
+        The address change has asked this way since it was built. Ten tries in
+        fifteen minutes per account, so the open session is no way to guess the
+        password either."""
+        if not kit.ask_again:
+            return None
+        if not is_allowed(f"reauth:{account['id']}", max_requests=10, window_seconds=900):
+            return REAUTH_TOO_MANY
+        if password_ok(current_password, account):
+            return None
+        kit.audit("sign_in_change_refused", request=request, admin_id=account["id"],
+                  admin_email=account.get("email"), subject=str(account["id"]),
+                  details={"reason": "wrong_password", "change": what})
+        return REAUTH_WRONG
 
     def new_hash(password: str) -> str:
         return kit.bcrypt.hashpw(clean(password).encode()[:72], kit.bcrypt.gensalt()).decode()
@@ -956,7 +990,8 @@ def build_account_router(kit: AccountKit) -> APIRouter:
 
     @router.post("/backoffice/two-factor")
     def two_factor_setup_submit(request: Request, action: str = Form("enable"),
-                                code: str = Form(""), csrf_token: str = Form("")) -> Response:
+                                code: str = Form(""), csrf_token: str = Form(""),
+                                current_password: str = Form("")) -> Response:
         account = kit.current_account(request)
         if not account:
             return kit.signed_out(request)
@@ -966,6 +1001,12 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         if action == "disable":
             if required:      # admins may not switch it off
                 return redirect(TWO_FACTOR_URL)
+            if not account.get("totp_enabled"):
+                return redirect(TWO_FACTOR_URL)
+            refused = asked_again(request, account, current_password, "two_factor_off")
+            if refused:
+                return two_factor_page(request, account, enabled=True, status_code=RESHOWN,
+                                       error=refused)
             run(f"UPDATE {T} SET totp_secret=NULL, totp_enabled=0, totp_backup_codes=NULL "
                 f"WHERE id=%s", (account["id"],))
             # Taking the second factor off an account is how a stolen session
@@ -990,6 +1031,13 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             return resp
         replacing = bool(account.get("totp_enabled"))
         secret = request.cookies.get(kit.enrolment_cookie)
+        # A first authenticator adds a step to signing in, so the open session
+        # is enough. A REPLACEMENT moves the second factor to another phone.
+        refused = asked_again(request, account, current_password, "two_factor_replaced") if replacing else None
+        if refused:
+            uri = twofactor.provisioning_uri(secret or "", account["email"], kit.tool_name)
+            return two_factor_page(request, account, status_code=RESHOWN, secret=secret,
+                                   qr_svg=twofactor.qr_svg(uri), replacing=True, error=refused)
         if not secret or not twofactor.verify(secret, code):
             uri = twofactor.provisioning_uri(secret or "", account["email"], kit.tool_name)
             return two_factor_page(request, account, status_code=RESHOWN,
@@ -1019,7 +1067,8 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         return passkeys.cookie_kwargs(secure=secure_cookies(request))
 
     @router.post("/backoffice/passkeys/options")
-    def passkey_register_options(request: Request, csrf_token: str = Form("")) -> Response:
+    def passkey_register_options(request: Request, csrf_token: str = Form(""),
+                                 current_password: str = Form("")) -> Response:
         account = kit.current_account(request)
         if not account:
             return json_error("Please sign in again.", 401)
@@ -1027,6 +1076,12 @@ def build_account_router(kit: AccountKit) -> APIRouter:
             return json_error("Please reload the page and try again.")
         if account.get("must_change_password"):
             return json_error("Set a new password first.", 403)
+        # The password is asked here, where the challenge is handed out: the
+        # registration below is refused without this challenge's cookie, so it
+        # needs no second check.
+        refused = asked_again(request, account, current_password, "passkey_added")
+        if refused:
+            return json_error(refused, 429 if refused == REAUTH_TOO_MANY else 403)
         existing = qall(f"SELECT credential_id FROM {PK} WHERE {OWNER}=%s",
                         (account["id"],)) or []
         if len(existing) >= passkeys.MAX_PER_ACCOUNT:
@@ -1156,7 +1211,14 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         row = q1(f"SELECT * FROM {T} WHERE id=%s", (key[OWNER],)) if key else None
         if not key or not row or not row.get("is_active", True):
             return json_error(refused)
-        if lockout.is_locked(row.get("locked_until")):
+        # The lock is no longer asked first (FL-129, 1.100.0). Five wrong
+        # PASSWORDS lock an account, and anyone who knows the address can type
+        # them; refused up front, the account's own passkey was locked out
+        # with it, so a stranger could keep its holder out for as long as they
+        # cared to. A passkey cannot be guessed. One that does not verify still
+        # counts towards the lock, and a locked account still answers "locked".
+        locked = lockout.is_locked(row.get("locked_until"))
+        if locked and not kit.ask_again:
             kit.audit("login_locked", request=request, admin_id=row["id"],
                       admin_email=row["email"])
             return json_error(lockout.LOCKED_MESSAGE, 429)
@@ -1166,6 +1228,10 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                 base_url=kit.passkey_base_url(),
                 public_key=bytes(key["public_key"]), sign_count=key["sign_count"])
         except passkeys.PasskeyError:
+            if locked:
+                kit.audit("login_locked", request=request, admin_id=row["id"],
+                          admin_email=row["email"])
+                return json_error(lockout.LOCKED_MESSAGE, 429)
             count_failure(row)
             kit.audit("login_failed", request=request, admin_id=row["id"],
                       admin_email=row["email"], details={"passkey": True})

@@ -178,6 +178,12 @@
       <label for="passkey_name">Name for this device (optional)</label>
       <input type="text" id="passkey_name" maxlength="60" placeholder="e.g. MacBook" data-passkey-name>
     </div>
+    {% if account_kit.ask_again %}
+    <div class="field">
+      <label for="passkey_password">Confirm with your password</label>
+      <input type="password" id="passkey_password" autocomplete="current-password" data-passkey-password>
+    </div>
+    {% endif %}
     <div class="form-actions">
       <button type="button" class="btn btn-primary" data-passkey-start>Add a passkey</button>
     </div>
