@@ -196,7 +196,7 @@ class SmtpConfiguration(_EmailContract):
     """
 
     OUTSIDE_ADDRESSES = (
-        "urs@urs-mueller.com",          # a real inbox — the thing being prevented
+        "someone@gmail.com",            # a real inbox — the thing being prevented
         "someone@example.org",
         "student@university.edu",
         "test@phronon.org.evil.com",    # suffix trick
@@ -270,7 +270,7 @@ class SmtpConfiguration(_EmailContract):
             (("x", "x", lambda r: called.append(r)),),
         )
         try:
-            self.sender_module.send_all("urs@urs-mueller.com")
+            self.sender_module.send_all("someone@gmail.com")
         except ValueError:
             pass
         else:
