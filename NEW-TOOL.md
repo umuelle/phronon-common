@@ -18,7 +18,7 @@ used to end up with nine diverging versions of one mechanism.
 
 | Shared (import it) | Stays in the tool (decide it there) |
 |---|---|
-| identity: `registry` | routes, templates, page wording |
+| identity: `registry` | routes, templates, page wording (in the fleet's words: `server-ops/docs/EDUCATOR-VOCABULARY.md`) |
 | security: `security_headers`, `csrf`, `hosts`, `rate_limit`, `request_ip` | the database schema and migrations |
 | sign-in: `passwords`, `lockout`, `twofactor`, `passkeys`, `sessions`, `account` | which accounts exist, roles, what a role may do |
 | participants: `participant`, `joincode`, `kanon` | what is collected, scoring, results |
@@ -102,6 +102,13 @@ belongs in your tool.
    their sections empty rather than declaring exceptions, so the gates that
    read them (`retention_contract_check.py`, `share_card_layout_check.py`,
    `audit_wiring_scan.py`) say what is missing.
+   Every word an educator meets comes from
+   `server-ops/docs/EDUCATOR-VOCABULARY.md` (owner, 13 November 2026): the
+   dashboard row says Manage · Copy · Archive · Delete, Close session and
+   Reopen session live on the session page, and so on. The tool writes
+   `tests/test_educator_vocabulary.py` with its first dashboard and session
+   page, and the dashboard gate (`fleet_dashboard_check.py`) refuses a row
+   in other words.
 5. **Tests.** The fleet invariants come from `phronon_common.testing`; the tool
    keeps thin wrappers. `server-ops/fleet_testkit_check.py <dir>` lists the
    wrapper files every tool must carry and fails a tool that re-implements
