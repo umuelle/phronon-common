@@ -63,7 +63,8 @@ class _Tool:
         return withdrawal_kit.WithdrawalKit(
             lookup=lookup, kind=lambda row: row["kind"], delete=delete, forget_browser=forget,
             describe=lambda row: {"session_title": row["title"]}, render=render,
-            client_ip=lambda request: "203.0.113.9", **recovery)
+            client_ip=lambda request: request.headers.get("x-test-sender", "203.0.113.9"),
+            **recovery)
 
 
 def _client(tool):
@@ -157,6 +158,24 @@ def test_bad_fields_reshow_the_form_and_five_requests_per_fifteen_minutes():
     codes = [c.post("/withdrawal-link", data={"code": "AB12", "email": "x@example.org"}).status_code
              for _ in range(5)]
     assert codes[-1] == 429 and tool.mail == []
+
+
+def test_one_address_gets_three_link_mails_an_hour_whoever_asks():
+    """FL-130: the sender's limit alone let a stranger with a session code have
+    mail sent to someone else's address from many places. Over the recipient's
+    limit the page answers as always and nothing is mailed."""
+    tool = _Tool()
+    c = _client(tool)
+    pages = [_page(c.post("/withdrawal-link", data={"code": "AB12", "email": "p@example.org"},
+                          headers={"x-test-sender": f"198.51.100.{n}"}))
+             for n in range(withdrawal_kit.LINK_RECIPIENT_LIMIT[0] + 2)]
+    assert {p["template"] for p in pages} == {"withdrawal_link_sent.html"}
+    assert len(tool.mail) == withdrawal_kit.LINK_RECIPIENT_LIMIT[0]
+    # Another address is not held by this one's count.
+    tool.rows[next(iter(tool.rows))]["email"] = "q@example.org"
+    c.post("/withdrawal-link", data={"code": "AB12", "email": "q@example.org"},
+           headers={"x-test-sender": "198.51.100.99"})
+    assert tool.mail[-1][0] == "q@example.org"
 
 
 def test_a_tool_without_addresses_serves_no_link_route():

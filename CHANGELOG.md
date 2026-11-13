@@ -5,7 +5,28 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
-## Unreleased
+## 1.103.0 — 14 November 2026
+
+**The Users page (FL-148).** A delete takes the account's passkeys, its
+pending links and the account in ONE transaction: where another table of the
+tool refuses the delete, or the account is the last administrator, nothing
+changes (until now the account stayed without its passkeys and links). A bulk
+"Send link" counts mails the server refused apart from the skipped accounts
+and says so in the error box (`FAILED_NOTE`; `failed=` in the address).
+
+**The ask-again rule is the only behaviour (FL-129).** `AccountKit.ask_again`
+is gone: the password is asked again before a passkey is added, the
+authenticator replaced or two-factor switched off, and the account's own
+passkey signs in while wrong passwords have locked it, in every tool. No tool
+has passed the field since 13 November 2026.
+
+**Limits (FL-130).** "Mail me my deletion link" is limited per recipient as
+well as per sender: three requests for one address an hour, whoever asks
+(`withdrawal_kit.LINK_RECIPIENT_LIMIT`); over it the page answers as always
+and nothing is mailed. `RateLimitMiddleware(locales=...)` sets a leading
+language prefix aside when it keys the count, so the language versions of one
+page share one allowance; without it every path counts on its own, as before.
+
 
 The registry keeps two language lists (owner, 13 November 2026, FL-135
 decision 23). `ToolIdentity.locales` is the languages a tool's legal notices

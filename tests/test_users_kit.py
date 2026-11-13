@@ -283,6 +283,35 @@ def test_an_account_that_owns_sessions_is_not_deleted(world):
     assert w.actions().count("admin_deleted") == 1
 
 
+def test_a_refused_delete_changes_nothing_at_all(world):
+    """FL-148 (a): the passkeys and links were deleted before the account, apart.
+    Where another table of the tool refuses the delete (Drawbridge's
+    baseline_batches is ON DELETE RESTRICT), the account stayed without its
+    passkeys and links. Now the three go in one transaction or not at all."""
+    w = world()
+    admin, uploader = w.admin(), w.educator()
+    uploads = w.T.replace("kit_accounts_", "kit_uploads_")
+    w.run(f"CREATE TABLE {uploads} (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, "
+          f"uploaded_by INT NOT NULL, FOREIGN KEY (uploaded_by) REFERENCES {w.T} (id) "
+          f"ON DELETE RESTRICT) ENGINE=InnoDB")
+    try:
+        w.run(f"INSERT INTO {uploads} (uploaded_by) VALUES (%s)", (uploader["id"],))
+        w.run(f"INSERT INTO {w.PK} (owner_id, credential_id, public_key, name) "
+              f"VALUES (%s, %s, %s, 'laptop')", (uploader["id"], b"cred-fl148", b"key"))
+        w.run(f"INSERT INTO {w.RT} (holder_id, token_hash, expires_at) "
+              f"VALUES (%s, 'fl148', NOW() + INTERVAL 1 HOUR)", (uploader["id"],))
+        c = w.signed_in(admin)
+        assert _where(_post(c, admin, _path(users_kit.DELETE_URL, uploader["id"]))) == \
+            f"{USERS}?err=not_deleted"
+        assert w.row(uploader["id"]) is not None
+        assert len(w.all(f"SELECT id FROM {w.PK} WHERE owner_id=%s", (uploader["id"],))) == 1, \
+            "the refused delete took the passkey"
+        assert len(w.tokens(uploader["id"])) == 1, "the refused delete took the link"
+        assert "admin_deleted" not in w.actions()
+    finally:
+        w.run(f"DROP TABLE {uploads}")
+
+
 # ── decision 3: the last administrator, and one's own account ────────────────
 
 def test_nobody_deactivates_demotes_or_deletes_their_own_account_here(world):
@@ -432,6 +461,24 @@ def test_a_deactivated_account_is_out_at_once_and_only_a_change_is_recorded(worl
 
 
 # ── decision 6: several at once ──────────────────────────────────────────────
+
+def test_a_bulk_send_counts_refused_mails_apart_from_the_skipped(world):
+    """FL-148 (b): a mail the server refused was counted among the skipped,
+    whose note names other reasons. It is its own count now, in the error box,
+    and no link is stored for it."""
+    w = world()
+    admin, a, b, off = w.admin(), w.educator(), w.educator(), w.educator(is_active=0)
+    c = w.signed_in(admin)
+    w.mail_ok = False
+    r = _post(c, admin, users_kit.BULK_URL, action="send-link",
+              ids=[str(x["id"]) for x in (a, b, off)])
+    assert _where(r) == f"{USERS}?msg=bulk_links&skipped=1&failed=2"
+    page = c.get(_where(r)).text
+    assert "The mail could not be sent to 2 of the selected accounts" in page
+    assert "1 skipped" in page and "0 link(s) sent." in page
+    assert w.tokens(a["id"]) == [] and w.tokens(b["id"]) == []
+    assert "admin_password_reset_sent" not in w.actions()
+
 
 def test_several_at_once_deactivate_or_send_links_and_nothing_else(world):
     w = world()

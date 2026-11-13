@@ -52,8 +52,14 @@ logger = logging.getLogger(__name__)
 
 #: Requests, seconds: the deletion route (participant.WITHDRAW_RATE_LIMIT).
 WITHDRAW_LIMIT = _participant.WITHDRAW_RATE_LIMIT
-#: Requests, seconds: "mail me my link".
+#: Requests, seconds: "mail me my link", per sender (the client address).
 LINK_LIMIT = (5, 900)
+#: Requests, seconds: "mail me my link", per RECIPIENT, whoever asks (TO DO
+#: FL-130, 14 November 2026). The sender's limit alone let a stranger who knew
+#: a session code have mail sent to someone else's address from many places.
+#: Over it, the page answers as always and no mail goes out, so the page tells
+#: nobody whether that address was asked for before.
+LINK_RECIPIENT_LIMIT = (3, 3600)
 #: At most this many rows get a fresh link per request (one person, one code).
 LINK_ROWS_MAX = 5
 
@@ -134,6 +140,17 @@ def _ip(kit: WithdrawalKit, request: Request) -> str:
 def _allowed(kit: WithdrawalKit, request: Request, name: str, limit: tuple[int, int]) -> bool:
     from .rate_limit import is_allowed
     return is_allowed(f"{name}:{_ip(kit, request)}", max_requests=limit[0], window_seconds=limit[1])
+
+
+def _recipient_allowed(email: str) -> bool:
+    """One more "mail me my link" for this address, within LINK_RECIPIENT_LIMIT?
+    Keyed on a digest of the address, so the window holds no address."""
+    import hashlib
+
+    from .rate_limit import is_allowed
+    digest = hashlib.sha256(email.encode("utf-8")).hexdigest()
+    return is_allowed(f"withdrawal-link-to:{digest}", max_requests=LINK_RECIPIENT_LIMIT[0],
+                      window_seconds=LINK_RECIPIENT_LIMIT[1])
 
 
 def _context(kit: WithdrawalKit, lang: str, **extra: Any) -> dict[str, Any]:
@@ -241,7 +258,12 @@ def build_withdrawal_router(kit: WithdrawalKit) -> APIRouter:
         if not code or not _EMAIL.match(email):
             return link_form(request, lang, code=code, email=email, error="fields")
         response = kit.render(request, kit.pages["withdrawal_link_sent"], _context(kit, lang), lang, 200)
-        response.background = BackgroundTask(send_fresh_links, kit, code, email, lang)
+        if _recipient_allowed(email):
+            response.background = BackgroundTask(send_fresh_links, kit, code, email, lang)
+        else:
+            from .emails import recipient_domain
+            kit.logger.warning("withdrawal link to %s not sent: the address had %s requests "
+                               "this hour", recipient_domain(email), LINK_RECIPIENT_LIMIT[0])
         return response
 
     return router

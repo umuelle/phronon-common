@@ -447,15 +447,6 @@ class AccountKit:
     #: hashing it. Controversy Generator stored its hashes that way, so an
     #: account whose password ended in a blank still signs in with it.
     strip_passwords: bool = False
-    #: Ask for the account's password again before a change to HOW it signs in
-    #: (a passkey added, the authenticator replaced, two-factor switched off),
-    #: and let the account's own passkey sign in while wrong passwords have
-    #: locked it (FL-129, 1.100.0). On unless the tool says otherwise, since
-    #: 1.102.0: all ten tools had switched it on by then, and a tool no longer
-    #: needs to say so. Saying False still turns the rule off, so that a tool
-    #: whose live commit still does is not broken by the release; the field
-    #: goes once none does (TO DO FL-129).
-    ask_again: bool = True
     #: Path prefixes the gate guards (must-change, forced enrolment). Layoff's
     #: administrators also work under /admin.
     gated_prefixes: tuple[str, ...] = ("/backoffice",)
@@ -534,7 +525,6 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         "back_link_while_must_change": kit.layout.back_link_while_must_change,
         "section_wrapper": kit.layout.section_wrapper,
         "password_tools": kit.layout.password_tools,
-        "ask_again": kit.ask_again,
         "logout_url": LOGOUT_URL,
         "dashboard_url": DASHBOARD_URL,
     }
@@ -613,8 +603,6 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         The address change has asked this way since it was built. Ten tries in
         fifteen minutes per account, so the open session is no way to guess the
         password either."""
-        if not kit.ask_again:
-            return None
         if not is_allowed(f"reauth:{account['id']}", max_requests=10, window_seconds=900):
             return REAUTH_TOO_MANY
         if password_ok(current_password, account):
@@ -1219,10 +1207,6 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         # cared to. A passkey cannot be guessed. One that does not verify still
         # counts towards the lock, and a locked account still answers "locked".
         locked = lockout.is_locked(row.get("locked_until"))
-        if locked and not kit.ask_again:
-            kit.audit("login_locked", request=request, admin_id=row["id"],
-                      admin_email=row["email"])
-            return json_error(lockout.LOCKED_MESSAGE, 429)
         try:
             count = passkeys.verify_authentication(
                 credential_json=credential, challenge=sealed.value,

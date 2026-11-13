@@ -299,7 +299,7 @@ class World:
                 f"USERS PAGE for {admin['email']}"),
             audit=audit, bcrypt=bcrypt,
             client_ip=lambda request: "kit-test-client", reset_token_hours=2,
-            mail_module=mail.__name__)    # ask_again: the kit's default, True since 1.102.0
+            mail_module=mail.__name__)
         settings.update(adapter)
         self.kit = kit_mod.AccountKit(**settings)
         app = FastAPI()
@@ -704,30 +704,6 @@ def test_an_open_session_alone_cannot_add_a_passkey(world):
     assert w.audits[-1][3] == {"reason": "wrong_password", "change": "passkey_added"}
     page = c.get("/backoffice/account").text
     assert "data-passkey-password" in page and 'autocomplete="current-password"' in page
-
-
-def test_a_tool_that_still_sets_it_off_behaves_as_before(world):
-    """Since 1.102.0 the rule is on unless the adapter says `ask_again=False`.
-    Saying it still works, so that the release can be verified against a live
-    commit that does; the field goes in the release after the last such commit."""
-    from phronon_common.testing.soft_authenticator import SoftAuthenticator
-    w = world(ask_again=False)
-    acc = w.account(totp_enabled=1, totp_secret=SECRET32)
-    c = w.signed_in(acc)
-    page = c.get("/backoffice/account").text
-    assert "data-passkey-password" not in page
-    assert 'name="current_password"' not in c.get("/backoffice/two-factor?replace=1").text
-    opts = c.post("/backoffice/passkeys/options", data={"csrf_token": _tok(acc)})
-    assert opts.status_code == 200
-    auth = SoftAuthenticator(origin=BASE)
-    assert c.post("/backoffice/passkeys", data={"csrf_token": _tok(acc), "credential": auth.create(opts.text),
-                                                "name": "Laptop"}).status_code == 200
-    w.run(f"UPDATE {w.T} SET locked_until=DATE_ADD(UTC_TIMESTAMP(), INTERVAL 5 MINUTE) WHERE id=%s", (acc["id"],))
-    _c, r = _passkey_login(w, auth)
-    assert r.status_code == 429, "a locked account's passkey signed in although the tool has not switched this on"
-    w.run(f"UPDATE {w.T} SET locked_until=NULL WHERE id=%s", (acc["id"],))
-    r = c.post("/backoffice/two-factor", data={"csrf_token": _tok(acc), "action": "disable"})
-    assert r.status_code == 303 and w.row(acc["id"])["totp_enabled"] == 0
 
 
 def test_the_password_cannot_be_guessed_through_these_pages(world):

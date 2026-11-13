@@ -122,6 +122,12 @@ ERRORS = {
     "nothing": "No account was selected.",
 }
 SKIPPED_NOTE = " {skipped} skipped (your own account, a deactivated one or the last administrator)."
+#: A bulk "Send link" whose mail the server refused for some accounts (TO DO
+#: FL-148, 14 November 2026). Until then they were counted among the skipped,
+#: whose note names other reasons. Shown in the error box, beside the count
+#: of links that went.
+FAILED_NOTE = ("The mail could not be sent to {failed} of the selected accounts, so no link "
+               "was issued to them. Try again in a moment.")
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -316,6 +322,9 @@ def build_users_router(users: UsersKit) -> APIRouter:
             skipped = number(request, "skipped")
             if skipped and code.startswith("bulk_"):
                 msg += SKIPPED_NOTE.format(skipped=skipped)
+            failed = number(request, "failed")
+            if failed and code == "bulk_links" and not err:
+                err = FAILED_NOTE.format(failed=failed)
         return list_page(request, signed_in, flash=msg, error=err)
 
     # ── a new account (decision 1) ───────────────────────────────────────────
@@ -522,6 +531,38 @@ def build_users_router(users: UsersKit) -> APIRouter:
                       details={"email": row.get("email")})
         return back(msg="activated")
 
+    def delete_account(user_id: int) -> int:
+        """The account's own passkeys and links, then the account, in ONE
+        transaction (TO DO FL-148, 14 November 2026). The passkeys and links go
+        first, so the delete works where the tool's tables have no cascade; an
+        administrator goes only while another active one exists (decision 3).
+        Until 14 November 2026 the three ran apart: where another table of the
+        tool refuses the delete (Drawbridge's baseline_batches is ON DELETE
+        RESTRICT), or the account was the last administrator, the account
+        stayed and had lost its passkeys and links. Now nothing changes unless
+        the account goes. Returns 1 when it went, 0 when it stays."""
+        conn = kit.tables.get_conn()
+        cur = conn.cursor()
+        try:
+            conn.start_transaction()
+            cur.execute(f"DELETE FROM {PK} WHERE {OWNER}=%s", (user_id,))
+            cur.execute(f"DELETE FROM {RT} WHERE {RT_OWNER}=%s", (user_id,))
+            cur.execute(f"DELETE FROM {T} WHERE id=%s AND (LOWER(role)<>%s OR is_active=0 "
+                        f"OR {ANOTHER_ADMIN})",
+                        (user_id, ADMIN.lower(), ADMIN.lower(), user_id))
+            gone = cur.rowcount
+            if gone == 1:
+                conn.commit()
+            else:
+                conn.rollback()
+            return 1 if gone == 1 else 0
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cur.close()
+            conn.close()
+
     @router.post(DELETE_URL)
     def users_delete(request: Request, user_id: int,
                      csrf_token: str = Form("")) -> Response:
@@ -541,16 +582,7 @@ def build_users_router(users: UsersKit) -> APIRouter:
         if int((users.session_counts() or {}).get(user_id, 0) or 0) > 0:
             return back(err="has_sessions")                     # decision 2
         try:
-            # The account's own passkeys and links first, so the delete works
-            # where the tool's tables have no cascade; an administrator goes
-            # only while another active one exists (decision 3).
-            run(f"DELETE FROM {PK} WHERE {OWNER}=%s", (user_id,))
-            run(f"DELETE FROM {RT} WHERE {RT_OWNER}=%s", (user_id,))
-            gone = _once._run(
-                kit.tables.get_conn,
-                f"DELETE FROM {T} WHERE id=%s AND (LOWER(role)<>%s OR is_active=0 "
-                f"OR {ANOTHER_ADMIN})",
-                [user_id, ADMIN.lower(), ADMIN.lower(), user_id])
+            gone = delete_account(user_id)
         except Exception:  # noqa: BLE001 — something of the tool's still refers to the account
             kit.logger.exception("the account could not be deleted")
             return back(err="not_deleted")
@@ -579,7 +611,7 @@ def build_users_router(users: UsersKit) -> APIRouter:
         chosen = sorted(set(ids))[:200]
         if not chosen:
             return back(err="nothing")
-        done = skipped = 0
+        done = skipped = failed = 0
         for user_id in chosen:
             row = q1(f"SELECT * FROM {T} WHERE id=%s", (user_id,))
             if not row or not row.get("is_active"):
@@ -598,9 +630,9 @@ def build_users_router(users: UsersKit) -> APIRouter:
                           admin_id=signed_in["id"], admin_email=signed_in.get("email"),
                           subject=str(user_id), details={"email": row.get("email"), "bulk": True})
             else:
-                skipped += 1
+                failed += 1
         return back(msg="bulk_deactivated" if action == "deactivate" else "bulk_links",
-                    n=done, skipped=skipped)
+                    n=done, skipped=skipped, failed=failed)
 
     # Every GET answers HEAD (see the account kit: mail scanners and proxies).
     for route in router.routes:

@@ -30,11 +30,9 @@
   <form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="action" value="disable">
-    {% if account_kit.ask_again %}
     <label class="tfa-label" for="tfa-off-password">Your password, to confirm</label>
     <input class="tfa-password-input" id="tfa-off-password" type="password" name="current_password"
            autocomplete="current-password" required>
-    {% endif %}
     <button type="submit" class="tfa-btn tfa-btn--secondary">Turn two-factor off</button>
   </form>
   {% else %}
@@ -71,7 +69,7 @@
     <input class="tfa-code-input" id="tfa-code" type="text" name="code"
            inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
            maxlength="6" autofocus required>
-    {% if replacing and account_kit.ask_again %}
+    {% if replacing %}
     <label class="tfa-label" for="tfa-replace-password">Your password, to confirm the change</label>
     <input class="tfa-password-input" id="tfa-replace-password" type="password" name="current_password"
            autocomplete="current-password" required>

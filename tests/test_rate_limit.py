@@ -179,3 +179,45 @@ def test_without_a_page_the_answer_is_unchanged():
     refused = client.post("/join")
     assert refused.status_code == 429
     assert refused.json() == {"detail": "Too many requests. Please try again later."}
+
+
+# ── The language versions of one page share one count (TO DO FL-130) ────────
+
+def _two_language_app(locales):
+    from fastapi import FastAPI
+    from fastapi.responses import PlainTextResponse
+    from fastapi.testclient import TestClient
+    from phronon_common.rate_limit import RateLimitMiddleware
+
+    app = FastAPI()
+    for path in ("/rank", "/de/rank", "/fr/rank", "/deck"):
+        app.add_api_route(path, lambda: PlainTextResponse("ok"), methods=["POST"])
+    kwargs = {"locales": locales} if locales is not None else {}
+    app.add_middleware(RateLimitMiddleware, rules=[(p, 2, 60) for p in
+                                                   ("/rank", "/de/rank", "/fr/rank", "/deck")],
+                       window=SlidingWindow(), **kwargs)
+    return TestClient(app)
+
+
+def test_with_locales_the_language_versions_of_a_page_share_one_allowance():
+    """Layoff's ten languages gave a visitor eleven times the allowance by
+    switching (FL-130). With the tool's locales named, /de/rank counts as /rank."""
+    c = _two_language_app(["en", "de", "fr"])
+    assert [c.post(p).status_code for p in ("/rank", "/de/rank", "/fr/rank")] == [200, 200, 429]
+    # A path that merely starts like a locale is its own page.
+    assert c.post("/deck").status_code == 200
+
+
+def test_without_locales_each_path_counts_on_its_own_as_before():
+    c = _two_language_app(None)
+    assert [c.post(p).status_code for p in ("/rank", "/de/rank", "/fr/rank")] == [200, 200, 200]
+
+
+def test_the_counted_path_sets_aside_only_a_leading_locale():
+    from fastapi import FastAPI
+    from phronon_common.rate_limit import RateLimitMiddleware
+    mw = RateLimitMiddleware(FastAPI(), rules=[("/x", 1, 1)], locales=["de", "fr"])
+    assert mw.counted_path("/de/rank") == "/rank"
+    assert mw.counted_path("/de") == "/"
+    assert mw.counted_path("/deck/de") == "/deck/de"
+    assert mw.counted_path("/rank/de") == "/rank/de"

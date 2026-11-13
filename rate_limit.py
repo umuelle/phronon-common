@@ -136,6 +136,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     `limited_methods=None` (default) limits every method except GET/HEAD/
     OPTIONS. Pass an explicit set to limit reads too.
 
+    `locales` (TO DO FL-130, 14 November 2026): the language prefixes of a
+    tool whose pages answer at `/<lang>/...` too. A leading one is set aside
+    when the count is keyed, so the language versions of one page share one
+    allowance; until then Layoff's ten languages gave a visitor eleven times
+    the allowance by switching. The rules still match the full path. Without
+    it, every path counts on its own, as before.
+
     `limited_response(request, retry_after)` builds the answer to a refused
     request, so a participant sees the tool's own page in their language
     instead of a line of JSON (TO DO FL-104, 26 October 2026: Inequality's
@@ -150,7 +157,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                  window: Optional[SlidingWindow] = None,
                  trusted_proxies: Optional[Sequence[str]] = None,
                  limited_methods: Optional[Iterable[str]] = None,
-                 limited_response: Optional[Callable] = None) -> None:
+                 limited_response: Optional[Callable] = None,
+                 locales: Optional[Iterable[str]] = None) -> None:
         super().__init__(app)
         if config is None:
             if rules is None:
@@ -163,6 +171,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                                 else default_trusted_proxies())
         self.limited_methods = frozenset(limited_methods) if limited_methods else None
         self.limited_response = limited_response
+        self.locales = frozenset(locales or ())
+
+    def counted_path(self, path: str) -> str:
+        """The path the count is keyed on: `/de/rank` counts as `/rank` when
+        `de` is one of the tool's locales; `/de` alone counts as `/`."""
+        first, sep, rest = path.lstrip("/").partition("/")
+        if first in self.locales:
+            return "/" + rest if sep else "/"
+        return path
 
     def _applies(self, method: str) -> bool:
         if self.limited_methods is not None:
@@ -179,7 +196,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         max_requests, window_seconds = rule
         ip = client_ip(request, self.trusted_proxies)
-        key = f"{ip}::{request.url.path}"
+        key = f"{ip}::{self.counted_path(request.url.path)}"
         allowed, count, retry_after = self.window.check(key, max_requests, window_seconds)
         if not allowed:
             logger.warning("Rate limited: %s on %s (%s/%s)",
