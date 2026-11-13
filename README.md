@@ -20,6 +20,7 @@ imports. One version, everywhere, or the deploy stops.
 |---|---|
 | `access_log` | keeps bearer tokens out of the access log |
 | `assets` | cache-busting query strings derived from the file, not from a person |
+| `common_assets` | a tool's shared styles and scripts served from the release it runs, at `/common/<release>/<master>`, for a tool whose `ops/tool.json` says `"shared_assets_served": "central"` (pilot: Peak Season, FL-069) |
 | `frontend_assets` | a tool's own `backoffice.css` from an immutable bundle: the app's half of the frontend-only release path |
 | `csrf` | `CSRFProtection` + `CSRFMiddleware` |
 | `hosts` | the Host names a tool answers to, derived from its notice |

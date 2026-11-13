@@ -419,6 +419,13 @@ class ThePageIsActuallyStyled(AccountPageContract):
                 m = re.search(r"filename='(css/[A-Za-z0-9._-]+\.css)'", h)  # url_for(...)
             if m:
                 p = Path(self.PROJECT_ROOT) / "static" / m.group(1)
+                if not p.is_file():
+                    # A tool that serves the shared sheets from its release
+                    # (common_assets, FL-069) holds no copy: read the master.
+                    from phronon_common.shared_assets import ASSETS, master_path
+                    by_copy = {v: k for k, v in ASSETS.items()}
+                    master = by_copy.get("static/" + m.group(1))
+                    p = master_path(master) if master else p
                 if p.is_file():
                     out.append(_read(p))
         return "\n".join(out)

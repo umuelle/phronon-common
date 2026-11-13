@@ -5,6 +5,17 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.106.0 — 13 November 2026
+
+**A tool may serve the shared styles and scripts from the release it runs
+(FL-069, pilot in Peak Season, the owner's go).** New `common_assets`:
+`install(app, templates, [masters])` links each listed master at
+`/common/<release>/<master>` (templates unchanged: `asset()` returns the new
+address) and answers it from the release folder the process loaded, or from a
+published release beside it, cached for a year. Only listed masters by name;
+no request path reaches the file system. No tool changes behaviour with this
+release; Peak Season opts in with its next deploy. The test kit's
+`ThePageIsActuallyStyled` reads a master where the tool holds no copy.
 ## 1.105.0 — 13 November 2026
 
 **One shared database module (`database`, FL-113).** A tool's pool and query
