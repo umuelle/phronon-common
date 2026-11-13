@@ -117,9 +117,12 @@ def build_legal_router(tool_key: str, config: dict) -> APIRouter:
     router = APIRouter()
 
     def page(doc: str, lang: str = "en") -> Callable[..., Awaitable[HTMLResponse]]:
-        # Default arguments bind doc/lang per closure; FastAPI needs a
-        # distinct callable per route.
-        async def _page(doc: str = doc, lang: str = lang) -> HTMLResponse:
+        # Each call is its own scope, so each route gets its own callable with
+        # its own doc and lang. The callable takes NO parameters: until
+        # 13 November 2026 they were default arguments, and FastAPI read them
+        # as query parameters, so /privacy?doc=terms served the terms and
+        # /privacy?doc=nope answered 500 (found by FL-112's type checking).
+        async def _page() -> HTMLResponse:
             return HTMLResponse(render_legal(tool_key, doc, lang, config=config,
                                              stylesheet_url=STYLESHEET_URL))
         return _page

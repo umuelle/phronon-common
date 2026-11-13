@@ -198,6 +198,17 @@ def test_the_router_serves_the_stylesheet_its_pages_link():
     assert STYLESHEET_URL.endswith(hashlib.sha256(sheet.encode()).hexdigest()[:12])
 
 
+def test_a_legal_page_takes_nothing_from_the_address():
+    """13 November 2026 (found by FL-112): the routes' doc and lang were
+    default arguments, which FastAPI reads as query parameters."""
+    c = _router_client(GERMAN)
+    plain = c.get("/privacy").text
+    for query in ("?doc=terms", "?doc=nope", "?doc=../x", "?lang=xx"):
+        r = c.get("/privacy" + query)
+        assert r.status_code == 200 and r.text == plain, query
+    assert c.get("/impressum?doc=").status_code == 200
+
+
 def test_a_page_rendered_outside_the_router_carries_the_same_rules_inline():
     """render_legal without stylesheet_url (a tool's own legal router that does
     not serve the sheet yet, and every test): the same file, inline, with its
