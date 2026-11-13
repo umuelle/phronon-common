@@ -96,7 +96,10 @@ belongs in your tool.
    use two-factor.
 4. **The tool itself.** Sessions, the participant pages, the public join
    sheet at `/share/<code>`, retention (`retention.py`), `/about` and
-   `/llms.txt` from a `ToolPresentation` entry, the `/accessibility`
+   `/llms.txt` from the tool's own `presentation.json` (read with
+   `registry.presentation_from_file`; the hub's copy in
+   `Phronon/fleet_presentations/` comes from `server-ops/fleet_files.py
+   --write`, since 13 November 2026), the `/accessibility`
    statement, and the notice's real text (reviewed before anything is
    published). The tool's `TODO.md` lists them; `ops/tool.json` leaves
    their sections empty rather than declaring exceptions, so the gates that

@@ -5,7 +5,7 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
-## Unreleased
+## 1.108.0 — 13 November 2026
 
 **Seventeen more modules pass the type checker (TO DO FL-112).** `access_log`,
 `account`, `adminroutes`, `demographics`, `emails`, `exports`,
