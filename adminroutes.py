@@ -56,7 +56,18 @@ import ast
 import inspect
 import os
 import textwrap
-from typing import Callable, Iterable, NamedTuple
+from typing import (TYPE_CHECKING, Any, Callable, Iterable, Iterator, NamedTuple,
+                    Optional, Sequence, Union, cast)
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from fastapi.routing import RouteContext
+    from starlette.applications import Starlette
+    from starlette.routing import BaseRoute
+
+    #: What the live checks take: the app, or the routes it dispatches.
+    AppOrRoutes = Union[Starlette, Sequence[BaseRoute]]
 
 
 class Route(NamedTuple):
@@ -183,7 +194,9 @@ def unguarded_admin_routes(source: str,
     return bad
 
 
-def assert_admin_routes_are_gated(app_py, prefixes, guards, allow=()) -> None:
+def assert_admin_routes_are_gated(app_py: Path, prefixes: Sequence[str],
+                                  guards: Iterable[str],
+                                  allow: Iterable[str] = ()) -> None:
     """Raise AssertionError naming every ungated admin route. For tests."""
     source = app_py.read_text(encoding='utf-8')
     routes = admin_routes(source, prefixes)
@@ -224,11 +237,11 @@ class LiveRoute(NamedTuple):
         return f'{self.methods} {self.path}  ({self.handler}, {self.source}:{self.lineno})'
 
 
-def _dependency_calls(dependant) -> tuple:
+def _dependency_calls(dependant: object) -> tuple[Callable[..., Any], ...]:
     """Every dependency callable under `dependant`, outermost first."""
-    out = []
+    out: list[Callable[..., Any]] = []
 
-    def walk(node):
+    def walk(node: object) -> None:
         for dep in getattr(node, 'dependencies', None) or ():
             call = getattr(dep, 'call', None)
             if call is not None:
@@ -239,7 +252,7 @@ def _dependency_calls(dependant) -> tuple:
     return tuple(out)
 
 
-def app_routes(app) -> list[AppRoute]:
+def app_routes(app: AppOrRoutes) -> list[AppRoute]:
     """Every APIRoute `app` dispatches, INCLUDING those inside included routers.
 
     Iterating `app.routes` is not enough on the FastAPI this fleet pins
@@ -256,12 +269,15 @@ def app_routes(app) -> list[AppRoute]:
     effective view (FastAPI caches it until a route is added).
     """
     from fastapi.routing import APIRoute
+    iter_route_contexts: Optional[
+        Callable[[Sequence[Union[BaseRoute, RouteContext]]], Iterator[RouteContext]]]
     try:
         from fastapi.routing import iter_route_contexts
     except ImportError:          # FastAPI before the lazy include
         iter_route_contexts = None
-    routes = getattr(app, 'routes', app)
-    out = []
+    # The app's routes, or the routes themselves when that is what was passed.
+    routes = cast("Sequence[BaseRoute]", getattr(app, 'routes', app))
+    out: list[AppRoute] = []
     if iter_route_contexts is None:
         for r in routes:
             if isinstance(r, APIRoute):
@@ -271,13 +287,16 @@ def app_routes(app) -> list[AppRoute]:
     for ctx in iter_route_contexts(routes):
         if not isinstance(ctx.original_route, APIRoute):
             continue
-        out.append(AppRoute(ctx.path, frozenset(ctx.methods or ()), ctx.name,
+        # An APIRoute always has its path and name; RouteContext types them
+        # Optional because it also wraps routes that have neither.
+        out.append(AppRoute(cast(str, ctx.path), frozenset(ctx.methods or ()),
+                            cast(str, ctx.name),
                             ctx.endpoint or ctx.original_route.endpoint,
                             _dependency_calls(ctx.dependant)))
     return out
 
 
-def _handler_source(endpoint) -> tuple[str, str, int]:
+def _handler_source(endpoint: Callable[..., Any]) -> tuple[str, str, int]:
     """(dedented source, file, first line) of a route's handler.
 
     ('', '?', 0) when Python cannot show it — a lambda built at runtime, a
@@ -299,7 +318,8 @@ def _handler_source(endpoint) -> tuple[str, str, int]:
     return textwrap.dedent(''.join(lines)), shown, lineno
 
 
-def live_admin_routes(app, prefixes: Iterable[str]) -> list[tuple[LiveRoute, str, tuple]]:
+def live_admin_routes(app: AppOrRoutes,
+                      prefixes: Iterable[str]) -> list[tuple[LiveRoute, str, tuple]]:
     """(route, handler_source, dependency_calls) under `prefixes`, from the RUNNING app."""
     prefixes = tuple(prefixes)
     out = []
@@ -314,7 +334,7 @@ def live_admin_routes(app, prefixes: Iterable[str]) -> list[tuple[LiveRoute, str
     return out
 
 
-def unguarded_live_admin_routes(app,
+def unguarded_live_admin_routes(app: AppOrRoutes,
                                 prefixes: Iterable[str],
                                 guards: Iterable[str] = (),
                                 allow: Iterable[str] = (),
@@ -345,8 +365,11 @@ def unguarded_live_admin_routes(app,
     return bad
 
 
-def assert_live_admin_routes_are_gated(app, prefixes, guards=(), allow=(),
-                                       guard_dependencies=()) -> None:
+def assert_live_admin_routes_are_gated(app: AppOrRoutes, prefixes: Sequence[str],
+                                       guards: Iterable[str] = (),
+                                       allow: Iterable[str] = (),
+                                       guard_dependencies: Iterable[Callable[..., Any]] = (),
+                                       ) -> None:
     """Raise AssertionError naming every ungated admin route the app serves.
 
     The live counterpart of `assert_admin_routes_are_gated`: it takes the

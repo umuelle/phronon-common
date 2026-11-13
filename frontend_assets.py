@@ -46,6 +46,17 @@ import logging
 import os
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, Union, cast
+
+if TYPE_CHECKING:
+    import jinja2
+    from fastapi import FastAPI, Request
+    from starlette.middleware.base import RequestResponseEndpoint
+    from starlette.responses import Response
+    from starlette.templating import Jinja2Templates
+
+#: A parsed active.json (JSON, checked by `Frontend._valid` before use).
+Manifest = dict[str, Any]
 
 log = logging.getLogger("phronon.frontend")
 
@@ -63,26 +74,36 @@ def default_root(tool_key: str) -> Path:
     return SERVER_ROOT / TOOLS[tool_key].service
 
 
+class _ManifestState(TypedDict):
+    stamp: Optional[tuple[int, int, int]]
+    good: Optional[Manifest]
+
+
 class Frontend:
     """One tool's enrolled files and its active bundle (one per process)."""
 
-    def __init__(self, base_dir, root=None):
+    def __init__(self, base_dir: Union[str, os.PathLike[str]],
+                 root: Union[str, os.PathLike[str], None] = None) -> None:
         self.base_dir = Path(base_dir)
         path = self.base_dir / "frontend" / "contract.json"
-        self.contract = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
-        self.enrolled = tuple((self.contract or {}).get("assets", ()))
-        self.tool = (self.contract or {}).get("tool")
+        self.contract: Optional[dict[str, Any]] = (
+            json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None)
+        self.enrolled: tuple[str, ...] = tuple((self.contract or {}).get("assets", ()))
+        self.tool: Optional[str] = (self.contract or {}).get("tool")
+        self.root: Optional[Path]
         if self.contract is None:
             self.root = None
         else:
-            self.root = Path(root or os.environ.get("FRONTEND_ROOT") or default_root(self.tool))
-        self._snapshot: contextvars.ContextVar = contextvars.ContextVar(
+            self.root = Path(root or os.environ.get("FRONTEND_ROOT")
+                             or default_root(self.contract.get("tool")))
+        self._snapshot: contextvars.ContextVar[Optional[Manifest]] = contextvars.ContextVar(
             f"frontend_snapshot_{id(self)}", default=None)
-        self._state = {"stamp": None, "good": None}     # last good manifest, keyed by the file's stat
-        self.env = None                                 # the Jinja environment install() wrapped
+        # last good manifest, keyed by the file's stat
+        self._state: _ManifestState = {"stamp": None, "good": None}
+        self.env: Optional[jinja2.Environment] = None   # the Jinja environment install() wrapped
 
     # ── the manifest ─────────────────────────────────────────────────────────
-    def _valid(self, m) -> bool:
+    def _valid(self, m: object) -> bool:
         if not isinstance(m, dict) or m.get("schema") != 1 or m.get("tool") != self.tool:
             return False
         if not BUNDLE_ID.match(str(m.get("bundle", ""))):
@@ -90,10 +111,11 @@ class Frontend:
         files = m.get("files")
         if not isinstance(files, dict) or set(files) != set(self.enrolled):
             return False
-        bundle = self.root / "bundles" / m["bundle"]
+        # Only current() calls this, after it returned for a missing root.
+        bundle = cast(Path, self.root) / "bundles" / m["bundle"]
         return all((bundle / rel).is_file() for rel in files)
 
-    def current(self):
+    def current(self) -> Optional[Manifest]:
         """The manifest for a new request: re-read when the file changed, the
         last good one if the new one is broken, None if there never was one."""
         if self.root is None:
@@ -117,19 +139,20 @@ class Frontend:
                           (self._state["good"] or {}).get("bundle", "the checkout's files"))
         return self._state["good"]
 
-    def active_bundle(self):
+    def active_bundle(self) -> Optional[str]:
         """The bundle a fresh page would use (for /health), or None."""
-        return (self.current() or {}).get("bundle")
+        bundle: Optional[str] = (self.current() or {}).get("bundle")
+        return bundle
 
     # ── one request, one bundle ──────────────────────────────────────────────
-    def begin_request(self):
+    def begin_request(self) -> contextvars.Token[Optional[Manifest]]:
         """Middleware: fix this request's manifest. Returns the token to reset."""
         return self._snapshot.set(self.current())
 
-    def end_request(self, token) -> None:
+    def end_request(self, token: contextvars.Token[Optional[Manifest]]) -> None:
         self._snapshot.reset(token)
 
-    def wrap_asset(self, base_asset):
+    def wrap_asset(self, base_asset: Callable[[str], str]) -> Callable[[str], str]:
         """The `asset()` Jinja global: enrolled paths from the request's bundle."""
         def asset(path: str) -> str:
             rel = path.split("?", 1)[0]
@@ -142,7 +165,7 @@ class Frontend:
         return asset
 
     # ── serving a bundle's file ──────────────────────────────────────────────
-    def bundle_file(self, bundle: str, rel: str):
+    def bundle_file(self, bundle: str, rel: str) -> Optional[tuple[Path, str]]:
         """(path, media type) of a bundle's file, or None. No traversal, no
         symlinks, only the published media types."""
         if self.root is None or not BUNDLE_ID.match(bundle):
@@ -166,13 +189,15 @@ class Frontend:
 _installed: Frontend | None = None
 
 
-def active_bundle():
+def active_bundle() -> Optional[str]:
     """For a tool's /health: the bundle a fresh page would use, or None
     (no contract, or nothing published yet)."""
     return _installed.active_bundle() if _installed is not None else None
 
 
-def install(app, templates, base_dir, root=None) -> Frontend:
+def install(app: FastAPI, templates: Jinja2Templates,
+            base_dir: Union[str, os.PathLike[str]],
+            root: Union[str, os.PathLike[str], None] = None) -> Frontend:
     """Wire the bundles into a FastAPI app: the `asset` global, the
     one-bundle-per-request middleware and the `/frontend/...` route. Call it
     once, at import, after `templates.env.globals["asset"]` is set. A tool
@@ -184,18 +209,21 @@ def install(app, templates, base_dir, root=None) -> Frontend:
     if "asset" not in templates.env.globals:
         raise RuntimeError("frontend_assets.install: set templates.env.globals['asset'] first")
     fe = Frontend(base_dir, root)
-    templates.env.globals["asset"] = fe.wrap_asset(templates.env.globals["asset"])
+    # The tool set it to its asset() (assets.asset_url), checked just above.
+    base_asset = cast(Callable[[str], str], templates.env.globals["asset"])
+    templates.env.globals["asset"] = fe.wrap_asset(base_asset)
     fe.env = templates.env
 
     @app.middleware("http")
-    async def _frontend_snapshot(request, call_next):
+    async def _frontend_snapshot(request: Request,
+                                 call_next: RequestResponseEndpoint) -> Response:
         token = fe.begin_request()
         try:
             return await call_next(request)
         finally:
             fe.end_request(token)
 
-    async def frontend_bundle_file(bundle: str, path: str):
+    async def frontend_bundle_file(bundle: str, path: str) -> Response:
         """A file of an immutable bundle, by the bundle's id: the same bytes
         for as long as the URL exists. Public, like /static."""
         found = fe.bundle_file(bundle, path)
@@ -204,7 +232,11 @@ def install(app, templates, base_dir, root=None) -> Frontend:
         file_path, media = found
         return FileResponse(file_path, media_type=media, headers={"Cache-Control": CACHE})
 
+    # response_model=None says outright what an endpoint without a return
+    # annotation meant: FastAPI would otherwise try to resolve `Response`,
+    # which this module imports only for the type checker.
     app.add_api_route("/frontend/{bundle}/{path:path}", frontend_bundle_file,
-                      methods=["GET", "HEAD"], include_in_schema=False)
+                      methods=["GET", "HEAD"], include_in_schema=False,
+                      response_model=None)
     _installed = fe
     return fe

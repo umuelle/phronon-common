@@ -12,10 +12,18 @@ For pandas/xlsxwriter exports use the engine option instead
 """
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, TypeVar
+
+if TYPE_CHECKING:
+    from fastapi import Request
+    from fastapi.responses import StreamingResponse
+
+_T = TypeVar("_T")
+
 _FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 
 
-def csv_safe(value):
+def csv_safe(value: _T) -> _T | str:
     """Return ``value`` neutralised for CSV export (strings only)."""
     if isinstance(value, str) and value[:1] in _FORMULA_PREFIXES:
         return "'" + value
@@ -43,9 +51,13 @@ def csv_safe_row(row: dict) -> dict:
 # neutralisation on every cell, and `Cache-Control: no-store` on a file full of
 # participant data.
 
-def csv_download(*, filename, header, rows, audit, actor,
-                 action="data_exported", subject=None, details=None,
-                 request=None, admin_id=None):
+def csv_download(*, filename: str, header: Iterable[object],
+                 rows: Iterable[Iterable[object]],
+                 audit: Optional[Callable[..., object]], actor: Optional[str],
+                 action: str = "data_exported", subject: Optional[str] = None,
+                 details: Optional[dict[str, Any]] = None,
+                 request: Optional[Request] = None,
+                 admin_id: Optional[int] = None) -> StreamingResponse:
     """Build an audited, non-cached CSV download.
 
     `audit` is the tool's own `_audit` — the same keyword signature in all nine

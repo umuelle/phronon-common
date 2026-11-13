@@ -37,6 +37,13 @@ from __future__ import annotations
 import hmac
 import os
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from fastapi.responses import JSONResponse
+    from starlette.requests import Request
+
+    from .registry import ToolIdentity
 
 PROVISION_HEADER = "X-Provision-Secret"
 
@@ -79,7 +86,7 @@ def parse_request(payload: dict) -> ProvisionRequest:
     )
 
 
-def secret_env_var(tool) -> str:
+def secret_env_var(tool: ToolIdentity) -> str:
     """The environment variable holding THIS tool's provisioning secret.
 
     Derived from the registry's entitlement key, which is what the hub already
@@ -90,7 +97,7 @@ def secret_env_var(tool) -> str:
     return f"PROVISION_SECRET_{tool.entitlement_key.upper()}"
 
 
-def require_internal_secret(request, tool):
+def require_internal_secret(request: Request, tool: ToolIdentity) -> Optional[JSONResponse]:
     """`None` if the caller presented this tool's secret; a 401 response if not.
 
         denied = require_internal_secret(request, TOOL)

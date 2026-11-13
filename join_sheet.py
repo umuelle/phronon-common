@@ -28,7 +28,11 @@ from __future__ import annotations
 
 import io
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional
+
+if TYPE_CHECKING:
+    from starlette.requests import Request
+    from starlette.responses import Response
 
 #: Per client address, per tool process (phronon_common.rate_limit's window).
 RATE_LIMIT = (20, 60)
@@ -45,8 +49,8 @@ def qr_svg(url: str) -> str:
     imported here so a test that replaces the module in sys.modules reaches it.
     Raises on failure: a sheet without its QR is not a sheet (unlike the
     authenticator enrolment page, whose qr_svg has a typed fallback)."""
-    import qrcode
-    import qrcode.image.svg
+    import qrcode  # type: ignore[import-untyped,unused-ignore]  # untyped where installed without stubs
+    import qrcode.image.svg  # type: ignore[import-untyped,unused-ignore]  # the same package
 
     qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M)
     qr.add_data(url)
@@ -71,13 +75,14 @@ class JoinSheet:
     context: Callable[[Any, Mapping, str, str], dict]
     #: (request, template, context, lang) -> the response, rendered the way
     #: the tool renders its participant pages.
-    render: Callable[[Any, str, dict, str], Any]
+    render: Callable[[Any, str, dict, str], Response]
     #: (request) -> the client address the rate limit is keyed on.
     client_ip: Optional[Callable[[Any], str]] = None
     template: str = "share_card.html"
 
 
-def render_join_sheet(request, code: str, sheet: JoinSheet, lang: str = "en"):
+def render_join_sheet(request: Request, code: str, sheet: JoinSheet,
+                      lang: str = "en") -> Response:
     """The join sheet for `code`. Synchronous: call it from the tool's route,
     `def` or `async def`, as the route already is."""
     from fastapi import HTTPException

@@ -5,6 +5,19 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## Unreleased
+
+**Seventeen more modules pass the type checker (TO DO FL-112).** `access_log`,
+`account`, `adminroutes`, `demographics`, `emails`, `exports`,
+`frontend_assets`, `join_sheet`, `legal`, `legal_conf`, `log_privacy`,
+`machine_facing`, `mail_diagnostics`, `passkeys`, `provisioning`,
+`shared_assets` and `undefined_names` joined `TYPED` in
+`tests/test_typed_interfaces.py`. Annotations only: no behaviour changes.
+`frontend_assets.install` now passes `response_model=None` for its
+`/frontend/...` route, which is what FastAPI derived from the unannotated
+endpoint before (checked by comparing the route FastAPI builds, before and
+after).
+
 ## 1.107.0 — 13 November 2026
 
 **Cleanup release (FL-144, FL-098, FL-131; the owner's "do all of these").**

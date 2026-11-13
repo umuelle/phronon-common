@@ -23,6 +23,7 @@ No pytest, no FastAPI: this is imported by nine applications at start-up.
 from __future__ import annotations
 
 import json
+from typing import Iterable
 
 from phronon_common.registry import ToolIdentity, ToolPresentation
 
@@ -38,7 +39,7 @@ SUITE_NOTE = ("Part of Phronon, a suite of online tools for practical judgment. 
               "install nothing.")
 
 
-def as_script(obj) -> str:
+def as_script(obj: object) -> str:
     """JSON-LD ready to drop inside a <script> tag.
 
     `</` is escaped: without it, a blurb containing "</script>" would end the
@@ -86,7 +87,7 @@ def llms_txt(t: ToolIdentity, p: ToolPresentation) -> str:
     return "\n".join(lines)
 
 
-def robots_txt(t: ToolIdentity, rules) -> str:
+def robots_txt(t: ToolIdentity, rules: Iterable[tuple[str, str]]) -> str:
     """The crawl policy. The RULES are the tool's; the shape is the fleet's.
 
     `rules` is an ordered sequence of ("Allow" | "Disallow", path). Ordered,
@@ -108,7 +109,8 @@ def robots_txt(t: ToolIdentity, rules) -> str:
     return "\n".join(lines)
 
 
-def missing_private_prefixes(rules, prefixes) -> list:
+def missing_private_prefixes(rules: Iterable[tuple[str, str]],
+                             prefixes: Iterable[str]) -> list[str]:
     """Which of `prefixes` no Disallow rule covers.
 
     A tool that forgets one hands its educator sign-in to the index. The page

@@ -6,7 +6,8 @@ is implicit, and no function hands back Any where it promises a type, so a
 tool calling the clock, the mail claim, the signer, the rate limiter, the
 registry or the audit trail is checked against what they really take and give.
 A module joins TYPED when its annotations are done (TO DO FL-112; the nine
-it named on 27 October joined on 29 October 2026). mypy is pinned in
+it named on 27 October joined on 29 October 2026, and the other seventeen it
+named joined on 13 November 2026). mypy is pinned in
 requirements-test.txt, which CI and the release's candidate matrix install, so
 there it must run; on a machine without it the test skips and says so.
 """
@@ -22,11 +23,14 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 TYPED = (
-    "account_kit", "assets", "audit", "countries", "csrf", "database", "hosts", "joincode",
-    "kanon", "legal_content", "lockout", "once", "participant", "passwords",
+    "access_log", "account", "account_kit", "adminroutes", "assets", "audit",
+    "countries", "csrf", "database", "demographics", "emails", "exports",
+    "frontend_assets", "hosts", "join_sheet", "joincode", "kanon", "legal",
+    "legal_conf", "legal_content", "lockout", "log_privacy", "machine_facing",
+    "mail_diagnostics", "once", "participant", "passkeys", "passwords", "provisioning",
     "rate_limit", "registry", "request_ip", "retention_heartbeat", "routing",
-    "scheduler", "security_headers", "sessions", "signing", "translations",
-    "twofactor", "users_kit", "withdrawal_kit",
+    "scheduler", "security_headers", "sessions", "shared_assets", "signing",
+    "translations", "twofactor", "undefined_names", "users_kit", "withdrawal_kit",
 )
 
 

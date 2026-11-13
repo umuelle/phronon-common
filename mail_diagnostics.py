@@ -31,8 +31,14 @@ import datetime as _dt
 import os
 import traceback
 from pathlib import Path
+from typing import Callable, Iterable, Optional, Sequence, Tuple
 
 from phronon_common.registry import display_names
+
+#: One sample: (key, label, sender). The sender takes the recipient address.
+Sample = Tuple[str, str, Callable[[str], object]]
+#: One sample's outcome: (key, label, the exception it raised or None).
+SampleResult = Tuple[str, str, Optional[Exception]]
 
 #: Dedicated test mailbox — test e-mail never reaches a real inbox.
 TEST_RECIPIENT = "test@phronon.org"
@@ -125,7 +131,7 @@ def load_project_env(project_root: Path) -> bool:
     return True
 
 
-def recipient_refusal(address: str):
+def recipient_refusal(address: str) -> Optional[str]:
     """Return None if this address may receive test mail, else the reason why not."""
     addr = (address or "").strip()
     if "@" not in addr:
@@ -261,7 +267,7 @@ def record_full_send(project_root: Path, today: str | None = None) -> None:
             pass
 
 
-def raise_if_not_sent(answer, what: str = "this sample") -> None:
+def raise_if_not_sent(answer: object, what: str = "this sample") -> None:
     """Turn a sender's False into a failed sample.
 
     `send_all` counts a sample as delivered unless it raises, and the fleet's
@@ -278,7 +284,8 @@ def raise_if_not_sent(answer, what: str = "this sample") -> None:
                            f"server refused it; the log says which).")
 
 
-def send_all(samples, recipient: str = TEST_RECIPIENT, *, project_root=None) -> list:
+def send_all(samples: Iterable[Sample], recipient: str = TEST_RECIPIENT, *,
+             project_root: Optional[Path] = None) -> list[SampleResult]:
     """Send the samples. Returns [(key, label, error_or_None), ...].
 
     Every sample on the first run of the day, ONE afterwards (see
@@ -301,7 +308,7 @@ def send_all(samples, recipient: str = TEST_RECIPIENT, *, project_root=None) -> 
             # most ordinary message. One real delivery still has to succeed.
             chosen = chosen[:1]
 
-    results = []
+    results: list[SampleResult] = []
     for key, label, sender in chosen:
         try:
             sender(recipient)
@@ -314,8 +321,9 @@ def send_all(samples, recipient: str = TEST_RECIPIENT, *, project_root=None) -> 
     return results
 
 
-def main(argv: list, *, samples, tool_label: str, public_domain: str,
-         status_of: callable, send: callable) -> int:
+def main(argv: Sequence[str], *, samples: Sequence[Sample], tool_label: str,
+         public_domain: str, status_of: Callable[[], tuple[str, str]],
+         send: Callable[[str], Iterable[SampleResult]]) -> int:
     """The CLI every tool's script exposes: send every sample, report each one.
 
     `status_of` and `send` are the tool's own zero/one-argument wrappers, so a

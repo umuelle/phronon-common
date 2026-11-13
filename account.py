@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from typing import Any, Mapping, Optional, Union
 
 from .signing import CookieSigner
 
@@ -69,7 +70,7 @@ MAX_NAME_LENGTH = 255
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
-def normalise_email(value) -> str:
+def normalise_email(value: object) -> str:
     """Trim and lower-case an address for storage and comparison.
 
     Lower-casing the whole address is technically wrong — the local part is
@@ -82,7 +83,7 @@ def normalise_email(value) -> str:
     return str(value or "").strip().lower()
 
 
-def validate_email(value, *, current: str | None = "") -> tuple[str, str | None]:
+def validate_email(value: object, *, current: str | None = "") -> tuple[str, str | None]:
     """Return `(normalised_address, error_or_None)`.
 
     `current` is the address the account has now: changing nothing is reported
@@ -101,7 +102,7 @@ def validate_email(value, *, current: str | None = "") -> tuple[str, str | None]
     return email, None
 
 
-def validate_name(value) -> tuple[str, str | None]:
+def validate_name(value: object) -> tuple[str, str | None]:
     """Return `(cleaned_name, error_or_None)`.
 
     The name is shown to colleagues in the user list and in audit trails, so it
@@ -128,8 +129,9 @@ def email_change_signer(secret_key: str | bytes) -> CookieSigner:
                         max_age=EMAIL_CHANGE_MAX_AGE)
 
 
-def make_email_change_token(signer: CookieSigner, *, admin_id, old_email: str,
-                            new_email: str, session_epoch) -> str:
+def make_email_change_token(signer: CookieSigner, *, admin_id: Union[int, str],
+                            old_email: str, new_email: str,
+                            session_epoch: Union[int, str, None]) -> str:
     """Sign a pending address change. Nothing is written to the database."""
     return signer.dumps({
         "id": int(admin_id),
@@ -139,7 +141,8 @@ def make_email_change_token(signer: CookieSigner, *, admin_id, old_email: str,
     })
 
 
-def read_email_change_token(signer: CookieSigner, raw, *, row) -> tuple[dict | None, str | None]:
+def read_email_change_token(signer: CookieSigner, raw: Optional[str], *,
+                            row: Optional[Mapping[str, Any]]) -> tuple[dict | None, str | None]:
     """Check a link against the account row it claims to be for.
 
     Returns `(payload, error_or_None)`. `row` is the `admins` row as the
@@ -163,7 +166,7 @@ def read_email_change_token(signer: CookieSigner, raw, *, row) -> tuple[dict | N
     # which made every first-ever address change on an untouched account report
     # "the account changed after this was sent". Caught by driving the real flow;
     # the unit tests all happened to use a non-zero epoch.
-    def _int(value, default):
+    def _int(value: Any, default: int) -> int:
         try:
             return int(value)
         except (TypeError, ValueError):

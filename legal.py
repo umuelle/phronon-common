@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from typing import Awaitable, Callable
 
 import jinja2
 from fastapi import APIRouter
@@ -115,10 +116,10 @@ def build_legal_router(tool_key: str, config: dict) -> APIRouter:
         raise ValueError(f"legal config for {config.get('key')!r} passed to the router for {tool_key!r}")
     router = APIRouter()
 
-    def page(doc: str, lang: str = "en"):
+    def page(doc: str, lang: str = "en") -> Callable[..., Awaitable[HTMLResponse]]:
         # Default arguments bind doc/lang per closure; FastAPI needs a
         # distinct callable per route.
-        async def _page(doc=doc, lang=lang) -> HTMLResponse:
+        async def _page(doc: str = doc, lang: str = lang) -> HTMLResponse:
             return HTMLResponse(render_legal(tool_key, doc, lang, config=config,
                                              stylesheet_url=STYLESHEET_URL))
         return _page
@@ -153,7 +154,7 @@ def build_legal_router(tool_key: str, config: dict) -> APIRouter:
                              response_class=HTMLResponse, include_in_schema=False,
                              methods=["GET", "HEAD"])
 
-    async def _imprint_redirect():
+    async def _imprint_redirect() -> RedirectResponse:
         # Historic canonical URL, published in e-mails and study descriptions.
         # It must keep working forever; /legal orients whoever follows it.
         return RedirectResponse("/legal", status_code=301)

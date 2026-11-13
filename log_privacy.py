@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Any
 
 ADDRESS = re.compile(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)")
 _MARK = "_phronon_address_redaction"
@@ -44,7 +45,7 @@ def redact_addresses(text: str) -> str:
     return ADDRESS.sub(r"***@\1", text)
 
 
-def _redact_value(value):
+def _redact_value(value: object) -> object:
     if isinstance(value, str):
         return redact_addresses(value)
     if isinstance(value, (int, float, bool)) or value is None:
@@ -78,7 +79,7 @@ def install_address_redaction() -> None:
     if getattr(current, _MARK, False):
         return
 
-    def factory(*args, **kwargs):
+    def factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
         return _redact_record(current(*args, **kwargs))
 
     setattr(factory, _MARK, True)

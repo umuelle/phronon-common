@@ -42,7 +42,7 @@ Standard library only, no I/O.
 from __future__ import annotations
 
 import re
-from typing import NamedTuple, Optional
+from typing import Callable, NamedTuple, Optional
 
 from . import countries
 
@@ -53,7 +53,7 @@ class Option(NamedTuple):
     label_de: str    # German label
 
 
-AGE_BANDS: tuple = (
+AGE_BANDS: tuple[Option, ...] = (
     Option("under 25", "Under 25", "Unter 25"),
     Option("25–34", "25–34", "25–34"),
     Option("35–44", "35–44", "35–44"),
@@ -62,7 +62,7 @@ AGE_BANDS: tuple = (
     Option("65 or older", "65 or older", "65 oder älter"),
 )
 
-GENDERS: tuple = (
+GENDERS: tuple[Option, ...] = (
     Option("woman", "Woman", "Weiblich"),
     Option("man", "Man", "Männlich"),
     Option("non-binary", "Non-binary", "Nicht-binär"),
@@ -111,36 +111,36 @@ _GENDER_ALIASES = {
 _DASHES = re.compile(r"\s*[‐‑‒–—−-]\s*")
 
 
-def _fold(value) -> str:
+def _fold(value: object) -> str:
     """Case, surrounding and doubled spaces, and the kind of dash ignored."""
     text = " ".join(str(value).split()).casefold()
     return _DASHES.sub("-", text)
 
 
-def _labels(opts: tuple, lang: str) -> list:
+def _labels(opts: tuple[Option, ...], lang: str) -> list[tuple[str, str]]:
     return [(o.value, o.label_de if lang == "de" else o.label) for o in opts]
 
 
-def age_options(lang: str = "en") -> list:
+def age_options(lang: str = "en") -> list[tuple[str, str]]:
     """[(stored value, label), ...] in the order the page shows them."""
     return _labels(AGE_BANDS, lang)
 
 
-def gender_options(lang: str = "en") -> list:
+def gender_options(lang: str = "en") -> list[tuple[str, str]]:
     return _labels(GENDERS, lang)
 
 
-def clean_age(value) -> Optional[str]:
+def clean_age(value: Optional[str]) -> Optional[str]:
     """A submitted age: one of the six values exactly, else None (nothing
     answered, or something the page never offered)."""
     return value if value in AGE_VALUES else None
 
 
-def clean_gender(value) -> Optional[str]:
+def clean_gender(value: Optional[str]) -> Optional[str]:
     return value if value in GENDER_VALUES else None
 
 
-def canonical_age(stored) -> Optional[str]:
+def canonical_age(stored: object) -> Optional[str]:
     """The value in this scheme for an answer a tool stored before, or None
     when it has none (empty, or a band of another scheme such as "20–29")."""
     if stored is None or not str(stored).strip():
@@ -148,13 +148,14 @@ def canonical_age(stored) -> Optional[str]:
     return _AGE_ALIASES.get(_fold(stored))
 
 
-def canonical_gender(stored) -> Optional[str]:
+def canonical_gender(stored: object) -> Optional[str]:
     if stored is None or not str(stored).strip():
         return None
     return _GENDER_ALIASES.get(_fold(stored))
 
 
-def _label_of(opts: tuple, value, lang: str, canonical) -> Optional[str]:
+def _label_of(opts: tuple[Option, ...], value: object, lang: str,
+              canonical: Callable[[object], Optional[str]]) -> Optional[str]:
     if value is None or not str(value).strip():
         return None
     found = canonical(value)
@@ -164,13 +165,13 @@ def _label_of(opts: tuple, value, lang: str, canonical) -> Optional[str]:
     return str(value)
 
 
-def age_label(stored, lang: str = "en") -> Optional[str]:
+def age_label(stored: object, lang: str = "en") -> Optional[str]:
     """What a page shows for a stored age: this scheme's label, or the
     stored text itself for a band of an older scheme ("20–29")."""
     return _label_of(AGE_BANDS, stored, lang, canonical_age)
 
 
-def gender_label(stored, lang: str = "en") -> Optional[str]:
+def gender_label(stored: object, lang: str = "en") -> Optional[str]:
     return _label_of(GENDERS, stored, lang, canonical_gender)
 
 
@@ -181,7 +182,8 @@ def country_options(lang: str = "en", *, value: str = "alpha2") -> list:
     return countries.options(lang, value=value)
 
 
-def clean_country(choice, other_text=None, *, value: str = "alpha2") -> Optional[str]:
+def clean_country(choice: object, other_text: object = None, *,
+                  value: str = "alpha2") -> Optional[str]:
     """What to store for a country answer.
 
     * nothing chosen -> None;

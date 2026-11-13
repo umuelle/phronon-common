@@ -21,7 +21,7 @@ from .account import EMAIL_CHANGE_HOURS  # noqa: F401 (re-exported)
 logger = logging.getLogger(__name__)
 
 
-def recipient_domain(address) -> str:
+def recipient_domain(address: object) -> str:
     """A log-safe stand-in for a recipient address: `"@domain"`, or a placeholder.
 
     ONE implementation, fleet-wide, since 16 August 2026. There were four —
@@ -116,7 +116,7 @@ def branded_html(tool_name: str, inner_html: str, card_width: int = 520,
     )
 
 
-def password_reset_bodies(tool_name: str, reset_url: str, hours: str = "2"):
+def password_reset_bodies(tool_name: str, reset_url: str, hours: str = "2") -> tuple[str, str]:
     """Return (plain_text, html) for a branded password-reset email."""
     text = (
         "Hello,\n\n"
@@ -285,7 +285,7 @@ def _multipart(subject: str, sender: str, to_email: str, text: str, html: str) -
 #              also exactly what taking over an account looks like, so it is
 #              never something the account holder learns only by noticing.
 
-def email_change_confirm_bodies(tool_name: str, confirm_url: str, hours: str = "2"):
+def email_change_confirm_bodies(tool_name: str, confirm_url: str, hours: str = "2") -> tuple[str, str]:
     text = (
         "Hello,\n\n"
         f"This address was given as the new sign-in address for a {tool_name} account.\n\n"
@@ -332,7 +332,7 @@ def send_email_change_confirm(tool_name: str, default_from: str, to_email: str,
     return True
 
 
-def email_change_notice_bodies(tool_name: str, new_email: str):
+def email_change_notice_bodies(tool_name: str, new_email: str) -> tuple[str, str]:
     text = (
         "Hello,\n\n"
         f"Somebody asked to change the sign-in address of your {tool_name} account "
@@ -388,7 +388,7 @@ def send_email_change_notice(tool_name: str, default_from: str, to_email: str,
 #                what moving an account away from its holder looks like, so
 #                the holder never learns of it only by being signed out.
 
-def account_invitation_bodies(tool_name: str, set_url: str, hours: int = 72):
+def account_invitation_bodies(tool_name: str, set_url: str, hours: int = 72) -> tuple[str, str]:
     text = (
         "Hello,\n\n"
         f"An administrator created a {tool_name} account for this address.\n\n"
@@ -433,7 +433,7 @@ def send_account_invitation(tool_name: str, default_from: str, to_email: str,
     return True
 
 
-def account_change_notice_bodies(tool_name: str, new_email: str = "", new_role: str = ""):
+def account_change_notice_bodies(tool_name: str, new_email: str = "", new_role: str = "") -> tuple[str, str]:
     """`new_email` and `new_role` ("admin" or "educator") name what changed;
     an empty one did not change."""
     changes = []
@@ -492,7 +492,7 @@ def send_account_change_notice(tool_name: str, default_from: str, to_email: str,
     return True
 
 
-def two_factor_reset_bodies(tool_name: str, account_url: str):
+def two_factor_reset_bodies(tool_name: str, account_url: str) -> tuple[str, str]:
     text = (
         "Hello,\n\n"
         f"An administrator has reset two-factor login on your {tool_name} account.\n\n"
@@ -574,7 +574,7 @@ _CODE_EVENTS = {"enabled", "replaced", "codes_regenerated"}
 
 
 def two_factor_confirmation_bodies(tool_name: str, account_url: str,
-                                   event: str = "enabled"):
+                                   event: str = "enabled") -> tuple[str, str]:
     _subject, happened = TWO_FACTOR_EVENTS[event]
     old_codes = (" Your previous recovery codes no longer work."
                  if event in ("replaced", "codes_regenerated") else "")
@@ -661,7 +661,7 @@ def send_two_factor_confirmation(tool_name: str, default_from: str, to_email: st
 # that answers uniformly whether or not the address exists, so a failure
 # here is logged and never surfaced to the requester.
 
-def participant_resume_bodies(tool_name: str, resume_url: str, minutes: int = 30):
+def participant_resume_bodies(tool_name: str, resume_url: str, minutes: int = 30) -> tuple[str, str]:
     safe_url = _html.escape(resume_url)
     text = (f"Someone — probably you — asked to continue your {tool_name} session on a "
             f"new device. This link works once and expires in {minutes} minutes:\n\n"
@@ -694,7 +694,7 @@ def send_participant_resume(tool_name: str, default_from: str, to_email: str,
 
 
 def withdrawal_link_bodies(tool_name: str, withdraw_url: str, deadline: str = "",
-                           research: bool = True):
+                           research: bool = True) -> tuple[str, str]:
     """The link mail's text and HTML. `research`: whether the tool keeps a
     pseudonymous research record past the deadline, as its notice says. A tool
     that keeps none passes False, and the mail promises nothing about one

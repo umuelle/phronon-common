@@ -43,6 +43,7 @@ import json
 import secrets
 import time
 from dataclasses import dataclass
+from typing import Any, Callable, Sequence, Union
 from urllib.parse import urlsplit
 
 from webauthn import (base64url_to_bytes, generate_authentication_options,
@@ -105,7 +106,7 @@ def origins_for(base_url: str) -> list[str]:
 
 # ── the challenge cookie ─────────────────────────────────────────────────────
 
-def _signer(secret_key) -> CookieSigner:
+def _signer(secret_key: Union[str, bytes]) -> CookieSigner:
     return CookieSigner(secret_key, salt="phronon-passkey-challenge",
                         max_age=CHALLENGE_SECONDS)
 
@@ -116,13 +117,13 @@ class SealedChallenge:
     issued_at: int      # unix seconds, the clock `record_sign_in` compares with
 
 
-def seal_challenge(secret_key, challenge: bytes, purpose: str) -> str:
+def seal_challenge(secret_key: Union[str, bytes], challenge: bytes, purpose: str) -> str:
     """The cookie value carrying `challenge` for one `purpose`."""
     return _signer(secret_key).dumps({"c": bytes_to_base64url(challenge), "p": purpose,
                                       "t": int(time.time())})
 
 
-def open_sealed_challenge(secret_key, cookie_value: str | None,
+def open_sealed_challenge(secret_key: Union[str, bytes], cookie_value: str | None,
                           purpose: str) -> SealedChallenge | None:
     """The challenge and when it was issued, if the cookie is genuine, fresh
     and for this purpose. A cookie sealed before issue times were added has no
@@ -136,7 +137,8 @@ def open_sealed_challenge(secret_key, cookie_value: str | None,
         return None  # a field missing, not text, or not base64/an integer: refused
 
 
-def open_challenge(secret_key, cookie_value: str | None, purpose: str) -> bytes | None:
+def open_challenge(secret_key: Union[str, bytes], cookie_value: str | None,
+                   purpose: str) -> bytes | None:
     """The challenge, if the cookie is genuine, fresh and for this purpose.
     Enough for registering; a sign-in needs `open_sealed_challenge`."""
     sealed = open_sealed_challenge(secret_key, cookie_value, purpose)
@@ -152,7 +154,7 @@ def cookie_kwargs(secure: bool = True) -> dict:
 # ── registering a passkey (signed in, from the account page) ─────────────────
 
 def registration_options(*, base_url: str, tool_name: str, user_handle: bytes,
-                         user_name: str, existing: list[bytes] = ()) -> tuple[str, bytes]:
+                         user_name: str, existing: Sequence[bytes] = ()) -> tuple[str, bytes]:
     """(options JSON for the browser, challenge to seal in the cookie).
 
     `user_handle` is an opaque per-account id the authenticator stores and
@@ -229,7 +231,8 @@ def verify_authentication(*, credential_json: str, challenge: bytes, base_url: s
     return v.new_sign_count
 
 
-def record_sign_in(get_db, passkey_id: int, sign_count: int, issued_at: int, *,
+def record_sign_in(get_db: Callable[[], Any], passkey_id: int, sign_count: int,
+                   issued_at: int, *,
                    table: str = "passkeys") -> bool:
     """Store the new counter and the use, but ONLY if the challenge is newer
     than the passkey's last use. False means refuse the sign-in: the same
@@ -254,7 +257,7 @@ def record_sign_in(get_db, passkey_id: int, sign_count: int, issued_at: int, *,
     return _once._run(get_db, sql, [sign_count, used_at, passkey_id, issued_at]) == 1
 
 
-def user_handle_for(secret_key, account_id: int) -> bytes:
+def user_handle_for(secret_key: Union[str, bytes], account_id: int) -> bytes:
     """A stable, opaque per-account handle for the authenticator to store.
 
     The spec asks for one that reveals nothing (no e-mail, no row number in
