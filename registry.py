@@ -66,13 +66,19 @@ class ToolIdentity:
     entitlement_key: str          #: the hub's key, and PROVISION_SECRET_<KEY>
     display_name: str             #: the brand, as it reaches a person
     canonical_domain: str         #: the one address that serves the tool
-    locales: tuple[str, ...]      #: the participant languages it publishes
+    locales: tuple[str, ...]      #: the languages its legal notices are published in (README §4)
     legacy_domains: tuple[str, ...] = ()   #: 301 to canonical_domain, never served
     short_name: str = ""          #: where a card needs fewer words; defaults to display_name
+    #: The languages its participant pages speak, one per i18n/<lang>.json;
+    #: defaults to `locales`. Layoff and Moral Mirror speak ten, while their
+    #: notices are in one or two (owner, 13 November 2026, FL-135 decision 23).
+    participant_locales: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.short_name:
             object.__setattr__(self, "short_name", self.display_name)
+        if not self.participant_locales:
+            object.__setattr__(self, "participant_locales", self.locales)
 
     @property
     def public_url(self) -> str:
@@ -161,6 +167,7 @@ TOOLS: dict[str, ToolIdentity] = {
             server_path="/var/www/layoff-exercise", port=8000,
             entitlement_key="layoff_exercise", display_name="Layoff Exercise",
             canonical_domain="layoff-exercise.org", locales=("en", "de"),
+            participant_locales=("ar", "de", "en", "es", "fr", "hi", "it", "pt", "ru", "zh"),
         ),
         ToolIdentity(
             key="polarity", repo_dir="polarity-profiler",
@@ -179,6 +186,7 @@ TOOLS: dict[str, ToolIdentity] = {
             server_path="/var/www/moral-mirror", port=8010,
             entitlement_key="moral_mirror", display_name="Moral Mirror",
             canonical_domain="moral-mirror.org", locales=("en",),
+            participant_locales=("ar", "de", "en", "es", "fr", "hi", "it", "pt", "ru", "zh"),
         ),
         ToolIdentity(
             key="orgsim", repo_dir="Orgdesignsim",

@@ -5,6 +5,15 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## Unreleased
+
+The registry keeps two language lists (owner, 13 November 2026, FL-135
+decision 23). `ToolIdentity.locales` is the languages a tool's legal notices
+are published in, as `server-ops/tool_registry_check.py` already read it; the
+new `participant_locales` is the languages its participant pages speak, and
+defaults to `locales`. Layoff and Moral Mirror speak ten. Nothing in a tool
+reads the new field, so no tool needs a pin bump for it.
+
 ## 1.102.0 — 2026-11-13
 
 The password-again rule is on by default (TO DO FL-129), and the Users page
