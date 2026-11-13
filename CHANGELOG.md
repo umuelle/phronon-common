@@ -18,6 +18,18 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 endpoint before (checked by comparing the route FastAPI builds, before and
 after).
 
+**The legal pages take nothing from the address.** The routes' `doc` and
+`lang` were default arguments, which FastAPI read as query parameters:
+`/privacy?doc=terms` served the terms and `/privacy?doc=nope` answered 500 in
+every tool. Found by the annotations above; `tests/test_legal.py` holds it.
+
+**A tool's card text comes from its own file (TO DO FL-134, first half).**
+`registry.presentation_from_file(path, key)` reads `presentation.json` from
+the tool's folder. `PRESENTATIONS` stays until every tool reads its own file,
+then leaves in a later release. The hub keeps checked copies
+(`server-ops/fleet_files.py`). A test now refuses any runtime module that
+imports the test kit, which `release_gate.py` counts as non-runtime.
+
 ## 1.107.0 — 13 November 2026
 
 **Cleanup release (FL-144, FL-098, FL-131; the owner's "do all of these").**

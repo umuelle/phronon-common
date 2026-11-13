@@ -33,6 +33,8 @@ and by tests.
 """
 from __future__ import annotations
 
+import json
+import os
 from dataclasses import dataclass
 
 
@@ -279,6 +281,41 @@ def display_names() -> tuple[str, ...]:
 #: The hub is not here: its own About page and card deck describe the suite
 #: rather than one exercise, and pretending otherwise would need a shape this
 #: one does not have.
+#: The file each tool keeps its own presentation in (TO DO FL-134,
+#: 13 November 2026), beside app.py; the hub keeps a checked copy of each in
+#: Phronon/fleet_presentations/<key>.json (server-ops/fleet_files.py).
+PRESENTATION_FILE = "presentation.json"
+_PRESENTATION_FIELDS = ("key", "tagline", "blurb", "audience", "duration", "how")
+
+
+def presentation_from_file(path: str | os.PathLike[str], key: str) -> ToolPresentation:
+    """A tool's presentation from its own JSON file.
+
+    The text used to live in PRESENTATIONS below, so a wording change for one
+    tool was a shared release that restarted all ten services. Now it is that
+    tool's file: its own deploy ships it. The file names its key, and it must
+    be the key the tool passes; every field is present and non-empty, `how`
+    a list of sentences.
+    """
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    if not isinstance(data, dict) or sorted(data) != sorted(_PRESENTATION_FIELDS):
+        raise ValueError(f"{path}: needs exactly the fields {', '.join(_PRESENTATION_FIELDS)}")
+    if data["key"] != key:
+        raise ValueError(f"{path}: written for {data['key']!r}, read for {key!r}")
+    how = data["how"]
+    if not (isinstance(how, list) and how and all(isinstance(x, str) and x for x in how)):
+        raise ValueError(f"{path}: 'how' must be a list of non-empty sentences")
+    for name in ("tagline", "blurb", "audience", "duration"):
+        if not (isinstance(data[name], str) and data[name].strip()):
+            raise ValueError(f"{path}: {name!r} must be a non-empty string")
+    return ToolPresentation(key=key, tagline=data["tagline"], blurb=data["blurb"],
+                            audience=data["audience"], duration=data["duration"], how=tuple(how))
+
+
+#: TRANSITIONAL (FL-134): each tool reads its own presentation.json since
+#: 13 November 2026. This copy stays until every tool runs code that no
+#: longer imports it, then leaves in a later release.
 PRESENTATIONS: dict[str, ToolPresentation] = {
     p.key: p for p in (
         ToolPresentation(
