@@ -35,7 +35,7 @@ function names on top. Drawbridge adopts it first; nothing changes for a tool
 until it does. New optional dependency group `db` (mysql-connector-python,
 which every tool already pins).
 
-## 1.104.0 — 14 November 2026
+## 1.104.0 — 13 November 2026
 
 **The notices say what a rate limit holds in memory (FL-150, the owner's
 wording).** Since 1.103.0 "Mail me my deletion link" also counts per
@@ -47,7 +47,7 @@ rate-limiting; they are held in memory only, for at most an hour, and never
 written to the database", and the same in German. Each tool moves its
 `notice_version` with the deploy that follows this release.
 
-## 1.103.0 — 14 November 2026
+## 1.103.0 — 13 November 2026
 
 **The Users page (FL-148).** A delete takes the account's passkeys, its
 pending links and the account in ONE transaction: where another table of the
