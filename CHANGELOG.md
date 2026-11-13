@@ -5,6 +5,25 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.105.0 — 13 November 2026
+
+**One shared database module (`database`, FL-113).** A tool's pool and query
+helpers, built from the strictest copy of each piece in the ten `db.py`
+files: a request waits up to ten seconds for a free connection, a connection
+is revived if MySQL restarted, every connection runs in UTC and utf8mb4, a
+failed write is rolled back, a transaction is opened with
+`start_transaction()` (all or nothing also where the tool runs with
+autocommit on), and every connection goes back in a `finally`. `insert`
+answers the new row's id and `write` the rows changed; `transaction`,
+`in_transaction` (a callback with a cursor) and `named_lock` (GET_LOCK) come
+with it. The settings are read at the first query, from
+`DatabaseSettings.from_env`, which reads `DB_HOST` like every tool (Controversy
+Generator's fixed `localhost` goes when it adopts this). A tool chooses its
+pool's name and size, its collation and `autocommit`, and keeps its own
+function names on top. Drawbridge adopts it first; nothing changes for a tool
+until it does. New optional dependency group `db` (mysql-connector-python,
+which every tool already pins).
+
 ## 1.104.0 — 14 November 2026
 
 **The notices say what a rate limit holds in memory (FL-150, the owner's

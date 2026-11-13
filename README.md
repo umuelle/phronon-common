@@ -30,6 +30,7 @@ imports. One version, everywhere, or the deploy stops.
 | `translations` | the `i18n/<lang>.json` loader and `t()`: English fallback per string, escaped values in templates, the merged strings as cached JSON for the browser |
 | `sessions` | instantly revocable admin sessions (`session_epoch`) |
 | `signing` | signed-cookie helpers (itsdangerous) |
+| `database` | a tool's connection pool and query helpers: the wait for a free connection, UTC, rollback on a failed write, all-or-nothing transactions; the tool keeps its own function names on top (FL-113; Drawbridge first) |
 
 ### Accounts and access
 

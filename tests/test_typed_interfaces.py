@@ -22,7 +22,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 TYPED = (
-    "account_kit", "assets", "audit", "countries", "csrf", "hosts", "joincode",
+    "account_kit", "assets", "audit", "countries", "csrf", "database", "hosts", "joincode",
     "kanon", "legal_content", "lockout", "once", "participant", "passwords",
     "rate_limit", "registry", "request_ip", "retention_heartbeat", "routing",
     "scheduler", "security_headers", "sessions", "signing", "translations",
