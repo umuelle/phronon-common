@@ -99,7 +99,6 @@ body:has(> .ph-footer) > .ph-footer { margin-top: auto; }
   margin-top: var(--ph-space-2xl, 3rem);
   padding: var(--ph-space-xl, 2rem) var(--ph-space-md, 1rem);
   border-top: 1px solid var(--ph-color-border, #dee2e6);
-  background: var(--ph-color-light, #f8f9fa);
   font-size: var(--ph-font-size-sm, 0.875rem);
   text-align: center;
   color: var(--ph-color-text-light, #666);

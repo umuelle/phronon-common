@@ -201,9 +201,21 @@ def live_sending_status(project_root: Path) -> tuple:
     return "send", ""
 
 
-#: Where a tool records the day it last sent its full set. One file per tool,
-#: beside the code, so it travels with the checkout the deploy tests.
+#: Where a tool records the day it last sent its full set. One file per tool.
 FULL_SEND_STAMP = ".last-full-mail-send"
+#: The folder for it, when set (TO DO FL-131, 13 November 2026). deploy.sh sets
+#: /var/lib/phronon-mail/<key>, which the tool's own service user may write, so
+#: the server's test run can later run as that user; the checkout it tests is
+#: root's and read-only to it. Unset (the Mac, CI, a hand-run script), the
+#: stamp stays beside the code, as before.
+STAMP_DIR_ENV = "PHRONON_MAIL_STAMP_DIR"
+
+
+def _stamp_paths(project_root: Path) -> tuple[Path, Path]:
+    """(where the stamp is written, where an older one may still be read)."""
+    beside_code = Path(project_root) / FULL_SEND_STAMP
+    folder = os.environ.get(STAMP_DIR_ENV, "").strip()
+    return (Path(folder) / FULL_SEND_STAMP if folder else beside_code), beside_code
 
 
 def full_set_due(project_root: Path, today: str | None = None) -> bool:
@@ -216,23 +228,37 @@ def full_set_due(project_root: Path, today: str | None = None) -> bool:
     budget on proving the same thing over and over, and then every further
     deploy of that tool failed on `450 Mail send limit exceeded`. That happened
     on 18 September, to Polarity Profiler, during this very change.
+
+    A stamp in the new folder wins; while it has none, the one beside the code
+    is read, so moving the stamp sends no second full set that day.
     """
-    stamp = Path(project_root) / FULL_SEND_STAMP
     day = today or _dt.date.today().isoformat()
-    try:
-        return stamp.read_text(encoding="utf-8").strip() != day
-    except OSError:
-        return True          # no stamp, or unreadable: send the full set
+    for stamp in dict.fromkeys(_stamp_paths(project_root)):
+        try:
+            return stamp.read_text(encoding="utf-8").strip() != day
+        except OSError:
+            continue
+    return True              # no stamp, or unreadable: send the full set
 
 
 def record_full_send(project_root: Path, today: str | None = None) -> None:
     """Remember that the full set went today. Never fatal: a read-only
-    checkout should degrade to sending the full set, not to failing."""
+    checkout should degrade to sending the full set, not to failing.
+
+    Written beside and then renamed over the old stamp, so a user who may
+    write the folder replaces a stamp another user wrote (root today, the
+    service user later)."""
     day = today or _dt.date.today().isoformat()
+    stamp = _stamp_paths(project_root)[0]
+    tmp = stamp.with_name(f"{stamp.name}.{os.getpid()}.tmp")
     try:
-        (Path(project_root) / FULL_SEND_STAMP).write_text(day + "\n", encoding="utf-8")
+        tmp.write_text(day + "\n", encoding="utf-8")
+        os.replace(tmp, stamp)
     except OSError:
-        pass
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
 
 
 def raise_if_not_sent(answer, what: str = "this sample") -> None:

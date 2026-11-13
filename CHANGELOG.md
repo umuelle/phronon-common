@@ -5,6 +5,22 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.107.0 — 13 November 2026
+
+**Cleanup release (FL-144, FL-098, FL-131; the owner's "do all of these").**
+- The footer: `design-tokens.css` no longer paints `.ph-footer` a pale band,
+  and `backoffice-core.css` stretches the footer across a sign-in page
+  (`.bo-body--login > .ph-footer`). The tools' own sheets drop the lines that
+  took the band off; their dark pages keep their own text colours.
+- `chart-table.js` is retired: no tool uses Chart.js any more. Its
+  `.chart-data` rules stay, for the chart engine's data tables.
+- The daily full-mail-set stamp is written to the folder named by
+  `PHRONON_MAIL_STAMP_DIR` when set (deploy.sh: `/var/lib/phronon-mail/<key>`,
+  writable by the tool's service user), by replacing the file; the old stamp
+  beside the code still counts until the folder has one.
+- The package stays Python 3.10-compatible: the server's alert job imports
+  `registry` with Ubuntu's 3.10 (TO DO FL-097).
+
 ## 1.106.0 — 13 November 2026
 
 **A tool may serve the shared styles and scripts from the release it runs

@@ -36,7 +36,6 @@ ASSETS = {
     "two-factor.css":          "static/css/two-factor.css",
     "share-card-download.js":  "static/js/share-card-download.js",
     "actions.js":              "static/js/actions.js",
-    "chart-table.js":          "static/js/chart-table.js",
     "svg-charts.js":           "static/js/svg-charts.js",
     "dashboard-table.js":      "static/js/dashboard-table.js",
     "bulk-select.js":          "static/js/bulk-select.js",
@@ -59,10 +58,9 @@ ASSETS = {
 #     static/vendor/fonts/fonts.css, so the master would add ten 404s per page.
 #   * rank-a11y.js: only the drag-ranking exercises, Layoff and Whiteout.
 #   * svg-charts.js (the fleet chart engine, FL-027): not OrgDesignSim, whose
-#     fairness scatter is server-rendered SVG that works with JS off; not
-#     Polarity Profiler, still on Chart.js.
-#   * chart-table.js (accessible tables for Chart.js charts, FL-012): only
-#     Polarity Profiler, the last tool on Chart.js; it goes when PP is ported.
+#     fairness scatter is server-rendered SVG that works with JS off. No tool
+#     uses Chart.js any more, and its table helper chart-table.js was retired
+#     in 1.107.0 (TO DO FL-098).
 #   * actions.js (the delegated-actions dispatcher, FL-017): not Moral Mirror
 #     or Whiteout, which use small per-feature scripts (confirm-submit.js,
 #     bulk-select.js), a different design rather than a drifted copy.

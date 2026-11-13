@@ -59,9 +59,9 @@
 }
 
 /* ── Chart data tables (FL-012) ────────────────────────────────────────────
-   Built by the shared chart-table.js from each Chart.js chart's own data, so a
-   chart's numbers are readable as text (WCAG 1.1.1) instead of living only in
-   a canvas. Collapsed by default: the chart is the primary presentation, and
+   Built by the chart engine (svg-charts.js, dataTable) beside each chart, so a
+   chart's numbers are readable as text (WCAG 1.1.1) and not only as a
+   drawing. Collapsed by default: the chart is the primary presentation, and
    an always-open table doubles the length of a results page.
 
    Participant-facing charts need these rules too — Inequality's results page
@@ -241,6 +241,10 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
 .bo-body--login {
   display: flex; align-items: center; justify-content: center; min-height: 100dvh; background: var(--bo-bg);
 }
+/* A sign-in or password-reset page centres one column, which would shrink the
+   fleet's footer to that column's width; the footer spans the page (README §3,
+   "The footer"; in the tools' own sheets until 1.107.0, TO DO FL-144). */
+.bo-body--login > .ph-footer { align-self: stretch; }
 .back-link:hover { color: var(--bo-primary); }
 .bo-table {
   width: 100%; border-collapse: collapse; font-size: .875rem; background: var(--bo-surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-card);
