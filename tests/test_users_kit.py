@@ -27,7 +27,7 @@ USERS = "/backoffice/users"
 class UsersWorld(World):
     """The account kit's world with the Users page mounted on it."""
 
-    def __init__(self, get_db, tmp_path, roles=("admin", "educator"), **adapter):
+    def __init__(self, get_db, tmp_path, roles=("admin", "educator"), users_adapter=None, **adapter):
         super().__init__(get_db, tmp_path, **adapter)
         self.owned: dict[int, int] = {}       # account id -> sessions it owns
         self.mail_ok = True
@@ -44,7 +44,8 @@ class UsersWorld(World):
         self.roles = roles
         self.users = users_kit.UsersKit(account=self.kit,
                                         session_counts=lambda: dict(self.owned),
-                                        admin_role=roles[0], educator_role=roles[1])
+                                        admin_role=roles[0], educator_role=roles[1],
+                                        **(users_adapter or {}))
         self.app.include_router(users_kit.build_users_router(self.users))
 
     def admin(self, **cols):
@@ -499,3 +500,34 @@ def test_the_kits_templates_are_the_account_kits(world):
     """They ship in the same folder and are found under the same prefix."""
     names = {p.name for p in kit_mod.TEMPLATE_DIR.glob("user*.html")}
     assert names == {"users.html", "user_edit.html"}
+
+
+def test_a_button_asks_through_the_script_the_tool_has(world):
+    """Moral Mirror has no actions.js: its buttons ask through confirm-submit.js
+    and `data-confirm-submit`. A Delete that carried only `data-confirm` there
+    would act without asking."""
+    plain = world()
+    admin, person = plain.admin(), plain.educator()
+    page = plain.signed_in(admin).get(USERS).text
+    assert "data-confirm=" in page and "data-confirm-submit" not in page
+    assert "/static/js/confirm-submit.js" not in page
+
+    mm = world(users_adapter=dict(confirm_attribute="data-confirm-submit",
+                                  extra_scripts=("/static/js/confirm-submit.js",)))
+    admin, person = mm.admin(), mm.educator()
+    page = mm.signed_in(admin).get(USERS).text
+    for action in ("deactivate", "delete", "reset-two-factor"):
+        if action == "reset-two-factor":
+            mm.run(f"UPDATE {mm.T} SET totp_enabled=1 WHERE id=%s", (person["id"],))
+            page = mm.signed_in(admin).get(USERS).text
+        block = re.search(rf'<form[^>]*/{person["id"]}/{action}".*?</form>', page, re.S).group(0)
+        assert 'data-confirm-submit="' in block and ' data-confirm="' not in block, action
+    assert '<script src="/static/js/confirm-submit.js" defer></script>' in page
+
+
+def test_the_adapter_refuses_a_confirm_attribute_or_script_it_does_not_know(world):
+    w = world()
+    for bad in (dict(confirm_attribute="onclick"), dict(extra_scripts=("https://elsewhere.example/x.js",)),
+                dict(extra_scripts=('/static/a.js" onload="x',))):
+        with pytest.raises(ValueError):
+            users_kit.UsersKit(account=w.kit, session_counts=dict, **bad)

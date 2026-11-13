@@ -80,6 +80,9 @@ PATHS = (USERS_URL, INVITE_URL, BULK_URL, EDIT_URL, SEND_LINK_URL, DEACTIVATE_UR
 #: The paths that answer GET (and HEAD) as well.
 GET_PATHS = (USERS_URL, EDIT_URL)
 
+#: The two ways a button in the fleet asks before it acts (UsersKit.confirm_attribute).
+CONFIRM_ATTRIBUTES = ("data-confirm", "data-confirm-submit")
+
 #: How long the link in an invitation lives (decision 1).
 INVITE_HOURS = 72
 
@@ -138,6 +141,21 @@ class UsersKit:
     educator_role: str = "educator"
     #: How long an invitation's link lives.
     invite_hours: int = INVITE_HOURS
+    #: The attribute the page puts on a button that asks before it acts: the
+    #: fleet's `data-confirm` (static/js/actions.js), or Moral Mirror's
+    #: `data-confirm-submit` (static/js/confirm-submit.js), which has no
+    #: actions.js. The bulk bar asks through bulk-select.js either way.
+    confirm_attribute: str = "data-confirm"
+    #: Scripts the page loads besides bulk-select.js, as paths the tool serves
+    #: (Moral Mirror: its confirm-submit.js).
+    extra_scripts: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.confirm_attribute not in CONFIRM_ATTRIBUTES:
+            raise ValueError(f"confirm_attribute must be one of {CONFIRM_ATTRIBUTES}")
+        for path in self.extra_scripts:
+            if not path.startswith("/static/") or '"' in path or " " in path:
+                raise ValueError(f"not a plain static path: {path!r}")
 
 
 def build_users_router(users: UsersKit) -> APIRouter:
@@ -216,7 +234,9 @@ def build_users_router(users: UsersKit) -> APIRouter:
              **context: Any) -> Response:
         context.update(account=me, users_kit={
             "tool_name": kit.tool_name, "invite_hours": users.invite_hours,
-            "reset_hours": kit.reset_token_hours})
+            "reset_hours": kit.reset_token_hours,
+            "confirm_submit": users.confirm_attribute == "data-confirm-submit",
+            "extra_scripts": users.extra_scripts})
         return kit.render(request, account_kit.template(name), context,
                           status_code=status_code, csrf_for=me, preauth=False)
 
@@ -258,7 +278,10 @@ def build_users_router(users: UsersKit) -> APIRouter:
         except Exception:  # noqa: BLE001
             kit.logger.exception("the link to set a password could not be sent")
             return False
-        if not sent:
+        # `is False`: the shared senders answer True or False; a stand-in that
+        # answers nothing (a test's recorder) counts as sent, as it does for the
+        # account kit's own mails.
+        if sent is False:
             return False
         store_link(row["id"], raw, users.invite_hours if invited else kit.reset_token_hours)
         return True

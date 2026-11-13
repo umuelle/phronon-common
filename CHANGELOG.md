@@ -5,6 +5,27 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.102.0 — 2026-11-13
+
+The password-again rule is on by default (TO DO FL-129), and the Users page
+learns two things Moral Mirror needs.
+
+- **`AccountKit.ask_again` defaults to `True`.** All ten tools had set it (the
+  hub has the rule in its own code), so a tool no longer says so. `False` still
+  turns the rule off, so that a live commit which says it is not broken by this
+  release; the field goes in the release after the last tool has dropped its
+  `ask_again=True` line.
+- **`UsersKit.confirm_attribute` and `extra_scripts`.** A button on the Users
+  page asks before it acts through the attribute the tool's own script reads:
+  `data-confirm` (static/js/actions.js, the fleet's) or `data-confirm-submit`
+  (Moral Mirror's confirm-submit.js, which has no actions.js). Without this a
+  Delete there would have acted without asking. `extra_scripts` names scripts
+  the page loads besides bulk-select.js. Defaults leave a tool that sets
+  neither unchanged.
+- Inequality and Moral Mirror mount the page (their own had the faults the
+  review found; Moral Mirror's delete and Inequality's removed an account's
+  sessions with the participants' data).
+
 ## 1.101.0 — 2026-11-12
 
 One Users page for the fleet (TO DO FL-133, from the fleet review of

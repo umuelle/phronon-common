@@ -299,7 +299,7 @@ class World:
                 f"USERS PAGE for {admin['email']}"),
             audit=audit, bcrypt=bcrypt,
             client_ip=lambda request: "kit-test-client", reset_token_hours=2,
-            mail_module=mail.__name__, ask_again=True)
+            mail_module=mail.__name__)    # ask_again: the kit's default, True since 1.102.0
         settings.update(adapter)
         self.kit = kit_mod.AccountKit(**settings)
         app = FastAPI()
@@ -706,10 +706,10 @@ def test_an_open_session_alone_cannot_add_a_passkey(world):
     assert "data-passkey-password" in page and 'autocomplete="current-password"' in page
 
 
-def test_a_tool_that_has_not_switched_it_on_behaves_as_before(world):
-    """1.100.0 changes nothing in a tool whose adapter does not say `ask_again`:
-    the release has to pass every tool's live tests, and each tool switches the
-    rule on in the deploy that carries its own tests for it."""
+def test_a_tool_that_still_sets_it_off_behaves_as_before(world):
+    """Since 1.102.0 the rule is on unless the adapter says `ask_again=False`.
+    Saying it still works, so that the release can be verified against a live
+    commit that does; the field goes in the release after the last such commit."""
     from phronon_common.testing.soft_authenticator import SoftAuthenticator
     w = world(ask_again=False)
     acc = w.account(totp_enabled=1, totp_secret=SECRET32)

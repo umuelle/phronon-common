@@ -450,11 +450,12 @@ class AccountKit:
     #: Ask for the account's password again before a change to HOW it signs in
     #: (a passkey added, the authenticator replaced, two-factor switched off),
     #: and let the account's own passkey sign in while wrong passwords have
-    #: locked it (FL-129, 1.100.0). Off unless the tool says so, for now: a
-    #: tool switches it on in the deploy that also carries its own tests for
-    #: it, so this release changes nothing in a tool that has not. The default
-    #: becomes True, and this field goes, once all ten have (TO DO FL-129).
-    ask_again: bool = False
+    #: locked it (FL-129, 1.100.0). On unless the tool says otherwise, since
+    #: 1.102.0: all ten tools had switched it on by then, and a tool no longer
+    #: needs to say so. Saying False still turns the rule off, so that a tool
+    #: whose live commit still does is not broken by the release; the field
+    #: goes once none does (TO DO FL-129).
+    ask_again: bool = True
     #: Path prefixes the gate guards (must-change, forced enrolment). Layoff's
     #: administrators also work under /admin.
     gated_prefixes: tuple[str, ...] = ("/backoffice",)

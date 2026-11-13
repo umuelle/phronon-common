@@ -98,14 +98,14 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="btn btn-sm btn-secondary"
                     title="For a lost phone: clears the second factor so they can enrol again"
-                    data-confirm="Reset two-factor login for {{ u.display_name or u.email }}? They will sign in with their password alone until they set it up again, and will be told by e-mail.">Reset 2FA</button>
+                    {% if users_kit.confirm_submit %}data-confirm-submit{% else %}data-confirm{% endif %}="Reset two-factor login for {{ u.display_name or u.email }}? They will sign in with their password alone until they set it up again, and will be told by e-mail.">Reset 2FA</button>
           </form>
           {% endif %}
           {% if not u.last_admin %}
           <form method="post" action="/backoffice/users/{{ u.id }}/deactivate">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="btn btn-sm btn-secondary"
-                    data-confirm="Deactivate {{ u.display_name or u.email }}? Nobody can sign in with this account until it is activated again. Its sessions stay.">Deactivate</button>
+                    {% if users_kit.confirm_submit %}data-confirm-submit{% else %}data-confirm{% endif %}="Deactivate {{ u.display_name or u.email }}? Nobody can sign in with this account until it is activated again. Its sessions stay.">Deactivate</button>
           </form>
           {% endif %}
           {% else %}
@@ -118,7 +118,7 @@
           <form method="post" action="/backoffice/users/{{ u.id }}/delete">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="btn btn-sm btn-danger"
-                    data-confirm="Permanently delete the account of {{ u.display_name or u.email }}? This cannot be undone.">Delete</button>
+                    {% if users_kit.confirm_submit %}data-confirm-submit{% else %}data-confirm{% endif %}="Permanently delete the account of {{ u.display_name or u.email }}? This cannot be undone.">Delete</button>
           </form>
           {% endif %}
           {% endif %}
@@ -147,4 +147,5 @@
 
 {% block scripts %}
 <script src="{{ asset('/static/js/bulk-select.js') }}" defer></script>
-{% endblock %}
+{% for path in users_kit.extra_scripts %}<script src="{{ asset(path) }}" defer></script>
+{% endfor %}{% endblock %}
