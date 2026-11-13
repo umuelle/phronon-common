@@ -91,6 +91,28 @@ def test_privacy_art13_essentials(key):
         assert needle in html, f"{key}: privacy notice lacks {needle!r}"
 
 
+@pytest.mark.parametrize("key", list(TOOLS))
+def test_the_privacy_notice_says_what_a_rate_limit_holds_in_memory(key):
+    """FL-150 (owner's wording, 14 November 2026): since 1.103.0 "Mail me my
+    deletion link" also counts per recipient, on a digest of the address held
+    in memory for an hour (withdrawal_kit.LINK_RECIPIENT_LIMIT). The notice
+    said only IP addresses were held. It says both now, wherever it says it."""
+    from phronon_common import withdrawal_kit
+    assert withdrawal_kit.LINK_RECIPIENT_LIMIT[1] <= 3600, "the notice promises at most an hour"
+    flat = " ".join(_render(key, "privacy", "en").split())
+    assert flat.count("a one-way digest of an e-mail address that asked for a deletion link, "
+                      "are processed for rate-limiting; they are held in memory only, for at "
+                      "most an hour, and never written to the database") == 2
+    assert "IP addresses processed for rate-limiting" not in flat
+
+
+def test_the_german_notice_says_it_too():
+    flat = " ".join(_render(GERMAN, "privacy", "de").split())
+    assert flat.count("ein Einweg-Hashwert einer E-Mail-Adresse, die einen Löschlink angefordert "
+                      "hat, werden für das Rate-Limiting verarbeitet; sie werden nur im "
+                      "Arbeitsspeicher gehalten, höchstens eine Stunde lang") == 2
+
+
 def test_german_ui_tools_have_german_notice():
     # Part 1.2a: a tool that addresses users in German owes them the notice
     # in German. Adding "de" to a tool's languages without German prose must

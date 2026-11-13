@@ -8,8 +8,10 @@ Browser-Kennung. Diese Protokolle dienen ausschließlich dem Betrieb und der
 Absicherung des Dienstes, werden nicht mit anderen Daten zusammengeführt, nicht
 zur Identifizierung von Personen oder zur Profilbildung verwendet und nach
 <strong>{{ cfg.log_retention_days }} Tagen</strong> rotiert und gelöscht.
-Für das Rate-Limiting verarbeitete IP-Adressen werden nur im Arbeitsspeicher
-gehalten und nie in die Datenbank geschrieben.</p>
+IP-Adressen und ein Einweg-Hashwert einer E-Mail-Adresse, die einen Löschlink
+angefordert hat, werden für das Rate-Limiting verarbeitet; sie werden nur im
+Arbeitsspeicher gehalten, höchstens eine Stunde lang, und nie in die Datenbank
+geschrieben.</p>
 
 {# The admin audit trail — fleet-wide, 12 August 2026 (FL-002, README §11).
    This paragraph ships in the SAME phronon_common version as the code that
@@ -32,8 +34,9 @@ time, the resource requested, HTTP status, referrer and browser identifier.
 These logs are used solely to operate and secure the service, are not combined
 with other data, are not used to identify individuals or build profiles, and
 are rotated and deleted after <strong>{{ cfg.log_retention_days }} days</strong>.
-IP addresses processed for rate-limiting are held in memory only and never
-written to the database.</p>
+IP addresses, and a one-way digest of an e-mail address that asked for a
+deletion link, are processed for rate-limiting; they are held in memory only,
+for at most an hour, and never written to the database.</p>
 
 {# See the German note above: educators, not participants; ships with v1.13.15. #}
 <p><strong>Administrative audit trail.</strong> If you use an educator account,

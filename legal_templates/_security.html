@@ -7,7 +7,7 @@
   <li>Passwörter werden ausschließlich als <strong>bcrypt-Hashes</strong> gespeichert, nie im Klartext.</li>
   <li>Sitzungscookies sind signiert und <strong>HTTP-only</strong>.</li>
   <li>Schriften werden vom eigenen Server ausgeliefert — keine Drittanbieter-CDNs, es fließen beim Laden keine Daten an Dritte.</li>
-  <li>Für das Rate-Limiting verarbeitete IP-Adressen werden nur im Arbeitsspeicher gehalten und nie in die Datenbank geschrieben.</li>
+  <li>IP-Adressen und ein Einweg-Hashwert einer E-Mail-Adresse, die einen Löschlink angefordert hat, werden für das Rate-Limiting verarbeitet; sie werden nur im Arbeitsspeicher gehalten, höchstens eine Stunde lang, und nie in die Datenbank geschrieben.</li>
 </ul>
 {% else %}
 <ul>
@@ -16,6 +16,6 @@
   <li>Passwords are stored only as <strong>bcrypt hashes</strong>, never in plain text.</li>
   <li>Session cookies are signed and <strong>HTTP-only</strong>.</li>
   <li>Web fonts are served from our own server — no third-party CDNs, so no data flows to third parties when fonts load.</li>
-  <li>IP addresses processed for rate-limiting are held in memory only and never written to the database.</li>
+  <li>IP addresses, and a one-way digest of an e-mail address that asked for a deletion link, are processed for rate-limiting; they are held in memory only, for at most an hour, and never written to the database.</li>
 </ul>
 {% endif %}

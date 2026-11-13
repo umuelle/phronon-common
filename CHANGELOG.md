@@ -5,6 +5,18 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.104.0 — 14 November 2026
+
+**The notices say what a rate limit holds in memory (FL-150, the owner's
+wording).** Since 1.103.0 "Mail me my deletion link" also counts per
+recipient, on a one-way digest of the address. The privacy notice's two
+places that said only IP addresses are held (`_security.html`,
+`_logging.html`) now read, in English: "IP addresses, and a one-way digest of
+an e-mail address that asked for a deletion link, are processed for
+rate-limiting; they are held in memory only, for at most an hour, and never
+written to the database", and the same in German. Each tool moves its
+`notice_version` with the deploy that follows this release.
+
 ## 1.103.0 — 14 November 2026
 
 **The Users page (FL-148).** A delete takes the account's passkeys, its
