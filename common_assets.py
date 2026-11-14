@@ -47,7 +47,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from phronon_common import shared_assets
 
@@ -109,9 +109,9 @@ class CommonAssets:
         return f if f.is_file() else None
 
 
-def install(app, templates, served: list[str]) -> CommonAssets:
+def install(app: Any, templates: Any, served: list[str]) -> CommonAssets:
     """Serve the listed masters from the release, and link them there."""
-    from starlette.responses import FileResponse, PlainTextResponse
+    from starlette.responses import FileResponse, PlainTextResponse, Response
 
     unknown = [a for a in served if a not in shared_assets.ASSETS]
     if not served or unknown:
@@ -121,7 +121,7 @@ def install(app, templates, served: list[str]) -> CommonAssets:
     ca = CommonAssets(served)
     templates.env.globals["asset"] = ca.wrap_asset(templates.env.globals["asset"])
 
-    async def common_file(release: str, master: str):
+    async def common_file(release: str, master: str) -> Response:
         """A shared master as published in a release. Public, like /static."""
         f = ca.file_for(release, master)
         if f is None:
@@ -129,6 +129,8 @@ def install(app, templates, served: list[str]) -> CommonAssets:
         return FileResponse(f, media_type=_MEDIA.get(f.suffix, "application/octet-stream"),
                             headers={"Cache-Control": CACHE})
 
+    # response_model=None: what FastAPI derived from the unannotated function
+    # before; a Response annotation would otherwise ask it for a model.
     app.add_api_route(PREFIX + "/{release}/{master}", common_file,
-                      methods=["GET", "HEAD"], include_in_schema=False)
+                      methods=["GET", "HEAD"], include_in_schema=False, response_model=None)
     return ca

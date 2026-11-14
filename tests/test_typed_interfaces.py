@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 TYPED = (
     "access_log", "account", "account_kit", "adminroutes", "assets", "audit",
-    "countries", "csrf", "database", "demographics", "emails", "exports",
+    "common_assets", "countries", "csrf", "database", "demographics", "emails", "exports",
     "frontend_assets", "hosts", "join_sheet", "joincode", "kanon", "legal",
     "legal_conf", "legal_content", "lockout", "log_privacy", "machine_facing",
     "mail_diagnostics", "once", "participant", "passkeys", "passwords", "provisioning",
