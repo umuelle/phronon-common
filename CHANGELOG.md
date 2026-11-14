@@ -5,6 +5,17 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.109.0 — 14 November 2026
+
+**The shared copy of the card texts is gone (TO DO FL-134, second half).**
+`registry.PRESENTATIONS` is removed: every tool reads its own
+`presentation.json` through `registry.presentation_from_file` since 1.108.0,
+and the hub its checked copies. `tests/test_orgsim_card.py` moved to
+OrgDesignSim, which owns that text now; `tests/test_presentation_file.py`
+tests the loader on a made-up card and holds that the copy stays gone. No
+behaviour changes: no running code read the copy.
+
+
 ## 1.108.0 — 13 November 2026
 
 **Seventeen more modules pass the type checker (TO DO FL-112).** `access_log`,

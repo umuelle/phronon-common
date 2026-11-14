@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from phronon_common.registry import PRESENTATIONS, presentation_from_file  # noqa: E402
+from phronon_common.registry import ToolPresentation, presentation_from_file  # noqa: E402
 
 
 def _write(tmp_path: Path, data: dict) -> Path:
@@ -20,14 +20,17 @@ def _write(tmp_path: Path, data: dict) -> Path:
 
 
 def _as_file(key: str) -> dict:
-    p = PRESENTATIONS[key]
-    return {"key": key, "tagline": p.tagline, "blurb": p.blurb, "audience": p.audience,
-            "duration": p.duration, "how": list(p.how)}
+    # A made-up card; the real ones are each tool's own file, tested there.
+    return {"key": key, "tagline": "A tagline.", "blurb": "What it does – in “quotes”.",
+            "audience": "Students & seminars", "duration": "20 min + debrief",
+            "how": ["The educator creates a session.", "Participants join; then they discuss."]}
 
 
-@pytest.mark.parametrize("key", sorted(PRESENTATIONS))
-def test_a_file_reads_back_as_the_same_presentation(tmp_path, key):
-    assert presentation_from_file(_write(tmp_path, _as_file(key)), key) == PRESENTATIONS[key]
+def test_a_file_reads_back_as_the_same_presentation(tmp_path):
+    assert presentation_from_file(_write(tmp_path, _as_file("layoff")), "layoff") == ToolPresentation(
+        key="layoff", tagline="A tagline.", blurb="What it does – in “quotes”.",
+        audience="Students & seminars", duration="20 min + debrief",
+        how=("The educator creates a session.", "Participants join; then they discuss."))
 
 
 def test_a_file_for_another_tool_is_refused(tmp_path):
@@ -46,3 +49,10 @@ def test_a_file_with_a_missing_or_empty_field_is_refused(tmp_path, change):
     del data["blurb"]
     with pytest.raises(ValueError, match="needs exactly the fields"):
         presentation_from_file(_write(tmp_path, data), "layoff")
+
+
+def test_the_shared_copy_is_gone():
+    # TO DO FL-134, done 14 November 2026: every tool reads its own file, and a
+    # second copy here would drift from it without anyone seeing.
+    import phronon_common.registry as registry
+    assert not hasattr(registry, "PRESENTATIONS")
