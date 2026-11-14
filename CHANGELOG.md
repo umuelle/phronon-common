@@ -5,6 +5,16 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## 1.110.0 — 14 November 2026
+
+**Every module of the package passes the type checker (TO DO FL-112).**
+`common_assets` joined `TYPED` in `tests/test_typed_interfaces.py`, the last
+module outside it. Annotations only: `install()` takes `app` and `templates`
+as `Any`, and its `/common/<release>/<master>` route is annotated to return a
+`Response`, with `response_model=None` so FastAPI builds the same route it
+derived from the unannotated function. No behaviour changes.
+
+
 ## 1.109.0 — 14 November 2026
 
 **The shared copy of the card texts is gone (TO DO FL-134, second half).**
