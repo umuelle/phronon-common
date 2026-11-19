@@ -5,6 +5,17 @@ each tool's CI: `phronon_common @ git+…@vX.Y.Z`), so a change here only reache
 tool when its pin is deliberately bumped — never implicitly on the next restart.
 
 
+## Unreleased
+
+**The hub signs in at the fleet's addresses (Phronon PH-007, 19 November
+2026).** `registry.ToolIdentity.login_path` and `dashboard_path` answer
+`BACKOFFICE_LOGIN` and `BACKOFFICE_DASHBOARD` for every tool, the hub included;
+`HUB_LOGIN` and `HUB_DASHBOARD` are gone (nothing on the server read them; the
+Mac's deploy checks read the sibling checkout). The hub mounts the account kit
+since that day and forwards its old `/admin` addresses. A comment in
+`shared_assets.py` names what the hub now carries.
+
+
 ## 1.110.0 — 14 November 2026
 
 **Every module of the package passes the type checker (TO DO FL-112).**

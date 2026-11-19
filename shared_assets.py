@@ -50,9 +50,10 @@ ASSETS = {
 
 # WHY A TOOL CARRIES FEWER (the lists themselves are in each ops/tool.json).
 # Only a tool that uses an asset gets a copy.
-#   * The Phronon hub has no participant flow and no educator backoffice
-#     vocabulary: it carries only recovery-codes.js and passkeys.js, which all
-#     nine need for two-factor and passkeys.
+#   * The Phronon hub has no participant flow: it carries what the account
+#     kit's pages and its backoffice need (the tokens, the two backoffice
+#     sheets, two-factor.css, actions.js, recovery-codes.js and passkeys.js;
+#     since PH-007, 19 November 2026).
 #   * design-tokens.css: not Layoff. The master carries @font-face rules for
 #     self-hosted Source Serif 4 / Source Sans 3; Layoff uses Inter from its own
 #     static/vendor/fonts/fonts.css, so the master would add ten 404s per page.

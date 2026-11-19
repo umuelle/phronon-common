@@ -46,13 +46,11 @@ from dataclasses import dataclass
 # /backoffice. Now one shape: sign in at BACKOFFICE_LOGIN, land on
 # BACKOFFICE_DASHBOARD, and /backoffice or /backoffice/ lead to one or the
 # other depending on whether you are signed in. The old addresses redirect.
-# The hub keeps /admin (a different area, two or three accounts) and sends
-# /backoffice/login on to HUB_LOGIN. Read these here; never spell them out
-# again in a script.
+# The hub kept /admin until it moved onto the account kit (PH-007, 19 November
+# 2026); since then all ten answer these, and the hub forwards its old /admin
+# addresses. Read these here; never spell them out again in a script.
 BACKOFFICE_LOGIN = "/backoffice/login"
 BACKOFFICE_DASHBOARD = "/backoffice/dashboard"
-HUB_LOGIN = "/admin/login"
-HUB_DASHBOARD = "/admin"
 
 
 @dataclass(frozen=True)
@@ -88,14 +86,14 @@ class ToolIdentity:
 
     @property
     def login_path(self) -> str:
-        """Where an account holder signs in. One address fleet-wide since
-        3 October 2026 (see BACKOFFICE_LOGIN); the hub's area is /admin."""
-        return HUB_LOGIN if self.key == "phronon" else BACKOFFICE_LOGIN
+        """Where an account holder signs in: one address fleet-wide since
+        3 October 2026, the hub's too since 19 November 2026 (BACKOFFICE_LOGIN)."""
+        return BACKOFFICE_LOGIN
 
     @property
     def dashboard_path(self) -> str:
         """Where a signed-in account holder lands: the sessions list."""
-        return HUB_DASHBOARD if self.key == "phronon" else BACKOFFICE_DASHBOARD
+        return BACKOFFICE_DASHBOARD
 
     @property
     def default_sender(self) -> str:
