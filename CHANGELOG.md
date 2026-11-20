@@ -30,6 +30,12 @@ reads only that folder's stamp; the stamp beside the code, read as well since
 1.105.0 for the days the stamp moved, no longer counts. Without the variable
 (the Mac, CI, a hand-run script) the stamp is beside the code, as before.
 
+**The package ships its type marker.** `py.typed` is in the wheel, so a type
+checker reads an installed `phronon_common` as typed. Without it, Moral
+Mirror's and Drawbridge's `tests/test_typed_interfaces.py` (in every tool
+since 19 November 2026) failed in the release rehearsal and in CI, where the
+package is installed, while passing beside the sources.
+
 **The hub signs in at the fleet's addresses (Phronon PH-007, 19 November
 2026).** `registry.ToolIdentity.login_path` and `dashboard_path` answer
 `BACKOFFICE_LOGIN` and `BACKOFFICE_DASHBOARD` for every tool, the hub included;

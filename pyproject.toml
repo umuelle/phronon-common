@@ -88,4 +88,10 @@ package-dir = { "phronon_common" = ".", "phronon_common.testing" = "testing" }
 #
 # The account kit's pages (account_templates/, FL-083) render inside each
 # tool's own layout; a wheel without them would 500 the account page in CI.
-phronon_common = ["legal_templates/*.html", "legal_templates/*.css", "account_templates/*.html", "*.css", "*.js"]
+#
+# py.typed (PEP 561, since 1.111.0): every module passes the strict type flags,
+# and a tool's own tests/test_typed_interfaces.py checks its code against them.
+# Without the marker a type checker treats an INSTALLED phronon_common (the
+# release rehearsal, CI) as untyped, and Moral Mirror's and Drawbridge's typed
+# modules failed there on "Returning Any" while passing beside the sources.
+phronon_common = ["legal_templates/*.html", "legal_templates/*.css", "account_templates/*.html", "*.css", "*.js", "py.typed"]
