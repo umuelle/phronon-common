@@ -190,7 +190,7 @@ def _moment(value: Any) -> Optional[str]:
 
 
 def build_hub_accounts_router(users: UsersKit, tool: ToolIdentity) -> APIRouter:
-    """The one address the hub's People page reads this tool's accounts from.
+    """The one address the hub's Users page reads this tool's accounts from.
 
     Only a caller with this tool's own provisioning secret gets an answer.
     The columns are named in the query, so a hash, a secret or a recovery code

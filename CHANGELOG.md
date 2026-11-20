@@ -22,7 +22,13 @@ with its traceback. A tool mounts it beside its Users page; nothing is mounted
 by itself, so a tool on this release that does not mount it is unchanged.
 `users_kit.role_name` is the page's role spelling as a module function. The
 test kit gains `testing.hub_accounts.assert_the_hub_reads_accounts`, which each
-tool's own suite calls. The Phronon hub's People page reads the route.
+tool's own suite calls. The Phronon hub's Users page reads the route.
+
+**The test-mail stamp is read in one place (TO DO FL-156).** With
+`PHRONON_MAIL_STAMP_DIR` set (every test run a deploy starts), `full_set_due`
+reads only that folder's stamp; the stamp beside the code, read as well since
+1.105.0 for the days the stamp moved, no longer counts. Without the variable
+(the Mac, CI, a hand-run script) the stamp is beside the code, as before.
 
 **The hub signs in at the fleet's addresses (Phronon PH-007, 19 November
 2026).** `registry.ToolIdentity.login_path` and `dashboard_path` answer

@@ -2,10 +2,10 @@
 
 deploy.sh names /var/lib/phronon-mail/<key> in PHRONON_MAIL_STAMP_DIR so that
 the server's test run can later run as the tool's service user, who may not
-write the checkout. What must hold: the stamp goes to that folder; while the
-folder has none, the old stamp beside the code still counts (no second full
-set the day the stamp moves); a stamp another user wrote is replaced, not
-written into; and without the variable nothing changes.
+write the checkout. What must hold: the stamp goes to that folder and is read
+only there (a stamp beside the code counted as well until 1.111.0, for the
+days the stamp moved; TO DO FL-156); a stamp another user wrote is replaced,
+not written into; and without the variable nothing changes.
 """
 import os
 import stat
@@ -36,12 +36,12 @@ def test_the_stamp_is_written_to_the_named_folder(folders):
     assert [p.name for p in stamps.iterdir()] == [md.FULL_SEND_STAMP], "a temporary file was left"
 
 
-def test_the_old_stamp_beside_the_code_still_counts_until_the_new_one_exists(folders):
+def test_a_stamp_beside_the_code_is_not_read_once_the_folder_is_named(folders):
     code, stamps = folders
     (code / md.FULL_SEND_STAMP).write_text(TODAY + "\n")
+    assert md.full_set_due(code, TODAY) is True, "the old stamp beside the code still counted"
+    (stamps / md.FULL_SEND_STAMP).write_text(TODAY + "\n")
     assert md.full_set_due(code, TODAY) is False
-    (stamps / md.FULL_SEND_STAMP).write_text("2026-11-12\n")
-    assert md.full_set_due(code, TODAY) is True, "the new folder's stamp must win"
 
 
 def test_a_read_only_stamp_of_another_user_is_replaced(folders):
