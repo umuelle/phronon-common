@@ -578,3 +578,69 @@ def test_the_adapter_refuses_a_confirm_attribute_or_script_it_does_not_know(worl
                 dict(extra_scripts=('/static/a.js" onload="x',))):
         with pytest.raises(ValueError):
             users_kit.UsersKit(account=w.kit, session_counts=dict, **bad)
+
+
+# ── the hub's read of the list (FL-157) ───────────────────────────────
+
+def _hub_world(world, **adapter):
+    from phronon_common.registry import TOOLS
+    w = world(**adapter)
+    w.tool = TOOLS["drawbridge"]
+    w.app.include_router(users_kit.build_hub_accounts_router(w.users, w.tool))
+    return w
+
+
+def test_the_hub_router_answers_one_read_only_address(world):
+    w = _hub_world(world)
+    served = {(r.path, m) for r in users_kit.build_hub_accounts_router(w.users, w.tool).routes
+              for m in r.methods}
+    assert served == {(users_kit.HUB_ACCOUNTS_URL, "GET"), (users_kit.HUB_ACCOUNTS_URL, "HEAD")}
+
+
+@pytest.mark.parametrize("roles", [("admin", "educator"), ("ADMIN", "EDUCATOR")])
+def test_the_hub_reads_every_account_with_the_tools_secret_only(world, monkeypatch, roles):
+    from phronon_common.testing import hub_accounts
+    w = _hub_world(world, roles=roles)
+    admin = w.admin(last_login_at="2026-11-19 08:30:00")
+    teacher, gone = w.educator(), w.educator(is_active=0)
+    w.owned[teacher["id"]] = 3
+    listed = hub_accounts.assert_the_hub_reads_accounts(w.client(), w.tool, monkeypatch.setenv, {
+        admin["email"]: {"role": "admin", "active": True, "two_factor": True, "sessions": 0,
+                         "name": "Kit Person"},
+        teacher["email"]: {"role": "educator", "active": True, "two_factor": False,
+                           "sessions": 3, "last_sign_in": None},
+        gone["email"]: {"active": False},
+    })
+    assert listed[admin["email"]]["last_sign_in"].startswith("2026-11-19T08:30")
+    assert w.audits == [] and w.mails == []
+
+
+def test_a_signed_in_administrator_is_no_substitute_for_the_secret(world, monkeypatch):
+    from phronon_common.testing import hub_accounts
+    w = _hub_world(world)
+    monkeypatch.setenv("PROVISION_SECRET_DRAWBRIDGE_DRAMA", hub_accounts.SECRET)
+    assert w.signed_in(w.admin()).get(users_kit.HUB_ACCOUNTS_URL).status_code == 401
+
+
+def test_another_tools_secret_opens_nothing(world, monkeypatch):
+    from phronon_common.testing import hub_accounts
+    w = _hub_world(world)
+    w.admin()
+    monkeypatch.setenv("PROVISION_SECRET_DRAWBRIDGE_DRAMA", "")
+    monkeypatch.setenv("PROVISION_SECRET_WHITEOUT", hub_accounts.SECRET)
+    r = w.client().get(users_kit.HUB_ACCOUNTS_URL, headers={"X-Provision-Secret": hub_accounts.SECRET})
+    assert r.status_code == 401
+
+
+def test_a_failed_read_answers_500_and_names_no_account(world, monkeypatch):
+    from phronon_common.testing import hub_accounts
+    w = _hub_world(world)
+    w.admin()
+    monkeypatch.setenv("PROVISION_SECRET_DRAWBRIDGE_DRAMA", hub_accounts.SECRET)
+
+    def broken():
+        raise RuntimeError("the sessions table is gone")
+    object.__setattr__(w.users, "session_counts", broken)
+    r = w.client().get(users_kit.HUB_ACCOUNTS_URL, headers={"X-Provision-Secret": hub_accounts.SECRET})
+    assert r.status_code == 500
+    assert r.json() == {"tool": "drawbridge_drama", "error": "query failed"}

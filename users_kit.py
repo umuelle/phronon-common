@@ -42,6 +42,12 @@ module also provides `send_account_invitation` and `send_account_change_notice`.
 EVERY ROUTE IS AN ADMINISTRATOR'S. Each handler checks the role itself, before
 it reads anything: hiding a button withholds nothing (adminroutes.py).
 
+THE HUB READS THE SAME LIST (TO DO FL-157). `build_hub_accounts_router` is a
+second, separate router with one read-only address, `/api/internal/accounts`,
+which answers only a caller holding this tool's own provisioning secret:
+
+    app.include_router(users_kit.build_hub_accounts_router(users, IDENTITY))
+
 A page is never drawn from a successful POST: the answer is a redirect to the
 list with a message code, so a reload repeats nothing. A form sent back with a
 mistake is re-shown with the mistake named and answers 400.
@@ -51,19 +57,20 @@ from __future__ import annotations
 import importlib
 import secrets
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Optional, cast
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.routing import APIRoute
 from starlette.background import BackgroundTask
 
 from . import account as account_mod
-from . import account_kit
+from . import account_kit, provisioning
 from . import once as _once
 from .account_kit import AccountKit
+from .registry import ToolIdentity
 
 USERS_URL = account_kit.USERS_URL
 INVITE_URL = "/backoffice/users/invite"
@@ -79,6 +86,12 @@ PATHS = (USERS_URL, INVITE_URL, BULK_URL, EDIT_URL, SEND_LINK_URL, DEACTIVATE_UR
          ACTIVATE_URL, DELETE_URL)
 #: The paths that answer GET (and HEAD) as well.
 GET_PATHS = (USERS_URL, EDIT_URL)
+
+#: Where the hub reads this tool's accounts (build_hub_accounts_router). Under
+#: /api/internal/, which nginx keeps off the internet in every tool.
+HUB_ACCOUNTS_URL = "/api/internal/accounts"
+#: What the hub is told about one account, and nothing else.
+HUB_ACCOUNT_FIELDS = ("email", "name", "role", "active", "two_factor", "last_sign_in", "sessions")
 
 #: The two ways a button in the fleet asks before it acts (UsersKit.confirm_attribute).
 CONFIRM_ATTRIBUTES = ("data-confirm", "data-confirm-submit")
@@ -164,6 +177,61 @@ class UsersKit:
                 raise ValueError(f"not a plain static path: {path!r}")
 
 
+def role_name(row: dict, users: UsersKit) -> str:
+    """"admin" or "educator", however the tool's table spells it."""
+    return "admin" if str(row.get("role") or "").lower() == users.admin_role.lower() else "educator"
+
+
+def _moment(value: Any) -> Optional[str]:
+    """A stored time as text for JSON; None stays None."""
+    if value is None or value == "":
+        return None
+    return value.isoformat() if hasattr(value, "isoformat") else str(value)
+
+
+def build_hub_accounts_router(users: UsersKit, tool: ToolIdentity) -> APIRouter:
+    """The one address the hub's People page reads this tool's accounts from.
+
+    Only a caller with this tool's own provisioning secret gets an answer.
+    The columns are named in the query, so a hash, a secret or a recovery code
+    never leaves the database for this route. It reads and changes nothing.
+    """
+    kit = users.account
+    router = APIRouter()
+    T, NAME = kit.tables.accounts, kit.tables.name_column
+    LIST = (f"SELECT id, email, {NAME} AS hub_name, role, is_active, totp_enabled, "
+            f"last_login_at FROM {T} ORDER BY email")
+
+    # GET and HEAD, as every read-only address in the fleet (testing/head_safety.py).
+    @router.api_route(HUB_ACCOUNTS_URL, methods=["GET", "HEAD"], include_in_schema=False)
+    def hub_accounts(request: Request) -> Response:
+        denied = provisioning.require_internal_secret(request, tool)
+        if denied:
+            return denied
+        try:
+            rows = kit.tables.query_all(LIST, ())
+            counts = users.session_counts() or {}
+        except Exception:
+            kit.logger.exception("the hub's account list could not be read")
+            return JSONResponse({"tool": tool.entitlement_key, "error": "query failed"},
+                                status_code=500)
+        return JSONResponse({
+            "tool": tool.entitlement_key,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "accounts": [{
+                "email": str(row.get("email") or "").strip().lower(),
+                "name": row.get("hub_name") or "",
+                "role": role_name(row, users),
+                "active": bool(row.get("is_active")),
+                "two_factor": bool(row.get("totp_enabled")),
+                "last_sign_in": _moment(row.get("last_login_at")),
+                "sessions": int(counts.get(row["id"], 0) or 0),
+            } for row in rows],
+        })
+
+    return router
+
+
 def build_users_router(users: UsersKit) -> APIRouter:
     """The Users page's routes for one tool. Mount with `app.include_router`."""
     kit = users.account
@@ -200,8 +268,7 @@ def build_users_router(users: UsersKit) -> APIRouter:
         return response
 
     def role_of(row: dict) -> str:
-        """"admin" or "educator", however the tool's table spells it."""
-        return "admin" if str(row.get("role") or "").lower() == ADMIN.lower() else "educator"
+        return role_name(row, users)
 
     def stored_role(role: str) -> str:
         return ADMIN if role == "admin" else EDUCATOR

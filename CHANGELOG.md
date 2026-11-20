@@ -7,6 +7,23 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## Unreleased
 
+
+## 1.111.0 — 20 November 2026
+
+**The hub can read a tool's account list (TO DO FL-157, step 1).**
+`users_kit.build_hub_accounts_router(users, tool)` is a second router with one
+read-only address, `GET /api/internal/accounts` (`HUB_ACCOUNTS_URL`), which
+answers only a caller with that tool's provisioning secret
+(`provisioning.require_internal_secret`). Per account: `email`, `name`, `role`
+("admin" or "educator", however the tool spells it), `active`, `two_factor`,
+`last_sign_in`, `sessions` (`HUB_ACCOUNT_FIELDS`). The query names its columns,
+so no hash or secret is read for it; a failed read answers 500 and is logged
+with its traceback. A tool mounts it beside its Users page; nothing is mounted
+by itself, so a tool on this release that does not mount it is unchanged.
+`users_kit.role_name` is the page's role spelling as a module function. The
+test kit gains `testing.hub_accounts.assert_the_hub_reads_accounts`, which each
+tool's own suite calls. The Phronon hub's People page reads the route.
+
 **The hub signs in at the fleet's addresses (Phronon PH-007, 19 November
 2026).** `registry.ToolIdentity.login_path` and `dashboard_path` answer
 `BACKOFFICE_LOGIN` and `BACKOFFICE_DASHBOARD` for every tool, the hub included;
