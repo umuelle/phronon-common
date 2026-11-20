@@ -111,3 +111,26 @@ def assert_the_tool_keeps_its_entrance_pages(project_root: Path | str) -> None:
             f"{name}: the form's token must be the kit's `csrf_token`")
         assert f'action="{action}"' in html, f"{name}: the form must post to {action}"
 
+
+
+#: Where phronon_common.csrf.refusal sends a refused form (1.112.0). Only the
+#: refusal adds `?msg=`: a route reached without a session redirects to the
+#: bare sign-in page, so these two prove the token check answered.
+REFUSED_LOCATIONS = ("/backoffice/login?msg=signed_out", "/backoffice/login?msg=form_expired")
+
+
+def assert_form_refused(response, what: str = "") -> None:
+    """The response is a refused form as phronon_common.csrf.refusal answers
+    it: the sign-in page with its note (303), the "This page has expired" page
+    (403), or, to a script, the JSON refusal (403). Pass a response that was
+    NOT followed (follow_redirects=False)."""
+    status = response.status_code
+    if status == 303:
+        assert response.headers.get("location") in REFUSED_LOCATIONS, (
+            f"{what}: refused to {response.headers.get('location')!r}, not the sign-in page's note")
+        return
+    assert status == 403, f"{what}: answered {status}, not a refusal"
+    if response.headers.get("content-type", "").startswith("application/json"):
+        assert response.json().get("success") is False, f"{what}: {response.text[:200]}"
+    else:
+        assert "This page has expired" in response.text, f"{what}: {response.text[:200]}"

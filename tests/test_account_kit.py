@@ -1902,3 +1902,48 @@ def test_a_reset_mail_that_fails_still_records_the_request_and_answers_the_same(
     unknown = _reset(w, email="nobody@example.invalid")
     assert known.status_code == unknown.status_code == 200 and known.text == unknown.text
     assert "password_reset_requested" in w.actions()
+
+
+# ── a refused form (1.112.0): the switch, and the sign-in page's two notes ────
+
+@pytest.mark.parametrize("msg, text", [("signed_out", "Your sign-in had ended, so nothing was changed"),
+                                       ("form_expired", "That page was open too long")])
+def test_the_sign_in_page_explains_a_refused_form(world, msg, text):
+    w = world()
+    r = w.client().get(f"/backoffice/login?msg={msg}")
+    assert r.status_code == 200 and f"NOTICE[{text}" in r.text
+
+
+def test_a_refused_kit_form_is_the_bare_400_without_the_switch(world):
+    w = world()
+    acc = w.account()
+    r = w.signed_in(acc).post("/backoffice/account/name", data={"csrf_token": "old", "display_name": "X"})
+    assert r.status_code == 400 and w.row(acc["id"])["display_name"] == "Kit Person"
+
+
+def test_with_the_switch_a_refused_kit_form_is_explained(world):
+    from phronon_common import csrf
+    w = world(explain_refusals=True)
+    csrf.install_refusal_handler(w.app, lambda request: w.kit.current_account(request) is not None)
+    acc = w.account()
+    r = w.signed_in(acc).post("/backoffice/account/name", data={"csrf_token": "old", "display_name": "X"})
+    assert r.status_code == 403 and "Nothing was changed." in r.text
+    assert w.row(acc["id"])["display_name"] == "Kit Person"
+    r = w.client().post("/backoffice/login", data={"csrf_token": "old", "email": acc["email"],
+                                                   "password": PASSWORD})
+    assert r.status_code == 303 and r.headers["location"] == "/backoffice/login?msg=form_expired"
+
+
+def test_with_the_switch_a_signed_out_form_reaching_the_kit_gets_the_note(world):
+    """Where the kit, not a middleware, notices that nobody is signed in: a
+    form goes to the sign-in page with the note; a page that is only read gets
+    the tool's own answer, as before."""
+    w = world(explain_refusals=True)
+    c = w.client()
+    r = c.post("/backoffice/account/name", data={"csrf_token": "pre", "display_name": "X"})
+    assert r.status_code == 303 and r.headers["location"] == "/backoffice/login?msg=signed_out"
+    plain = world()
+    r = plain.client().post("/backoffice/account/name", data={"csrf_token": "pre", "display_name": "X"})
+    assert r.headers.get("location") != "/backoffice/login?msg=signed_out"
+    assert w.client().get("/backoffice/account").headers.get("location") == \
+        plain.client().get("/backoffice/account").headers.get("location")

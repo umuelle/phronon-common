@@ -299,3 +299,106 @@ def test_safe_methods_are_never_checked():
         return {"ok": True}
 
     assert TestClient(app).get("/backoffice").status_code == 200
+
+
+# ── What a person sees when a form is refused (1.112.0) ──────────────────────
+# Owner, 20 November 2026: a form sent after the three-hour sign-in had ended
+# showed "403 Forbidden. CSRF validation failed", which read as a breakdown.
+
+def _explaining(**kwargs):
+    return _build(explain_refusals=True, session_cookie="sess", **kwargs)
+
+
+def test_without_the_switch_the_answer_is_the_bare_403_of_before():
+    client, _ = _build(session_cookie="sess")
+    r = client.post("/backoffice/users/1/send-link", data={"csrf_token": "old"})
+    assert r.status_code == 403 and "CSRF validation failed" in r.text
+
+
+def test_a_backoffice_form_after_the_sign_in_ended_goes_to_the_sign_in_page():
+    client, _ = _explaining()
+    r = client.post("/backoffice/users/1/send-link", data={"csrf_token": "old"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/backoffice/login?msg=signed_out"
+
+
+@pytest.mark.parametrize("path", ["/backoffice/login", "/backoffice/login/passkey",
+                                  "/backoffice/verify", "/backoffice/password-reset"])
+def test_a_stale_sign_in_form_goes_back_to_the_sign_in_page(path):
+    """Whoever sends it, signed in or not: the sign-in page sends a signed-in
+    person on to the dashboard."""
+    client, _ = _explaining()
+    client.cookies.set("sess", "someone")
+    r = client.post(path, data={"csrf_token": "old"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/backoffice/login?msg=form_expired"
+
+
+def test_a_signed_in_form_left_open_too_long_says_nothing_was_changed():
+    client, _ = _explaining()
+    client.cookies.set("sess", "someone")
+    r = client.post("/backoffice/sessions/7/close", data={"csrf_token": "old"},
+                    headers={"Referer": "https://testserver/backoffice/sessions/7?tab=game"})
+    assert r.status_code == 403
+    assert "<h1>This page has expired</h1>" in r.text and "Nothing was changed." in r.text
+    assert 'href="/backoffice/sessions/7?tab=game"' in r.text
+    assert "CSRF" not in r.text and '<html lang="en">' in r.text and 'class="ph-footer"' in r.text
+
+
+@pytest.mark.parametrize("referer, back", [
+    ("https://elsewhere.example/phish", "/backoffice/dashboard"),
+    ("//elsewhere.example/x", "/backoffice/dashboard"),
+    ("javascript:alert(1)", "/backoffice/dashboard"),
+    ("", "/backoffice/dashboard"),
+    ('https://testserver/backoffice/x?a="><script>', '/backoffice/x?a=&quot;&gt;&lt;script&gt;'),
+])
+def test_the_link_back_never_leaves_this_site_and_is_escaped(referer, back):
+    client, _ = _explaining()
+    client.cookies.set("sess", "someone")
+    r = client.post("/backoffice/sessions/7/close", data={"csrf_token": "old"}, headers={"Referer": referer})
+    assert f'<a href="{back}">' in r.text
+
+
+def test_a_participant_form_gets_the_page_with_a_link_to_its_own_page():
+    client, _ = _explaining()
+    r = client.post("/join", data={"csrf_token": "old"}, headers={"Referer": "https://testserver/join?code=AB12"})
+    assert r.status_code == 403 and 'href="/join?code=AB12"' in r.text
+    r = client.post("/join", data={"csrf_token": "old"})
+    assert 'href="/"' in r.text
+
+
+def test_a_script_still_gets_json_and_learns_whether_it_is_signed_out():
+    client, _ = _explaining()
+    r = client.post("/backoffice/x", headers={"Accept": "application/json"})
+    assert r.status_code == 403 and r.json()["success"] is False and r.json()["signed_out"] is True
+    client.cookies.set("sess", "someone")
+    assert client.post("/backoffice/x", headers={"Accept": "application/json"}).json()["signed_out"] is False
+
+
+def test_a_valid_token_still_goes_through_with_the_switch_on():
+    client, protection = _explaining()
+    client.cookies.set("sess", "someone")
+    r = client.post("/backoffice/x", data={"csrf_token": protection.generate_token("someone")})
+    assert r.status_code == 200 and r.json() == {"reached": True}
+
+
+def test_a_tool_that_checks_tokens_itself_answers_the_same_way():
+    """FormExpired, raised where a tool's own check refuses, through the
+    shared handler; a session that cannot be read counts as signed out."""
+    from phronon_common.csrf import FormExpired, install_refusal_handler
+    for signed_in, where in ((lambda r: False, "/backoffice/login?msg=signed_out"),
+                             (lambda r: 1 / 0, "/backoffice/login?msg=signed_out")):
+        app = FastAPI()
+        install_refusal_handler(app, signed_in)
+
+        @app.post("/backoffice/users/1/deactivate")
+        def refused():
+            raise FormExpired()
+        r = TestClient(app, follow_redirects=False).post("/backoffice/users/1/deactivate")
+        assert r.status_code == 303 and r.headers["location"] == where
+    app = FastAPI()
+    install_refusal_handler(app, lambda r: True)
+
+    @app.post("/backoffice/users/1/deactivate")
+    def refused_signed_in():
+        raise FormExpired()
+    r = TestClient(app).post("/backoffice/users/1/deactivate")
+    assert r.status_code == 403 and "Nothing was changed." in r.text

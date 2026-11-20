@@ -644,3 +644,16 @@ def test_a_failed_read_answers_500_and_names_no_account(world, monkeypatch):
     r = w.client().get(users_kit.HUB_ACCOUNTS_URL, headers={"X-Provision-Secret": hub_accounts.SECRET})
     assert r.status_code == 500
     assert r.json() == {"tool": "drawbridge_drama", "error": "query failed"}
+
+
+def test_with_the_switch_a_refused_users_form_is_explained(world):
+    """The Users page raises the kit's refusal: the bare 400 without the
+    switch (the test above this file's every-write test), the explained page
+    with it."""
+    from phronon_common import csrf
+    w = world(explain_refusals=True)
+    csrf.install_refusal_handler(w.app, lambda request: w.kit.current_account(request) is not None)
+    admin, person = w.admin(), w.educator()
+    r = w.signed_in(admin).post(f"{USERS}/{person['id']}/deactivate", data={"csrf_token": "old"})
+    assert r.status_code == 403 and "Nothing was changed." in r.text
+    assert w.row(person["id"])["is_active"] == 1

@@ -377,7 +377,7 @@ def build_users_router(users: UsersKit) -> APIRouter:
     def users_list(request: Request) -> Response:
         signed_in = kit.current_account(request)
         if not signed_in:
-            return kit.signed_out(request)
+            return account_kit.signed_out_answer(kit, request)
         account = {**signed_in, "role": role_of(signed_in)}
         if account.get("role") != "admin":
             return kit.not_an_admin(request)
@@ -402,12 +402,12 @@ def build_users_router(users: UsersKit) -> APIRouter:
                      role: str = Form("educator")) -> Response:
         signed_in = kit.current_account(request)
         if not signed_in:
-            return kit.signed_out(request)
+            return account_kit.signed_out_answer(kit, request)
         account = {**signed_in, "role": role_of(signed_in)}
         if account.get("role") != "admin":
             return kit.not_an_admin(request)
         if not kit.csrf_ok(request, csrf_token, signed_in):
-            raise HTTPException(400, "Bad CSRF token")
+            raise account_kit.csrf_refusal(kit)
         form = {"display_name": display_name.strip(), "email": email.strip(), "role": role}
 
         def again(error: str) -> Response:
@@ -446,7 +446,7 @@ def build_users_router(users: UsersKit) -> APIRouter:
     def users_edit_page(request: Request, user_id: int) -> Response:
         signed_in = kit.current_account(request)
         if not signed_in:
-            return kit.signed_out(request)
+            return account_kit.signed_out_answer(kit, request)
         account = {**signed_in, "role": role_of(signed_in)}
         if account.get("role") != "admin":
             return kit.not_an_admin(request)
@@ -463,12 +463,12 @@ def build_users_router(users: UsersKit) -> APIRouter:
                    role: str = Form("")) -> Response:
         signed_in = kit.current_account(request)
         if not signed_in:
-            return kit.signed_out(request)
+            return account_kit.signed_out_answer(kit, request)
         account = {**signed_in, "role": role_of(signed_in)}
         if account.get("role") != "admin":
             return kit.not_an_admin(request)
         if not kit.csrf_ok(request, csrf_token, signed_in):
-            raise HTTPException(400, "Bad CSRF token")
+            raise account_kit.csrf_refusal(kit)
         person = one(user_id, signed_in)
         if not person:
             return back(err="missing")
@@ -534,12 +534,12 @@ def build_users_router(users: UsersKit) -> APIRouter:
                         csrf_token: str = Form("")) -> Response:
         signed_in = kit.current_account(request)
         if not signed_in:
-            return kit.signed_out(request)
+            return account_kit.signed_out_answer(kit, request)
         account = {**signed_in, "role": role_of(signed_in)}
         if account.get("role") != "admin":
             return kit.not_an_admin(request)
         if not kit.csrf_ok(request, csrf_token, signed_in):
-            raise HTTPException(400, "Bad CSRF token")
+            raise account_kit.csrf_refusal(kit)
         row = q1(f"SELECT * FROM {T} WHERE id=%s", (user_id,))
         if not row:
             return back(err="missing")
@@ -557,12 +557,12 @@ def build_users_router(users: UsersKit) -> APIRouter:
                          csrf_token: str = Form("")) -> Response:
         signed_in = kit.current_account(request)
         if not signed_in:
-            return kit.signed_out(request)
+            return account_kit.signed_out_answer(kit, request)
         account = {**signed_in, "role": role_of(signed_in)}
         if account.get("role") != "admin":
             return kit.not_an_admin(request)
         if not kit.csrf_ok(request, csrf_token, signed_in):
-            raise HTTPException(400, "Bad CSRF token")
+            raise account_kit.csrf_refusal(kit)
         row = q1(f"SELECT * FROM {T} WHERE id=%s", (user_id,))
         if not row:
             return back(err="missing")
@@ -582,12 +582,12 @@ def build_users_router(users: UsersKit) -> APIRouter:
                        csrf_token: str = Form("")) -> Response:
         signed_in = kit.current_account(request)
         if not signed_in:
-            return kit.signed_out(request)
+            return account_kit.signed_out_answer(kit, request)
         account = {**signed_in, "role": role_of(signed_in)}
         if account.get("role") != "admin":
             return kit.not_an_admin(request)
         if not kit.csrf_ok(request, csrf_token, signed_in):
-            raise HTTPException(400, "Bad CSRF token")
+            raise account_kit.csrf_refusal(kit)
         row = q1(f"SELECT * FROM {T} WHERE id=%s", (user_id,))
         if not row:
             return back(err="missing")
@@ -635,12 +635,12 @@ def build_users_router(users: UsersKit) -> APIRouter:
                      csrf_token: str = Form("")) -> Response:
         signed_in = kit.current_account(request)
         if not signed_in:
-            return kit.signed_out(request)
+            return account_kit.signed_out_answer(kit, request)
         account = {**signed_in, "role": role_of(signed_in)}
         if account.get("role") != "admin":
             return kit.not_an_admin(request)
         if not kit.csrf_ok(request, csrf_token, signed_in):
-            raise HTTPException(400, "Bad CSRF token")
+            raise account_kit.csrf_refusal(kit)
         row = q1(f"SELECT * FROM {T} WHERE id=%s", (user_id,))
         if not row:
             return back(err="missing")
@@ -667,12 +667,12 @@ def build_users_router(users: UsersKit) -> APIRouter:
                    ids: list[int] = Form(default=[])) -> Response:  # noqa: B006 — FastAPI's form default
         signed_in = kit.current_account(request)
         if not signed_in:
-            return kit.signed_out(request)
+            return account_kit.signed_out_answer(kit, request)
         account = {**signed_in, "role": role_of(signed_in)}
         if account.get("role") != "admin":
             return kit.not_an_admin(request)
         if not kit.csrf_ok(request, csrf_token, signed_in):
-            raise HTTPException(400, "Bad CSRF token")
+            raise account_kit.csrf_refusal(kit)
         if action not in ("deactivate", "send-link"):
             raise HTTPException(400, "Invalid request")
         chosen = sorted(set(ids))[:200]

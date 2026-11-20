@@ -2,6 +2,25 @@
 
 The session cookie name used to bind tokens is configurable so each tool can keep
 its own cookie name while sharing this code.
+
+WHAT A PERSON SEES WHEN A FORM IS REFUSED (`refusal`, since 1.112.0). A form
+is refused when its token is missing, forged, or simply old: the sign-in had
+ended (an administrator's lasts three hours), or the page was open longer than
+a token lives. The last two are routine and were answered with a bare "403
+Forbidden. CSRF validation failed" (or, in the tools with their own check, a
+raw JSON line), which reads as a breakdown and does not say that nothing was
+changed (owner, 20 November 2026). Now:
+  * a backoffice form sent after the sign-in ended goes to the sign-in page,
+    which says so (`account_kit.ACCOUNT_MESSAGES["signed_out"]`);
+  * the sign-in, code and password-reset forms themselves go back to the
+    sign-in page with "the page was open too long";
+  * any other form gets a short page that says nothing was changed and links
+    back to the page it came from, to reload it;
+  * a script (Accept: application/json) gets JSON, as before.
+A tool turns this on with `CSRFMiddleware(..., explain_refusals=True)`, or, where
+it checks tokens itself, by raising `FormExpired` and installing
+`install_refusal_handler`. Off by default, so a release with this changes no
+running tool until that tool's own deploy turns it on with its tests.
 """
 
 from __future__ import annotations
@@ -13,11 +32,16 @@ import secrets
 import logging
 from typing import TYPE_CHECKING, Callable, Iterable, Optional
 from urllib.parse import parse_qs
+from html import escape
+from urllib.parse import urlsplit
+
 from fastapi import Request
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import HTMLResponse, JSONResponse
+from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 if TYPE_CHECKING:
+    from fastapi import FastAPI
     from starlette.middleware.base import RequestResponseEndpoint
     from starlette.responses import Response
     from starlette.types import ASGIApp, Message
@@ -67,6 +91,93 @@ class CSRFProtection:
             return False
 
 
+#: The sign-in page, and the forms that belong to signing in: a stale one of
+#: these is answered by a fresh sign-in page, whoever sends it.
+SIGN_IN_URL = "/backoffice/login"
+SIGN_IN_FORMS = ("/backoffice/login", "/backoffice/verify", "/backoffice/password-reset")
+#: The `?msg=` keys the sign-in page reads (account_kit.ACCOUNT_MESSAGES).
+SIGNED_OUT_MSG = "signed_out"
+FORM_EXPIRED_MSG = "form_expired"
+#: What a script is told (Accept: application/json).
+EXPIRED_JSON = {"success": False, "error": "This page has expired. Reload it and try again.",
+                "detail": "Please refresh the page and try again."}
+
+_PAGE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>This page has expired</title>
+</head>
+<body>
+<main>
+<h1>This page has expired</h1>
+<p>Nothing was changed. The page was open for too long, so the form on it is no
+longer accepted.</p>
+<p><a href="{back}">Reload the page</a> and do it again.</p>
+</main>
+<footer class="ph-footer"><a href="/impressum">Impressum</a> &middot; <a href="/privacy">Privacy</a></footer>
+</body>
+</html>
+"""
+
+
+class FormExpired(Exception):
+    """Raised by a tool's own token check where it refuses a form; answered by
+    `install_refusal_handler` with `refusal`."""
+
+
+def _back(request: Request) -> str:
+    """The page the form came from, as a path on this site, for its link.
+
+    Only the Referer's path and query, and only when it names this same host:
+    a link, never a redirect, but still never to another site."""
+    fallback = "/backoffice/dashboard" if request.url.path.startswith("/backoffice/") else "/"
+    referer = request.headers.get("referer", "")
+    try:
+        parts = urlsplit(referer)
+    except ValueError:
+        return fallback
+    if not parts.path.startswith("/") or parts.path.startswith("//"):
+        return fallback
+    if parts.netloc and parts.netloc != request.url.netloc:
+        return fallback
+    return parts.path + (f"?{parts.query}" if parts.query else "")
+
+
+def refusal(request: Request, *, signed_in: bool) -> Response:
+    """What a refused form is answered with (see the module's docstring).
+
+    `signed_in`: whether the request still carries a live backoffice session.
+    """
+    path = request.url.path
+    if "application/json" in request.headers.get("accept", ""):
+        return JSONResponse(dict(EXPIRED_JSON, signed_out=not signed_in), status_code=403)
+    if any(path == f or path.startswith(f + "/") for f in SIGN_IN_FORMS):
+        return RedirectResponse(f"{SIGN_IN_URL}?msg={FORM_EXPIRED_MSG}", status_code=303)
+    if path.startswith("/backoffice/") and not signed_in:
+        return RedirectResponse(f"{SIGN_IN_URL}?msg={SIGNED_OUT_MSG}", status_code=303)
+    return HTMLResponse(_PAGE.format(back=escape(_back(request), quote=True)), status_code=403)
+
+
+def install_refusal_handler(app: FastAPI, signed_in: Callable[[Request], bool]) -> None:
+    """Answer `FormExpired` with `refusal`, for a tool that checks tokens itself.
+
+    `signed_in(request)` may read the database; it runs in the thread pool, and
+    a failure there counts as signed out (the sign-in page is the safe place to
+    send somebody whose session cannot be read)."""
+    async def answer(request: Request, exc: Exception) -> Response:
+        logger.warning(f"Form refused (expired or forged token) for {request.method} {request.url.path}")
+        try:
+            live = bool(await run_in_threadpool(signed_in, request))
+        except Exception:
+            logger.exception("refused form: the session could not be read; answering as signed out")
+            live = False
+        return refusal(request, signed_in=live)
+    app.add_exception_handler(FormExpired, answer)
+
+
 class CSRFMiddleware(BaseHTTPMiddleware):
     """Validate CSRF tokens on state-changing requests.
 
@@ -101,7 +212,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                  session_cookie: Optional[str] = "backoffice",
                  exempt_paths: Optional[Iterable[str]] = None,
                  exempt_exact: Optional[Iterable[str]] = None,
-                 session_id_of: Optional[Callable[[Request], Optional[str]]] = None):
+                 session_id_of: Optional[Callable[[Request], Optional[str]]] = None,
+                 explain_refusals: bool = False):
         """
         Args:
             session_cookie: Cookie whose value tokens are bound to. Pass ``None``
@@ -114,11 +226,15 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 rolls: it returns the cookie's stable part (the account and its
                 session epoch, say), or ``None`` for a visitor. When given, it
                 is used instead of ``session_cookie`` (1.93.0, TO DO FL-090 (b)).
+            explain_refusals: answer a refused form with `refusal` (1.112.0):
+                the sign-in page with a note, or a page that says nothing was
+                changed. Off: the bare 403 of before.
         """
         super().__init__(app)
         self.csrf = csrf_protection
         self.session_cookie = session_cookie
         self.session_id_of = session_id_of
+        self.explain_refusals = explain_refusals
         self.EXEMPT_PATHS = ["/static/"] + list(exempt_paths or [])
         self.EXEMPT_EXACT = frozenset(exempt_exact or ())
 
@@ -182,6 +298,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         session_id = _session_id(request, self.session_cookie, self.session_id_of)
         if not csrf_token or not self.csrf.validate_token(csrf_token, session_id):
             logger.warning(f"CSRF validation failed for {request.method} {path}")
+            if self.explain_refusals:
+                return refusal(request, signed_in=session_id is not None)
             if "application/json" in request.headers.get("accept", ""):
                 return JSONResponse(
                     {"success": False, "error": "CSRF validation failed",

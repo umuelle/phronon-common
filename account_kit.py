@@ -91,6 +91,7 @@ from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
 
 from . import account as account_mod
+from . import csrf
 from . import lockout
 from . import once as _once
 from . import passkeys
@@ -193,6 +194,9 @@ ACCOUNT_MESSAGES = {
                    "address. Until you do, this account keeps its current address."),
     "email_changed": "Your e-mail address has been changed. Please sign in again.",
     "passkey_removed": "The passkey has been removed.",
+    # A form refused because its token was old (csrf.refusal, 1.112.0).
+    "signed_out": "Your sign-in had ended, so nothing was changed. Sign in, then do it again.",
+    "form_expired": "That page was open too long, so nothing was sent. Please try again.",
 }
 ACCOUNT_ERRORS = {
     "password_needed": "Set a new password first — the rest of this page unlocks afterwards.",
@@ -467,6 +471,34 @@ class AccountKit:
     #: ContextVar), which this replaces. False: the shapes above, unchanged.
     cookie_setters_take_request: bool = False
 
+    # ── a refused form (1.112.0) ─────────────────────────────────────────────
+    #: True: a form whose token the kit refuses is answered as
+    #: `csrf.refusal` answers it (the sign-in page with a note, or a page that
+    #: says nothing was changed), through the `csrf.FormExpired` handler the
+    #: tool installs (`csrf.install_refusal_handler`). False: the bare 400
+    #: "Bad CSRF token" of before. Only the tools that check tokens in the kit
+    #: reach this; in the others the CSRF middleware refuses first.
+    explain_refusals: bool = False
+
+
+def signed_out_answer(kit: AccountKit, request: Request) -> Response:
+    """What a page of the kit answers somebody who is not signed in. With
+    `explain_refusals`, a form sent after the sign-in ended goes to the sign-in
+    page with the note that says so, as csrf.refusal sends it; a page that is
+    only read gets the tool's own answer, as before. So does signing out
+    while signed out: there is nothing to do again."""
+    if (kit.explain_refusals and request.method not in ("GET", "HEAD")
+            and request.url.path != LOGOUT_URL):
+        return RedirectResponse(f"{LOGIN_URL}?msg={csrf.SIGNED_OUT_MSG}", status_code=303)
+    return kit.signed_out(request)
+
+
+def csrf_refusal(kit: AccountKit) -> Exception:
+    """What the kit and the Users page raise for a form whose token is refused."""
+    if kit.explain_refusals:
+        return csrf.FormExpired()
+    return HTTPException(400, "Bad CSRF token")
+
 
 # ── templates ────────────────────────────────────────────────────────────────
 
@@ -553,8 +585,8 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     def redirect(url: str) -> RedirectResponse:
         return RedirectResponse(url, status_code=303)
 
-    def bad_csrf() -> HTTPException:
-        return HTTPException(400, "Bad CSRF token")
+    def bad_csrf() -> Exception:
+        return csrf_refusal(kit)
 
     def json_error(message: str, status: int = 400) -> JSONResponse:
         return JSONResponse({"error": message}, status_code=status)
@@ -795,7 +827,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         one (TO DO FL-090 (a), 7 October 2026)."""
         account = kit.current_account(request)
         if not account:
-            return kit.signed_out(request)
+            return signed_out_answer(kit, request)
         return page(request, "sign_out.html", csrf_for=account, account=named(account))
 
     @router.post(LOGOUT_URL)
@@ -804,7 +836,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         # web could sign a person out.
         account = kit.current_account(request)
         if not account:
-            return kit.signed_out(request)
+            return signed_out_answer(kit, request)
         if not kit.csrf_ok(request, csrf_token, account):
             raise bad_csrf()
         resp = redirect(LOGIN_URL)
@@ -961,7 +993,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     def two_factor_setup(request: Request, replace: int = 0) -> Response:
         account = kit.current_account(request)
         if not account:
-            return kit.signed_out(request)
+            return signed_out_answer(kit, request)
         # `?replace=1` — a new phone. Without it an enrolled account could only
         # re-enrol by switching two-factor OFF first, which admins may not do.
         # Nothing is written until a code from the NEW secret proves the new app
@@ -983,7 +1015,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                                 current_password: str = Form("")) -> Response:
         account = kit.current_account(request)
         if not account:
-            return kit.signed_out(request)
+            return signed_out_answer(kit, request)
         if not kit.csrf_ok(request, csrf_token, account):
             raise bad_csrf()
         required = twofactor.is_required(account.get("role"))
@@ -1127,7 +1159,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     def passkey_delete(request: Request, pid: int, csrf_token: str = Form("")) -> Response:
         account = kit.current_account(request)
         if not account:
-            return kit.signed_out(request)
+            return signed_out_answer(kit, request)
         if not kit.csrf_ok(request, csrf_token, account):
             raise bad_csrf()
         gone = q1(f"SELECT id, name FROM {PK} WHERE id=%s AND {OWNER}=%s",
@@ -1248,7 +1280,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
     def account_get(request: Request) -> Response:
         account = kit.current_account(request)
         if not account:
-            return kit.signed_out(request)
+            return signed_out_answer(kit, request)
         return account_page(request, account)
 
     @router.post("/backoffice/account/name")
@@ -1256,7 +1288,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                      display_name: str = Form("")) -> Response:
         account = kit.current_account(request)
         if not account:
-            return kit.signed_out(request)
+            return signed_out_answer(kit, request)
         if not kit.csrf_ok(request, csrf_token, account):
             raise bad_csrf()
         if account.get("must_change_password"):
@@ -1276,7 +1308,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         """Ask for an address change. Writes nothing — see phronon_common.account."""
         account = kit.current_account(request)
         if not account:
-            return kit.signed_out(request)
+            return signed_out_answer(kit, request)
         if not kit.csrf_ok(request, csrf_token, account):
             raise bad_csrf()
         if account.get("must_change_password"):
@@ -1383,7 +1415,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
                          confirm_password: str = form_field("confirm_password")) -> Response:
         account = kit.current_account(request)
         if not account:
-            return kit.signed_out(request)
+            return signed_out_answer(kit, request)
         if not kit.csrf_ok(request, csrf_token, account):
             raise bad_csrf()
         if not password_ok(current_password, account):
@@ -1427,7 +1459,7 @@ def build_account_router(kit: AccountKit) -> APIRouter:
         """
         account = kit.current_account(request)
         if not account:
-            return kit.signed_out(request)
+            return signed_out_answer(kit, request)
         # Any case (FL-083 (f)): four adopters spell the role ADMIN, so the
         # check reads a lower-cased copy. The comparison stays one plain line:
         # it is the text the fleet's role-gate tests look for (KIT_GUARDS), and

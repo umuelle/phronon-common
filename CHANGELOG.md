@@ -8,6 +8,32 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 ## Unreleased
 
 
+## 1.112.0 — 20 November 2026
+
+**A refused form is explained (owner, 20 November 2026).** A form sent after
+the sign-in had ended (an administrator's lasts three hours), or from a page
+open longer than its token lives, was answered with a bare "403 Forbidden.
+CSRF validation failed" in five tools and a raw JSON line or a 400 in the
+others: it read as a breakdown and did not say that nothing was changed.
+`csrf.refusal(request, signed_in=...)` is the one answer now: a backoffice form
+after the sign-in ended goes to the sign-in page with "Your sign-in had ended,
+so nothing was changed. Sign in, then do it again." (`?msg=signed_out`); a stale
+sign-in, code or reset form goes back to the sign-in page with "That page was
+open too long" (`?msg=form_expired`); any other form gets a short page, "This
+page has expired. Nothing was changed.", with a link back to the page it came
+from (same site only); a script still gets JSON, now with `signed_out`.
+`account_kit.ACCOUNT_MESSAGES` carries the two notes.
+
+Each tool turns it on, so this release changes no running tool by itself:
+`CSRFMiddleware(..., explain_refusals=True)`; `csrf.FormExpired`, raised where a
+tool checks tokens itself, with `csrf.install_refusal_handler(app, signed_in)`;
+`AccountKit(explain_refusals=True)`, under which the kit and the Users page
+raise `FormExpired` instead of the 400 "Bad CSRF token"
+(`account_kit.csrf_refusal`) and send a form that arrives signed out to the
+sign-in page with the note (`account_kit.signed_out_answer`; signing out while
+signed out keeps the tool's plain answer). The test kit's
+`testing.account_kit.assert_form_refused` recognises every shape of it.
+
 ## 1.111.0 — 20 November 2026
 
 **The hub can read a tool's account list (TO DO FL-157, step 1).**
