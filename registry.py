@@ -213,6 +213,7 @@ TOOLS: dict[str, ToolIdentity] = {
             server_path="/var/www/peak-season", port=8011,
             entitlement_key="peak_season", display_name="Peak Season",
             canonical_domain="peak-season.org", locales=("en",),
+            participant_locales=("ar", "de", "en", "es", "fr", "hi", "it", "pt", "ru", "zh"),
         ),
         ToolIdentity(
             key="phronon", repo_dir="Phronon",
