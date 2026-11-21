@@ -8,6 +8,35 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 ## Unreleased
 
 
+## 1.113.0 — 21 November 2026
+
+**The backoffice's look, direction A (owner, 21 November 2026).** The owner
+found the educator pages stiff and dated and chose the first of three
+mock-ups, a quiet refresh: the same bar, the same page shape and the same
+words, drawn more calmly. Only `backoffice-core.css` and `backoffice-nav.css`
+change; no template and no Python does.
+
+- Palette: a lighter page (`--bo-bg`), cooler lines, larger radii, a hairline
+  ring where cards had a shadow. `--bo-primary` stays the ink a tool's own
+  headings and links use; the action colour has its own token, `--bo-accent`
+  (`#2456a6`), for a page's main button, the open tab and the quick-start mark.
+- The bar: each link is a pill and the page it shows is the filled one. Navy
+  for an educator and dark red for an administrator are unchanged, and so is
+  the 58px height. "Manage account" and "Sign out" are 27px tall (they were
+  under 24px).
+- Tables: headers and field labels in normal case, a thinner line between
+  rows, session names dark and bold. In a row the main action is outlined and
+  Archive and Delete are words (Delete in red).
+- States are a coloured dot and a word in normal case; code chips are bold.
+- The quick-start guide has no left edge of its own.
+
+The tools' own sheets still say "uppercase" for table headers and labels; the
+shared sheet, which loads last, now says otherwise in so many words. An
+assets-only release: the eight teaching tools and the hub that hold copies
+carry the new ones from their next deploy; Peak Season reads the masters from
+the release.
+
+
 ## 1.112.0 — 20 November 2026
 
 **A refused form is explained (owner, 20 November 2026).** A form sent after
