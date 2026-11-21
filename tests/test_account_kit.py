@@ -39,7 +39,10 @@ from phronon_common.testing import (assert_form_asks_for_the_shared_hint,
                                     assert_minlength_matches_the_policy)
 
 PKG = Path(kit_mod.__file__).resolve().parent
-TEMPLATES = sorted(kit_mod.TEMPLATE_DIR.glob("*.html"))
+#: Building blocks a tool's own page imports (macros, tests/test_session_head.py);
+#: every other file in the folder is one of the kit's pages.
+PARTS = {"session_head.html"}
+TEMPLATES = sorted(p for p in kit_mod.TEMPLATE_DIR.glob("*.html") if p.name not in PARTS)
 BASE = "https://testserver"
 SECRET = "kit-test-secret-" + "0" * 32  # pragma: allowlist secret (test value)
 PASSWORD = "Kit-test-passphrase-2026"  # pragma: allowlist secret (test value)
@@ -51,6 +54,11 @@ def test_there_are_templates_to_check():
     assert {p.name for p in TEMPLATES} == {
         "account.html", "account_confirm_email.html", "sign_out.html", "two_factor.html",
         "two_factor_verify.html", "users.html", "user_edit.html"}
+
+
+def test_the_building_blocks_are_there_and_parse():
+    for name in PARTS:
+        jinja2.Environment().parse((kit_mod.TEMPLATE_DIR / name).read_text(encoding="utf-8"))
 
 
 @pytest.mark.parametrize("tpl", TEMPLATES, ids=lambda p: p.name)

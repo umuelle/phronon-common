@@ -51,6 +51,9 @@ PUBLIC_PREFIXES = (
     # Immutable stylesheet bundles (frontend_assets.py, v1.74.0): public like
     # /static/, and cached for a year; no-store here would undo that.
     "/frontend/",
+    # The shared styles and scripts a tool serves from its release
+    # (common_assets.py): public like /static/, a year in the cache.
+    "/common/",
 )
 
 

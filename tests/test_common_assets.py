@@ -97,3 +97,12 @@ def test_install_needs_known_masters(tmp_path):
     for bad in ([], ["no-such.js"]):
         with pytest.raises(RuntimeError, match="known masters"):
             ca.install(FastAPI(), templates, bad)
+
+
+def test_the_master_behind_a_copys_place():
+    """For a tool's tests since the tools hold no copies: what read
+    static/js/passkeys.js reads the master."""
+    assert shared_assets.master_for_copy("static/js/passkeys.js") == shared_assets.master_path("passkeys.js")
+    assert shared_assets.master_for_copy("/static/css/phronon-tokens.css") == shared_assets.master_path("design-tokens.css")
+    with pytest.raises(KeyError):
+        shared_assets.master_for_copy("static/css/style.css")

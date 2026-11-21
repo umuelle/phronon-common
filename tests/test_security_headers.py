@@ -24,6 +24,7 @@ def _app():
         Route("/", page),
         Route("/join", page, methods=["GET", "POST"]),
         Route("/backoffice/anything", page, methods=["GET", "POST"]),
+        Route("/common/{release}/{master}", page),
     ])
     app.add_middleware(SecurityHeadersMiddleware, csp="default-src 'self'",
                        public_paths=DEFAULT_PUBLIC)
@@ -38,6 +39,15 @@ def test_public_get_pages_stay_cacheable():
     client = _app()
     assert "no-store" not in _cache(client.get("/"))
     assert "no-store" not in _cache(client.get("/join"))
+
+
+def test_a_shared_file_from_the_release_stays_cacheable():
+    """The tools serve the shared styles and scripts at /common/<release>/<master>
+    (common_assets.py) with a year in the cache. Under the fleet's public list
+    this address was private at first, and every page fetched every shared file
+    again (found on Whiteout, 21 November 2026)."""
+    client = _app()
+    assert "no-store" not in _cache(client.get("/common/v1.114.0/backoffice-core.css"))
 
 
 def test_post_responses_are_no_store_even_on_public_paths():

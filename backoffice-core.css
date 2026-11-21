@@ -885,3 +885,62 @@ a.code-chip:hover { background: #e3e7ec; }
 .bo-passkeys li:last-child { border-bottom: none; }
 .bo-passkeys .hint { flex: 1 1 12rem; }
 .bo-inline-form { display: inline; margin: 0; }
+
+/* ── The head of a session page (owner, 21 November 2026) ────────────────
+   One head in every tool, drawn by account_templates/session_head.html: the
+   code in a box that opens the join sheet, the session's name as the
+   headline with its states, then the tool's own lines of facts
+   (.bo-detail-meta). Below it the action bar (.bo-detail-actions) and the
+   tab row. */
+.bo-session-head {
+  display: flex; align-items: center; gap: .75rem 1.1rem; flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.bo-session-code {
+  display: inline-flex; flex-direction: column; align-items: center; gap: .1rem;
+  flex: 0 0 auto; padding: .45rem 1rem .4rem;
+  background: var(--bo-surface, #fff); color: var(--bo-text, #16191d);
+  border: 1px solid var(--bo-border, #d5dae1); border-radius: var(--radius, 12px);
+  text-decoration: none; transition: background .12s, border-color .12s;
+}
+a.bo-session-code:hover {
+  background: var(--bo-code-bg, #f0f2f5); border-color: var(--bo-accent, #2456a6);
+  color: var(--bo-text, #16191d); text-decoration: none;
+}
+.bo-session-code__value {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Fira Code", monospace;
+  font-size: 1.5rem; font-weight: 700; letter-spacing: .14em; line-height: 1.2;
+}
+.bo-session-code__label { font-size: .8rem; font-weight: 600; color: var(--bo-accent, #2456a6); }
+.bo-session-head__main { flex: 1 1 18rem; min-width: 0; }
+.bo-session-title {
+  display: flex; align-items: center; gap: .4rem .6rem; flex-wrap: wrap;
+  font-size: 1.6rem; font-weight: 700; letter-spacing: -.015em; line-height: 1.2; margin: 0;
+}
+.bo-session-head .bo-detail-meta { margin: .25rem 0 0; }
+.bo-session-head .bo-detail-meta a { color: var(--bo-accent, #2456a6); }
+
+/* The states a session has in every tool; a tool adds its own beside them. */
+.state-badge--open   { background: var(--bo-success-bg); color: var(--bo-success); }
+.state-badge--closed { background: #f0f1f4; color: var(--bo-muted); }
+.state-badge--sample { background: #eaf3ff; color: #1e3a5f; border: 1px solid #c6ddf5; }
+
+/* The tab row of a session page: the tabs on the left, downloads and
+   Presentation mode on the right (.tabs-row__actions), one rule under both. */
+.tabs-row {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem;
+  border-bottom: 2px solid var(--bo-border);
+}
+.tabs-row > .tabs__nav { border-bottom: 0; }
+.tabs-row__actions,
+.tabs-row .results-actions { display: flex; gap: .4rem; flex-wrap: wrap; padding-bottom: .5rem; margin-left: auto; }
+/* On the tab row a quiet button is outlined, so a download reads as a button. */
+.tabs-row__actions .btn-ghost,
+.tabs-row .results-actions .btn-ghost {
+  background: var(--bo-surface, #fff); color: var(--bo-text, #16191d); border-color: var(--bo-border, #d5dae1);
+}
+.tabs-row__actions .btn-ghost:hover,
+.tabs-row .results-actions .btn-ghost:hover { background: var(--bo-code-bg, #f0f2f5); border-color: var(--bo-text, #16191d); }
+/* The shared component has no visible focus ring; a keyboard user needs one. */
+.tabs__tab:focus-visible { outline: 2px solid var(--bo-accent, #2456a6); outline-offset: 2px; }

@@ -194,5 +194,5 @@
 {% endblock %}
 
 {% block scripts %}
-{% if account_kit.password_tools %}<script src="/static/js/users-password.js"></script>{% endif %}
+{% if account_kit.password_tools %}<script src="{{ asset('/static/js/users-password.js') }}"></script>{% endif %}
 {% endblock %}

@@ -92,3 +92,14 @@ def master_path(asset: str) -> Path:
     if asset not in ASSETS:
         raise KeyError(f"{asset!r} is not a shared asset. Known: {', '.join(ASSETS)}")
     return MASTERS / asset
+
+
+def master_for_copy(copy_path: str) -> Path:
+    """The master behind the place a tool's copy had, e.g. "static/js/passkeys.js".
+    For a tool's tests since the tools take the files from the release: what
+    read the copy reads the master. Raises KeyError for any other path."""
+    wanted = copy_path.lstrip("/")
+    for asset, copy in ASSETS.items():
+        if copy == wanted:
+            return master_path(asset)
+    raise KeyError(f"{copy_path!r} is not the place of a shared asset's copy")

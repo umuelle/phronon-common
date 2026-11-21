@@ -1,0 +1,42 @@
+{# The head of a session page, the same in every tool (owner, 21 November 2026).
+
+   The code in a box that opens the join sheet, the session's name as the
+   headline, its states, then the tool's own lines of facts. A tool calls it:
+
+     {% from "account_kit/session_head.html" import session_head %}
+     {% call session_head(code=s.code, name=s.session_name, join_url="/share/" ~ s.code,
+                          badges=[("Open", "state-badge--open")]) %}
+       <p class="bo-detail-meta">2026-11-21 · 28 joined</p>
+     {% endcall %}
+
+   code        the session code, as participants type it
+   name        the session's name; without one the page says "Untitled session"
+   join_url    where the box leads, in a new tab; without it the box is plain text
+   join_label  the words under the code (default "Join sheet")
+   badges      (word, class) pairs, drawn as the fleet's state badges; a third
+               element, where given, is the badge's hover text
+   The block between call and endcall is the tool's own facts under the name.
+   Styles: backoffice-core.css, ".bo-session-head". #}
+{% macro session_head(code, name=None, join_url=None, join_label="Join sheet", badges=()) -%}
+<div class="bo-session-head">
+  {% if join_url -%}
+  <a class="bo-session-code" href="{{ join_url }}" target="_blank" rel="noopener" title="Open the join sheet">
+    <span class="bo-session-code__value">{{ code }}</span>
+    <span class="bo-session-code__label">{{ join_label }}</span>
+  </a>
+  {%- else -%}
+  <span class="bo-session-code"><span class="bo-session-code__value">{{ code }}</span></span>
+  {%- endif %}
+  <div class="bo-session-head__main">
+    <h1 class="bo-session-title">
+      <span class="bo-session-title__name">{{ name or "Untitled session" }}</span>
+      {%- for badge in badges %}
+      <span class="state-badge {{ badge[1] }}"{% if badge|length > 2 and badge[2] %} title="{{ badge[2] }}"{% endif %}>{{ badge[0] }}</span>
+      {%- endfor %}
+    </h1>
+    {%- if caller %}
+    {{ caller() }}
+    {%- endif %}
+  </div>
+</div>
+{%- endmacro %}

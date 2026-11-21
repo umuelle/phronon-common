@@ -8,6 +8,37 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 ## Unreleased
 
 
+## 1.114.0 — 21 November 2026
+
+**One head for every session page (owner, 21 November 2026).**
+`account_templates/session_head.html` holds the macro `session_head`: the
+session's code in a box that is one link to the join sheet (new tab, the words
+"Join sheet" inside), the session's name as the headline with its states, then
+the calling tool's own lines of facts. Every tool's session page calls it
+(`{% from "account_kit/session_head.html" import session_head %}`), so the head
+is one piece of code. Until now eight tools had the code as the headline and
+the name in a line of facts, and Peak Season the reverse with a small code
+chip; the owner chose the name as the headline and a large code.
+`backoffice-core.css` gains the head (`.bo-session-head`, `.bo-session-code`,
+`.bo-session-title`), the three states every tool has
+(`.state-badge--open`, `--closed`, `--sample`) and the tab row of a session
+page (`.tabs-row`, `.tabs-row__actions`), which three tools carried as copies.
+
+**Every tool takes the shared styles and scripts from the release (TO DO
+FL-069, done).** Peak Season piloted it since 1.106.0; from this release the
+eight older teaching tools and the hub work the same way and hold no copies.
+Two things in the package made that possible:
+
+- `security_headers.PUBLIC_PREFIXES` names `/common/`. Under the fleet's public
+  list the address was private, so a shared file went out with `no-store` and
+  was fetched again with every page; Peak Season, which does not use that
+  list, had not shown it.
+- `shared_assets.master_for_copy("static/js/passkeys.js")` answers the master
+  behind the place a copy had, for the tools' own tests.
+
+A code release (a template the services load, two Python modules).
+
+
 ## 1.113.0 — 21 November 2026
 
 **The backoffice's look, direction A (owner, 21 November 2026).** The owner
