@@ -10,44 +10,67 @@
  * Mirror needed four such rules realigned on 29 July 2026 after everything
  * already-shared matched. Values below ARE that reference look:
  *
- *   table headers   .78rem  uppercase muted
- *   form labels     .825rem uppercase muted
- *   page headings   1.4rem / 700
- *   state badges    uppercase pills
+ *   table headers   .82rem  muted, sentence case
+ *   form labels     .87rem  sentence case
+ *   page headings   1.75rem / 700
+ *   state badges    a coloured dot and a word
  *   role badges     lowercase rectangles
  *
  * The root font size (15px) is pinned in backoffice-nav.css. Colors fall
  * back sensibly where a tool does not define --bo-muted. */
 
 .bo-page-header h1 {
-  font-size: 1.4rem;
+  font-size: 1.75rem;
   font-weight: 700;
+  letter-spacing: -.015em;
+  line-height: 1.2;
 }
 
-.bo-table th {
-  font-size: .78rem;
+/* Both spellings, because one tool writes the selector as table.bo-table th. */
+.bo-table th,
+table.bo-table th {
+  font-size: .82rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: var(--bo-muted, #6b7280);
+  background: transparent;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--bo-muted, #5b6470);
+  border-bottom: 1px solid var(--bo-border, #d5dae1);
 }
 
-.bo-field label {
-  font-size: .825rem;
+.bo-field label,
+.field label {
+  font-size: .87rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .03em;
-  color: var(--bo-muted, #6b7280);
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--bo-text, #16191d);
 }
 
 .state-badge {
-  display: inline-block;
-  padding: .2rem .6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .22rem .7rem .22rem .6rem;
   border-radius: 999px;
-  font-size: .75rem;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-size: .8rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
 }
+/* A state is a coloured dot and a word; a mark such as "Test" has no dot. */
+.state-badge::before {
+  content: "";
+  width: .5rem;
+  height: .5rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .8;
+  flex: 0 0 auto;
+}
+.state-badge.badge-test::before,
+.state-badge--test::before,
+.state-badge--archived::before { content: none; }
 
 .role-badge {
   display: inline-block;
@@ -121,11 +144,12 @@
 .bo-detail-code {
   font-family: ui-monospace, "SF Mono", "Fira Code", monospace;
   font-size: 1.5rem; font-weight: 800; letter-spacing: .15em;
-  background: var(--bo-code-bg, #f1f1f1); padding: .2rem .6rem;
-  border-radius: 6px; text-decoration: none; color: inherit;
+  background: var(--bo-surface, #fff); border: 1px solid var(--bo-border, #d5dae1);
+  padding: .2rem .7rem;
+  border-radius: var(--radius-sm, 8px); text-decoration: none; color: inherit;
   transition: background .12s;
 }
-a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
+a.bo-detail-code:hover { background: var(--bo-code-bg, #f0f2f5); }
 .bo-detail-meta {
   font-size: .85rem; color: var(--bo-muted, #6b7280); margin: .3rem 0 0;
 }
@@ -135,9 +159,9 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
    never adjacent to the one an educator reaches for mid-class. */
 .bo-detail-actions {
   display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
-  margin-bottom: 1.25rem; padding: .85rem 1.1rem;
-  background: var(--bo-surface, #fff); border: 1px solid var(--bo-border, #d4d4d4);
-  border-radius: 8px;
+  margin-bottom: 1.25rem; padding: .7rem .8rem;
+  background: var(--bo-surface, #fff); border: 1px solid var(--bo-border, #d5dae1);
+  border-radius: var(--radius, 12px);
 }
 .bo-detail-actions__sep { flex: 1; }
 
@@ -147,7 +171,7 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
    this one. */
 .btn-ghost {
   background: transparent; color: var(--bo-muted, #6b7280);
-  border: 1.5px solid var(--bo-border, #d4d4d4);
+  border: 1px solid var(--bo-border, #d5dae1);
 }
 .btn-ghost:hover { border-color: var(--bo-text, #171717); color: var(--bo-text, #171717); }
 /* The bar's buttons must LOOK like buttons without depending on the tool
@@ -161,8 +185,8 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
 .bo-detail-actions .btn,
 .bo-detail-actions .btn-ghost {
   display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
-  font-size: .82rem; font-weight: 600; line-height: 1;
-  padding: .45rem .85rem; border-radius: 6px;
+  font-size: .875rem; font-weight: 600; line-height: 1;
+  padding: .62rem .95rem; border-radius: var(--radius-sm, 8px);
   text-decoration: none; white-space: nowrap; cursor: pointer;
 }
 .bo-detail-actions .btn-ghost {
@@ -174,6 +198,11 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
   background: var(--bo-code-bg, #f5f5f5);
   border-color: var(--bo-text, #171717);
 }
+/* In the bar the destructive action is a red word, so it never competes with the main one. */
+.bo-detail-actions .btn-danger {
+  background: transparent; color: var(--bo-danger); border: 1px solid transparent;
+}
+.bo-detail-actions .btn-danger:hover { background: var(--bo-danger-bg); color: var(--bo-danger); }
 
 /* ── Manage account: one column, the width of the tables ────────────────────
    Owner, 17 August 2026, and this is the settled shape. The page went 440px
@@ -231,7 +260,7 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
    from Whiteout rather than copied eight times. */
 
 .btn:active { opacity: .85; }
-.btn-primary { background: var(--bo-primary); color: #fff; }
+.btn-primary { background: var(--bo-accent, #2456a6); color: #fff; }
 .btn-danger { background: var(--bo-danger); color: #fff; }
 .btn-full { width: 100%; }
 .btn-link:hover { color: var(--bo-primary); text-decoration: underline; }
@@ -249,15 +278,17 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
 .bo-table {
   width: 100%; border-collapse: collapse; font-size: .875rem; background: var(--bo-surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-card);
 }
-.bo-table thead { background: #f3f3f3; }
+.bo-table thead { background: var(--bo-surface); }
 .bo-table td {
-  padding: .65rem .9rem; border-bottom: 1px solid var(--bo-border); vertical-align: middle;
+  padding: .8rem .9rem; border-bottom: 1px solid var(--bo-line, #e8ebef); vertical-align: middle;
 }
 .bo-table tr:last-child td { border-bottom: none; }
 .bo-table .row-inactive td { opacity: .55; }
 .bo-table .text-right { text-align: right; }
 .bo-table .col-narrow { width: 1%; white-space: nowrap; }
 .bo-table .col-name { min-width: 12rem; }
+.bo-table .col-name a { color: var(--bo-primary); font-weight: 600; text-decoration: none; }
+.bo-table .col-name a:hover { text-decoration: underline; }
 .form-actions { display: flex; justify-content: flex-end; gap: .6rem; margin-top: 1.25rem; }
 .bo-empty {
   text-align: center; padding: 3rem 1rem; color: var(--bo-muted); font-size: .95rem;
@@ -275,7 +306,7 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
 .bulk-bar__count { font-size: .875rem; font-weight: 600; }
 .bulk-bar__actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 .bulk-bar .btn-sm { font-size: .8rem; }
-.bulk-bar .btn-secondary { border-color: rgba(255,255,255,.4); color: #fff; }
+.bulk-bar .btn-secondary { background: transparent; border-color: rgba(255,255,255,.4); color: #fff; }
 .bulk-bar .btn-secondary:hover { background: rgba(255,255,255,.12); }
 .bulk-bar .btn-danger { background: #c0392b; color: #fff; }
 .bulk-bar .btn-danger:hover { background: #a93226; }
@@ -290,13 +321,13 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
   .print-hide { display: none !important; }
 }
 .bo-quickstart {
-  border: 1px solid var(--bo-border, #d9dee5); border-left: 4px solid var(--bo-primary, #2b6cb0); border-radius: 8px; background: var(--bo-surface, #fff); margin-bottom: 1.25rem;
+  border: 1px solid var(--bo-border, #d5dae1); border-radius: var(--radius, 12px); background: var(--bo-surface, #fff); margin-bottom: 1.25rem;
 }
 .bo-quickstart > summary {
-  cursor: pointer; list-style: none; padding: .7rem 1rem; font-weight: 600; color: var(--bo-primary, #2b6cb0); display: flex; align-items: center; gap: .5rem;
+  cursor: pointer; list-style: none; padding: .85rem 1.1rem; font-weight: 600; color: var(--bo-text, #16191d); display: flex; align-items: center; gap: .6rem;
 }
 .bo-quickstart > summary::-webkit-details-marker { display: none; }
-.bo-quickstart > summary .qs-chev { transition: transform .15s ease; }
+.bo-quickstart > summary .qs-chev { transition: transform .15s ease; color: var(--bo-accent, #2456a6); font-size: .7rem; }
 .bo-quickstart[open] > summary .qs-chev { transform: rotate(90deg); }
 .bo-quickstart .qs-body {
   padding: 0 1.1rem 1rem 1.1rem; color: var(--bo-text, #1f2933); font-size: .92rem;
@@ -347,12 +378,37 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
 .bo-section-card__summary-hint {
   margin-left: auto; font-size: .8rem; font-weight: 500; color: var(--bo-muted);
 }
-.bo-table .col-actions { min-width: 11rem; white-space: normal; vertical-align: middle; }
+.bo-table .col-actions { min-width: 14.5rem; white-space: normal; vertical-align: middle; }
 .bo-table .row-actions {
   display: flex; gap: .35rem; flex-wrap: wrap; align-items: center; white-space: normal;
 }
 .bo-table .row-actions .btn, .bo-table .row-actions form { flex: 0 0 auto; }
 .bo-table .row-actions form { display: inline-flex; margin: 0; }
+/* In a table row the main action is outlined and the others are plain words,
+   so a list of sessions is not a wall of buttons. Both spellings, because one
+   tool puts the buttons straight into the cell. */
+.bo-table .row-actions { gap: .15rem; min-width: 15.5rem; }
+.bo-table .row-actions .btn-sm,
+.bo-table td.col-actions .btn-sm { padding: .4rem .55rem; }
+.bo-table .row-actions .btn-primary,
+.bo-table td.col-actions .btn-primary {
+  background: var(--bo-surface); color: var(--bo-text); border-color: var(--bo-border);
+  padding: .4rem .75rem; margin-right: .25rem;
+}
+.bo-table .row-actions .btn-primary:hover,
+.bo-table td.col-actions .btn-primary:hover { background: var(--bo-code-bg, #f0f2f5); color: var(--bo-text); }
+.bo-table .row-actions .btn-secondary,
+.bo-table td.col-actions .btn-secondary {
+  background: transparent; color: var(--bo-muted); border-color: transparent;
+}
+.bo-table .row-actions .btn-secondary:hover,
+.bo-table td.col-actions .btn-secondary:hover { background: var(--bo-code-bg, #f0f2f5); color: var(--bo-text); }
+.bo-table .row-actions .btn-danger,
+.bo-table td.col-actions .btn-danger {
+  background: transparent; color: var(--bo-danger); border-color: transparent;
+}
+.bo-table .row-actions .btn-danger:hover,
+.bo-table td.col-actions .btn-danger:hover { background: var(--bo-danger-bg); color: var(--bo-danger); }
 .bo-table--wrappy { table-layout: auto; }
 .bo-table--wrappy .col-name {
   white-space: normal; word-break: break-word; min-width: 9rem; max-width: 22rem;
@@ -627,10 +683,10 @@ a.bo-detail-code:hover { background: var(--bo-code-bg-hover, #e5e5e5); }
 .tabs__panel { display: none; padding: 1.5rem 0; }
 .tabs__panel.active { display: block; }
 .tabs__tab {
-  padding: .6rem 1.1rem; background: none; border: none; font: .85rem/1 var(--font); font-weight: 600; color: var(--bo-muted); cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color .15s, border-color .15s;
+  padding: .6rem 1.1rem; background: none; border: none; font: .9rem/1 var(--font); font-weight: 600; color: var(--bo-muted); cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color .15s, border-color .15s;
 }
-.tabs__tab.active { color: var(--bo-primary); border-bottom-color: var(--bo-primary); }
-.tabs__tab:hover { color: var(--bo-primary); }
+.tabs__tab.active { color: var(--bo-text); border-bottom-color: var(--bo-accent, #2456a6); }
+.tabs__tab:hover { color: var(--bo-text); }
 .test-class-fieldset {
   border: 1.5px solid #f1d9a3; background: #fffaf1; border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;
 }
@@ -731,23 +787,27 @@ details[open] > summary > .bo-section-card__summary-hint { display: none; }
    background and the quick-start box — so these are Whiteout's values, and
    because this sheet loads last they win over a tool's own palette. */
 :root {
-  --bo-bg:          #efefef;
+  --bo-bg:          #f5f6f8;
   --bo-surface:     #ffffff;
-  --bo-border:      #d4d4d4;
-  --bo-text:        #171717;
-  --bo-muted:       #666666;
-  --bo-primary:     #232323;
-  --bo-primary-h:   #0f0f0f;
-  --bo-danger:      #c0392b;
-  --bo-danger-bg:   #fdecea;
+  --bo-border:      #d5dae1;   /* controls and cards */
+  --bo-line:        #e8ebef;   /* the hairline between table rows */
+  --bo-text:        #16191d;
+  --bo-muted:       #5b6470;
+  --bo-primary:     #16191d;   /* ink: headings, links, a tool's own accents */
+  --bo-primary-h:   #000000;
+  --bo-accent:      #2456a6;   /* the one action colour: main buttons, the open tab */
+  --bo-accent-h:    #1b4384;
+  --bo-code-bg:     #f0f2f5;
+  --bo-danger:      #b42318;
+  --bo-danger-bg:   #feeceb;
   --bo-success:     #276749;
   --bo-success-bg:  #edfaf2;
   --bo-warn:        #9a6700;
   --bo-warn-bg:     #fffbea;
-  --radius-sm: 5px;
-  --radius:    8px;
-  --radius-lg: 12px;
-  --shadow-card: 0 1px 6px rgba(0,0,0,.07);
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 16px;
+  --shadow-card: 0 0 0 1px rgba(22,25,29,.07), 0 1px 2px rgba(22,25,29,.04);
   --font: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 .bo-body, .bo-layout { background: var(--bo-bg); color: var(--bo-text); font-family: var(--font); }
@@ -767,45 +827,46 @@ details[open] > summary > .bo-section-card__summary-hint { display: none; }
   display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
   margin-bottom: 1.5rem;
 }
-.bo-page-header h1 { font-size: 1.4rem; font-weight: 700; flex: 1; margin: 0; }
+.bo-page-header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.015em; line-height: 1.2; flex: 1; margin: 0; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
-  padding: .5rem 1.1rem;
-  border: none; border-radius: var(--radius-sm, 6px);
+  padding: .62rem 1.1rem;
+  border: 1px solid transparent; border-radius: var(--radius-sm, 8px);
   font: 600 .875rem/1 var(--font, inherit);
   cursor: pointer; text-decoration: none;
   transition: background .15s, opacity .15s;
   white-space: nowrap;
 }
 .btn:active { opacity: .85; }
-.btn-primary   { background: var(--bo-primary); color: #fff; }
-.btn-primary:hover { background: var(--bo-primary-h, var(--bo-primary)); color: #fff; text-decoration: none; }
-.btn-secondary { background: transparent; color: var(--bo-primary); border: 1.5px solid var(--bo-primary); }
-.btn-secondary:hover { background: #f0f0f0; text-decoration: none; }
+.btn-primary   { background: var(--bo-accent, #2456a6); color: #fff; }
+.btn-primary:hover { background: var(--bo-accent-h, #1b4384); color: #fff; text-decoration: none; }
+.btn-secondary { background: transparent; color: var(--bo-text); border: 1px solid var(--bo-border); }
+.btn-secondary:hover { background: var(--bo-code-bg, #f0f2f5); text-decoration: none; }
 .btn-danger    { background: var(--bo-danger); color: #fff; }
-.btn-danger:hover { background: #a93226; text-decoration: none; }
-.btn-sm        { padding: .3rem .75rem; font-size: .8rem; }
+.btn-danger:hover { background: #912018; text-decoration: none; }
+.btn-sm        { padding: .42rem .8rem; font-size: .84rem; }
 .btn-link      { background: none; border: none; color: var(--bo-muted); font: inherit; cursor: pointer; padding: 0; }
 .btn:disabled  { opacity: .4; cursor: not-allowed; pointer-events: none; }
 .bo-table-wrap { overflow-x: auto; }
-.bo-table tr:hover td { background: #f7f7f7; }
+.bo-table tr:hover td { background: #f8f9fb; }
 .bo-table .row-test td { background: #fdfaf5; }
 .badge-test { background: #efefef; color: #4f4f4f; border: 1px solid #d7d7d7; font-size: .7rem; }
 code, .code-chip {
-  font-family: "SF Mono", "Fira Code", monospace;
-  font-size: .82rem; background: #f1f1f1; color: #2f2f2f;
-  padding: .15rem .45rem; border-radius: 4px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Fira Code", monospace;
+  font-size: .82rem; background: var(--bo-code-bg, #f0f2f5); color: var(--bo-text, #16191d);
+  padding: .15rem .45rem; border-radius: 6px;
 }
+.code-chip { font-weight: 600; letter-spacing: .06em; padding: .28rem .55rem; }
 a.code-chip { text-decoration: none; transition: background .12s; }
-a.code-chip:hover { background: #e2e2e2; }
+a.code-chip:hover { background: #e3e7ec; }
 .table-search { width: 100%; max-width: 360px; }
 .table-page-size-label {
   display: flex; align-items: center; gap: .4rem;
   font-size: .85rem; color: var(--bo-muted); white-space: nowrap;
 }
 .table-page-size {
-  padding: .2rem .4rem; font-size: .85rem;
-  border: 1px solid var(--bo-border); border-radius: 4px; background: var(--bo-surface, #fff);
+  padding: .35rem .5rem; font-size: .85rem;
+  border: 1px solid var(--bo-border); border-radius: var(--radius-sm, 8px); background: var(--bo-surface, #fff);
   -webkit-appearance: auto; appearance: auto;
 }
 .table-empty-msg {
