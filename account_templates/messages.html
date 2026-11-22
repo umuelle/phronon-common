@@ -1,0 +1,58 @@
+{# The fleet's message panel (phronon_common.messages; owner, 22 November 2026).
+
+   {% from "account_kit/messages.html" import messages_panel %}
+   {{ messages_panel(mode="participant", words=w, poll_url="/api/messages", send_url="/play/message",
+                     recipients=[("all", "Everyone in Valley A"), ("0", "The educator"), ("12", "Hotel Edelweiss")],
+                     initial=messages, token=token, can_send=True, state="open", scope="ps-12-4",
+                     csrf_token=csrf_token) }}
+
+   mode        "participant" or "educator" (adds Hide / Show again to every message)
+   words       phronon_common.messages.words(lang): the panel speaks the page's language
+   poll_url    answers ?token=... (messages.js says how)
+   send_url    takes the form: to, text, csrf_token
+   hide_url    educator only: takes id and hidden
+   recipients  (value, label) pairs of the "To" list, in the order shown
+   initial     the messages as messages.as_json shapes them, drawn before the first poll
+   token       messages.state_token at the time of the page
+   can_send    False: the form is hidden and `state` says why ("off" or "closed")
+   scope       a key unique to this person and session: what was seen and typed is kept under it
+   heading     the heading's level (2 by default)
+   note        False hides the line that the educator reads every message (the educator's own panel)
+   fields      further (name, value) pairs the form posts, as hidden fields
+   Script: messages.js; styles: messages.css. #}
+{% macro messages_panel(mode, words, poll_url, send_url, recipients, initial, token, can_send, state="open",
+                        scope="messages", csrf_token="", hide_url="", heading=2, note=True, poll_ms=3000,
+                        text_max=300, id="messages", fields=()) -%}
+<section class="ph-messages ph-messages--{{ mode }}" id="{{ id }}" data-messages data-mode="{{ mode }}"
+         aria-labelledby="{{ id }}-title"
+         data-poll-url="{{ poll_url }}" data-poll-ms="{{ poll_ms }}" data-token="{{ token }}"
+         data-scope="{{ scope }}" data-can-send="{{ 1 if can_send else 0 }}" data-state="{{ state }}"
+         {% if hide_url %}data-hide-url="{{ hide_url }}"{% endif %}
+         data-words="{{ words | tojson | forceescape }}" data-initial="{{ initial | tojson | forceescape }}">
+  <h{{ heading }} class="ph-messages__title" id="{{ id }}-title">{{ words.title }}</h{{ heading }}>
+  <ol class="ph-messages__list" data-messages-list tabindex="0" aria-label="{{ words.title }}"></ol>
+  <p class="ph-messages__empty" data-messages-empty>{{ words.empty }}</p>
+  <p class="ph-messages__state" data-messages-state{% if can_send %} hidden{% endif %}>{% if not can_send %}{{ words.closed if state == 'closed' else words.off }}{% endif %}</p>
+  <form class="ph-messages__form" method="post" action="{{ send_url }}" data-messages-form{% if not can_send %} hidden{% endif %}>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {%- for name, value in fields %}
+    <input type="hidden" name="{{ name }}" value="{{ value }}">
+    {%- endfor %}
+    <label class="ph-messages__to"><span>{{ words.to }}</span>
+      <select name="to">
+        {%- for value, label in recipients %}
+        <option value="{{ value }}">{{ label }}</option>
+        {%- endfor %}
+      </select>
+    </label>
+    <label class="ph-messages__visually-hidden" for="{{ id }}-text">{{ words.placeholder }}</label>
+    <textarea id="{{ id }}-text" name="text" rows="2" maxlength="{{ text_max }}" placeholder="{{ words.placeholder }}" required></textarea>
+    <div class="ph-messages__send">
+      <span class="ph-messages__count" data-messages-count hidden></span>
+      <button type="submit" class="ph-messages__button">{{ words.send }}</button>
+    </div>
+    <p class="ph-messages__status" data-messages-status role="status"></p>
+  </form>
+  {% if note %}<p class="ph-messages__note">{{ words.note }}</p>{% endif %}
+</section>
+{%- endmacro %}

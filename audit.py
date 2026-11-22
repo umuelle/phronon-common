@@ -122,6 +122,8 @@ ACTIONS = (
     "manual_ranking_entered", "manual_ranking_corrected",
     "group_added", "group_renamed", "group_reopened", "groups_reallocated",
     "group_ranking_entered_by_hand", "group_ranking2_entered_by_hand",
+    # Messages inside a session (phronon_common.messages, 22 November 2026).
+    "message_hidden", "message_shown", "class_messages_off", "class_messages_on",
     # Data leaving the tool.
     "data_exported",
 )

@@ -8,6 +8,25 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 ## Unreleased
 
 
+## 1.115.0 — 22 November 2026
+
+**Messages inside a session (owner, 22 November 2026; TO DO FL-160).** The
+teams and the educator write to each other during a session: to everyone in
+the team's room, to one other team of that room, or to the educator; the
+educator also to every room at once. `messages.py` holds the rules (who may
+write to whom, what a team sees: `may_see`, and the same rule as SQL), the
+storage in each tool's own `messages` table (`CREATE_TABLE` is the contract),
+a limit of six messages in thirty seconds per team, the educator's Hide and
+Show again, and the shape a page draws. `account_templates/messages.html`
+holds the panel (`messages_panel`), `messages.js` keeps it current, shows a
+short pop-up when a message from somebody else arrives and keeps what is
+being typed across the page's own reloads, `messages.css` its look. The
+panel's words are in the fleet's ten languages (`messages_words/`; AI
+translations, not yet read by native speakers). The audit list gains
+`message_hidden`, `message_shown`, `class_messages_off` and
+`class_messages_on`. Peak Season is the first tool to use it.
+
+
 ## 1.114.0 — 21 November 2026
 
 **One head for every session page (owner, 21 November 2026).**

@@ -14,13 +14,15 @@ from phronon_common.registry import TOOLS
 TEN = ("ar", "de", "en", "es", "fr", "hi", "it", "pt", "ru", "zh")
 
 
-def test_layoff_and_moral_mirror_speak_ten_languages_and_publish_their_notices_in_fewer():
+def test_layoff_moral_mirror_and_peak_season_speak_ten_languages_and_publish_their_notices_in_fewer():
     assert TOOLS["layoff"].participant_locales == TEN and TOOLS["layoff"].locales == ("en", "de")
     assert TOOLS["moralmirror"].participant_locales == TEN and TOOLS["moralmirror"].locales == ("en",)
+    # Peak Season since 21 November 2026
+    assert TOOLS["peakseason"].participant_locales == TEN and TOOLS["peakseason"].locales == ("en",)
 
 
 def test_a_tool_without_its_own_list_speaks_its_notices_languages():
-    for key in ("whiteout", "polarity", "peakseason", "phronon"):
+    for key in ("whiteout", "polarity", "phronon"):
         assert TOOLS[key].participant_locales == TOOLS[key].locales, key
 
 

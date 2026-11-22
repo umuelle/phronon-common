@@ -41,7 +41,7 @@ from phronon_common.testing import (assert_form_asks_for_the_shared_hint,
 PKG = Path(kit_mod.__file__).resolve().parent
 #: Building blocks a tool's own page imports (macros, tests/test_session_head.py);
 #: every other file in the folder is one of the kit's pages.
-PARTS = {"session_head.html"}
+PARTS = {"session_head.html", "messages.html"}
 TEMPLATES = sorted(p for p in kit_mod.TEMPLATE_DIR.glob("*.html") if p.name not in PARTS)
 BASE = "https://testserver"
 SECRET = "kit-test-secret-" + "0" * 32  # pragma: allowlist secret (test value)

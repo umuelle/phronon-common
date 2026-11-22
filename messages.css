@@ -1,0 +1,63 @@
+/* The fleet's message panel and its pop-up (phronon_common.messages, messages.js).
+   A tool sets its own colours with the custom properties below; the rest is shared. */
+.ph-messages {
+  --ph-msg-bg: #fff;
+  --ph-msg-ink: #1f2933;
+  --ph-msg-muted: #5b6670;
+  --ph-msg-line: #d5dade;
+  --ph-msg-mine: #eef4f0;
+  --ph-msg-direct: #fff6e0;
+  --ph-msg-accent: #2f6b4f;
+  --ph-msg-accent-ink: #fff;
+  display: flex; flex-direction: column; gap: .55rem; min-width: 0;
+  background: var(--ph-msg-bg); color: var(--ph-msg-ink);
+  border: 1px solid var(--ph-msg-line); border-radius: 10px; padding: .9rem 1rem;
+}
+.ph-messages__title { margin: 0; font-size: 1.1rem; }
+.ph-messages__list {
+  list-style: none; margin: 0; padding: 0 .1rem 0 0; display: flex; flex-direction: column; gap: .5rem;
+  overflow-y: auto; max-height: 26rem; min-height: 3rem;
+}
+.ph-messages__list:empty { display: none; }
+.ph-messages__item { border: 1px solid var(--ph-msg-line); border-radius: 8px; padding: .45rem .6rem; }
+.ph-messages__item--mine { background: var(--ph-msg-mine); }
+.ph-messages__item--direct { border-left: 4px solid #c98a12; }
+.ph-messages__item--direct.ph-messages__item--mine { background: var(--ph-msg-mine); }
+.ph-messages__item--direct:not(.ph-messages__item--mine) { background: var(--ph-msg-direct); }
+.ph-messages__item--hidden { opacity: .62; }
+.ph-messages__head { margin: 0 0 .15rem; font-size: .82rem; color: var(--ph-msg-muted); }
+.ph-messages__when { font-size: .78rem; }
+.ph-messages__text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.4; }
+.ph-messages__hidden { margin: .25rem 0 0; font-size: .8rem; font-weight: 600; color: #8a2d1f; }
+.ph-messages__hide { margin-top: .35rem; }
+.ph-messages__empty, .ph-messages__state, .ph-messages__note { margin: 0; font-size: .86rem; color: var(--ph-msg-muted); }
+.ph-messages__state { font-weight: 600; }
+.ph-messages__form { display: flex; flex-direction: column; gap: .4rem; margin: 0; }
+.ph-messages__to { display: flex; align-items: center; gap: .45rem; font-size: .9rem; }
+.ph-messages__to select { flex: 1; min-width: 0; max-width: 100%; font: inherit; font-size: 16px; padding: .3rem .4rem;
+  border: 1px solid var(--ph-msg-line); border-radius: 6px; background: #fff; color: inherit; }
+.ph-messages__form textarea { font: inherit; font-size: 16px; line-height: 1.35; padding: .45rem .55rem; resize: vertical;
+  min-height: 3.2rem; border: 1px solid var(--ph-msg-line); border-radius: 6px; width: 100%; box-sizing: border-box; }
+.ph-messages__send { display: flex; align-items: center; justify-content: flex-end; gap: .6rem; }
+.ph-messages__count { font-size: .8rem; color: var(--ph-msg-muted); margin-right: auto; }
+.ph-messages__button { font: inherit; font-weight: 600; padding: .4rem 1rem; border: 0; border-radius: 6px; cursor: pointer;
+  background: var(--ph-msg-accent); color: var(--ph-msg-accent-ink); }
+.ph-messages__button:disabled { opacity: .6; cursor: default; }
+.ph-messages__status { margin: 0; min-height: 0; font-size: .86rem; color: #8a2d1f; }
+.ph-messages__status:empty { display: none; }
+.ph-messages__visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.ph-messages-toast {
+  position: fixed; right: 1rem; bottom: 1rem; z-index: 50; max-width: min(24rem, calc(100vw - 2rem));
+  display: flex; align-items: center; gap: .6rem; padding: .7rem .8rem .7rem 1rem;
+  background: #1f2933; color: #fff; border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, .28);
+}
+.ph-messages-toast[hidden] { display: none; }
+.ph-messages-toast__line { margin: 0; flex: 1; font-weight: 600; overflow-wrap: anywhere; }
+.ph-messages-toast__read { font: inherit; font-weight: 600; padding: .3rem .8rem; border: 0; border-radius: 6px;
+  background: #fff; color: #1f2933; cursor: pointer; }
+.ph-messages-toast__close { font: inherit; font-size: 1.2rem; line-height: 1; padding: .2rem .4rem; border: 0;
+  background: transparent; color: #fff; cursor: pointer; }
+[dir="rtl"] .ph-messages-toast { right: auto; left: 1rem; }
+[dir="rtl"] .ph-messages__item--direct { border-left: 1px solid var(--ph-msg-line); border-right: 4px solid #c98a12; }
+@media print { .ph-messages, .ph-messages-toast { display: none !important; } }

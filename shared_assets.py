@@ -46,6 +46,8 @@ ASSETS = {
     "flow-preview.js":         "static/js/flow-preview.js",
     "flow-preview-frame.js":   "static/js/flow-preview-frame.js",
     "pdf-report.js":           "static/js/pdf-report.js",
+    "messages.js":             "static/js/messages.js",
+    "messages.css":            "static/css/messages.css",
 }
 
 # WHY A TOOL CARRIES FEWER (the lists themselves are in each ops/tool.json).
@@ -80,6 +82,9 @@ ASSETS = {
 #   * pdf-report.js (the PDF report builder, FL-098, 26 October 2026): only
 #     the three tools that make a PDF in the browser, Layoff, Polarity
 #     Profiler and Whiteout. Each keeps its own cover and page design.
+#   * messages.js and messages.css (messages inside a session, 22 November
+#     2026, TO DO FL-160): only the tools that let their teams write to each
+#     other, Peak Season so far (phronon_common.messages).
 #
 # LOOK SHARED, ARE NOT (checked 26 October 2026, FL-098 point 3): Polarity
 # Profiler's and Whiteout's session-tabs.js and lang-switcher.js, and Moral

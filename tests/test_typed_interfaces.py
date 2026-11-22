@@ -27,7 +27,7 @@ TYPED = (
     "common_assets", "countries", "csrf", "database", "demographics", "emails", "exports",
     "frontend_assets", "hosts", "join_sheet", "joincode", "kanon", "legal",
     "legal_conf", "legal_content", "lockout", "log_privacy", "machine_facing",
-    "mail_diagnostics", "once", "participant", "passkeys", "passwords", "provisioning",
+    "mail_diagnostics", "messages", "once", "participant", "passkeys", "passwords", "provisioning",
     "rate_limit", "registry", "request_ip", "retention_heartbeat", "routing",
     "scheduler", "security_headers", "sessions", "shared_assets", "signing",
     "translations", "twofactor", "undefined_names", "users_kit", "withdrawal_kit",
