@@ -8,6 +8,22 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 ## Unreleased
 
 
+## 1.117.0 — 22 November 2026
+
+**One tab strip for the fleet (TO DO FL-161, 22 November 2026).** `tabs.js`,
+a new shared file served from the release, runs every `.tabs__nav`: each tab
+is a link to `?tab=<name>` (a right-click opens it in a new window, owner,
+22 November 2026), a plain click switches in place and writes the address,
+and the tab to open on is the address's, else `#name`, else the one this
+window remembers (`data-tab-store`), else `data-tab-default`. Each tab names
+its panel with `aria-controls`; a panel is shown with `hidden` and `.active`.
+`PhrononTabs.onShow` / `show` / `current` let a page add its own (chart
+loading, a scroll). `backoffice-core.css` gains `a.tabs__tab` (no underline)
+and `[role="tabpanel"][hidden]`. Seven tools replace their own copies with it
+once this release is live. Pinned by `tests/test_tabs_browser.py` (Chromium
+and WebKit).
+
+
 ## 1.116.0 — 22 November 2026
 
 **A reference line in line charts (owner, 22 November 2026).** `drawLine`

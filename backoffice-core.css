@@ -687,6 +687,9 @@ a.bo-detail-code:hover { background: var(--bo-code-bg, #f0f2f5); }
 }
 .tabs__tab.active { color: var(--bo-text); border-bottom-color: var(--bo-accent, #2456a6); }
 .tabs__tab:hover { color: var(--bo-text); }
+/* Each tab is a link to ?tab=<name> (tabs.js), so a right-click can open it in a new window. */
+a.tabs__tab { text-decoration: none; }
+[role="tabpanel"][hidden] { display: none; }
 .test-class-fieldset {
   border: 1.5px solid #f1d9a3; background: #fffaf1; border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;
 }

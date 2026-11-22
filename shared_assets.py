@@ -48,6 +48,7 @@ ASSETS = {
     "pdf-report.js":           "static/js/pdf-report.js",
     "messages.js":             "static/js/messages.js",
     "messages.css":            "static/css/messages.css",
+    "tabs.js":                 "static/js/tabs.js",
 }
 
 # WHY A TOOL CARRIES FEWER (the lists themselves are in each ops/tool.json).
@@ -85,11 +86,14 @@ ASSETS = {
 #   * messages.js and messages.css (messages inside a session, 22 November
 #     2026, TO DO FL-160): only the tools that let their teams write to each
 #     other, Peak Season so far (phronon_common.messages).
+#   * tabs.js (the tab strip, 22 November 2026, TO DO FL-161): the seven tools
+#     with tabbed pages, Controversy Generator, Drawbridge, Layoff, Moral
+#     Mirror, Peak Season, Polarity Profiler and Whiteout.
 #
 # LOOK SHARED, ARE NOT (checked 26 October 2026, FL-098 point 3): Polarity
-# Profiler's and Whiteout's session-tabs.js and lang-switcher.js, and Moral
-# Mirror's and Whiteout's confirm-submit.js, share a name but not their code;
-# each is the tool's own script for its own pages.
+# Profiler's and Whiteout's lang-switcher.js, and Moral Mirror's and
+# Whiteout's confirm-submit.js, share a name but not their code; each is the
+# tool's own script for its own pages.
 
 
 def master_path(asset: str) -> Path:
