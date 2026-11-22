@@ -8,6 +8,14 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 ## Unreleased
 
 
+## 1.116.0 — 22 November 2026
+
+**A reference line in line charts (owner, 22 November 2026).** `drawLine`
+takes `reference: true` on a series: a thin dotted line drawn beneath the
+other lines, with no dots and no numbers on it, and a dotted mark in the
+legend. Layoff draws the whole class this way behind its demographic
+segments. Pinned by `tests/test_line_chart_reference_series.py` (Chromium).
+
 ## 1.115.0 — 22 November 2026
 
 **Messages inside a session (owner, 22 November 2026; TO DO FL-160).** The

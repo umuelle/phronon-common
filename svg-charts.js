@@ -1198,13 +1198,15 @@
   /* ── drawLine: values over an ordered category axis ─────────────────────
    * The one honest use of a line: an ORDER (serial position, rounds) whose
    * progression is the question. series: [{label, values[], tone OR color
-   * (hex — segment identity lines), dash}]; opts: cats (x labels), yLabel,
+   * (hex — segment identity lines), dash, reference}]; opts: cats (x labels), yLabel,
    * xLabel, yMin/yMax/yStep, reverse (true = LOW values at the top, for
    * rank scales where 1 is the good end), legend (true draws a swatch row;
    * default is on from two series up), aria, height, unit, pointValues
    * (false suppresses the per-point numbers when many series would collide
    * — the data table carries them instead). Every point carries its value
-   * by default.
+   * by default. A series with `reference: true` is a yardstick to compare
+   * against (the whole class behind its segments): a thin dotted line drawn
+   * beneath the others, without dots or numbers, and a dotted legend mark.
    */
   function drawLine(host, series, opts) {
     if (!host || !series.length || !opts.cats || !opts.cats.length) return;
@@ -1273,8 +1275,29 @@
       }, opts.yLabel));
     }
 
+    function lineColor(s, si) {
+      return s.color || TONE[s.tone] || (s.reference ? C.muted : (si === 0 ? C.ink : C.muted));
+    }
+    var plotted = series.filter(function (s) { return !s.reference; }).length;
+    // Reference lines first, so every segment line is drawn over them.
     series.forEach(function (s, si) {
-      var color = s.color || TONE[s.tone] || (si === 0 ? C.ink : C.muted);
+      if (!s.reference) return;
+      var d = '';
+      s.values.forEach(function (v, i) {
+        if (!has(v)) return;
+        d += (d ? ' L ' : 'M ') + x(i) + ' ' + y(v);
+      });
+      if (d) {
+        svg.appendChild(tag('path', {
+          d: d, fill: 'none', stroke: lineColor(s, si), 'stroke-width': 2.5,
+          'stroke-linejoin': 'round', 'stroke-linecap': 'round',
+          'stroke-dasharray': s.dash || '0.5 6', 'data-reference': 'true',
+        }));
+      }
+    });
+    series.forEach(function (s, si) {
+      if (s.reference) return;
+      var color = lineColor(s, si);
       var d = '';
       s.values.forEach(function (v, i) {
         if (!has(v)) return;
@@ -1290,7 +1313,7 @@
       s.values.forEach(function (v, i) {
         if (!has(v)) return;
         svg.appendChild(tag('circle', {
-          cx: x(i), cy: y(v), r: series.length > 3 ? 4 : 5, fill: color,
+          cx: x(i), cy: y(v), r: plotted > 3 ? 4 : 5, fill: color,
           stroke: C.surface, 'stroke-width': 2,
         }));
         if (opts.pointValues !== false) {
@@ -1319,8 +1342,8 @@
       for (var lr = 0; lr < legendRows; lr++) {
         legendRow(svg, series.slice(lr * per, (lr + 1) * per)
           .map(function (se, si) {
-            return { label: se.label,
-                     fill: se.color || TONE[se.tone] || C.ink };
+            return { label: se.label, dotted: !!se.reference,
+                     fill: se.color || TONE[se.tone] || (se.reference ? C.muted : C.ink) };
           }), PAD_L, 22 + lr * 22);
       }
     }
@@ -1801,6 +1824,13 @@
               x: r[0], y: r[1], width: r[2], height: r[3], fill: it.fill,
             }));
           });
+      } else if (it.dotted) {
+        // A reference line's mark is a piece of that dotted line.
+        svg.appendChild(tag('line', {
+          x1: lx + 1, x2: lx + 13, y1: y0 - 3.5, y2: y0 - 3.5,
+          stroke: it.fill, 'stroke-width': 2.5, 'stroke-linecap': 'round',
+          'stroke-dasharray': '0.5 4',
+        }));
       } else {
       svg.appendChild(tag('rect', {
         x: lx, y: y0 - 10, width: 13, height: 13, rx: 3,
