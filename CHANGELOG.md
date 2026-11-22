@@ -8,6 +8,13 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 ## Unreleased
 
 
+## 1.117.1 — 23 November 2026
+
+**The tab link rule in `backoffice-core.css` reads `.tabs__nav a.tabs__tab`.**
+1.117.0 wrote it as `a.tabs__tab`, the very rule Layoff's own sheet carries
+until it loads `tabs.js`, and Layoff's test refuses a sheet that repeats the
+shared one, so the release gate held 1.117.0 back. Same effect on the page.
+
 ## 1.117.0 — 22 November 2026
 
 **One tab strip for the fleet (TO DO FL-161, 22 November 2026).** `tabs.js`,
