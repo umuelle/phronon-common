@@ -7,9 +7,6 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## Unreleased
 
-
-## 1.119.0 — 23 November 2026
-
 **Messages read like a chat** (owner, 23 November 2026): your own messages
 lean right and the others' left, and the educator's messages are light red
 (`--ph-msg-educator`, `.ph-messages__item--educator`, set by `messages.js`
