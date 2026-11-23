@@ -62,7 +62,8 @@
   function item(m) {
     var li = document.createElement('li');
     li.className = 'ph-messages__item' + (m.mine ? ' ph-messages__item--mine' : '') +
-      (m.direct ? ' ph-messages__item--direct' : '') + (m.hidden ? ' ph-messages__item--hidden' : '');
+      (m.direct ? ' ph-messages__item--direct' : '') + (m.hidden ? ' ph-messages__item--hidden' : '') +
+      (m.sender === 0 ? ' ph-messages__item--educator' : '');
     li.setAttribute('data-message-id', String(m.id));
     var head = document.createElement('p');
     head.className = 'ph-messages__head';

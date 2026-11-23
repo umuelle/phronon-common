@@ -7,6 +7,7 @@
   --ph-msg-line: #d5dade;
   --ph-msg-mine: #eef4f0;
   --ph-msg-direct: #fff6e0;
+  --ph-msg-educator: #fde8e6;
   --ph-msg-accent: #2f6b4f;
   --ph-msg-accent-ink: #fff;
   display: flex; flex-direction: column; gap: .55rem; min-width: 0;
@@ -25,6 +26,12 @@
 .ph-messages__item--direct.ph-messages__item--mine { background: var(--ph-msg-mine); }
 .ph-messages__item--direct:not(.ph-messages__item--mine) { background: var(--ph-msg-direct); }
 .ph-messages__item--hidden { opacity: .62; }
+/* As in a chat (owner, 23 November 2026): your own messages lean right, the
+   others' left, and the educator's are light red wherever they stand. */
+.ph-messages__item { margin-right: 12%; }
+.ph-messages__item--mine { margin-right: 0; margin-left: 12%; }
+.ph-messages__item--educator:not(.ph-messages__item--direct) { background: var(--ph-msg-educator); }
+.ph-messages__item--educator.ph-messages__item--direct { background: var(--ph-msg-educator); border-left-color: #c0392b; }
 .ph-messages__head { margin: 0 0 .15rem; font-size: .82rem; color: var(--ph-msg-muted); }
 .ph-messages__when { font-size: .78rem; }
 .ph-messages__text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.4; }

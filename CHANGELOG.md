@@ -7,6 +7,11 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## Unreleased
 
+**Messages read like a chat** (owner, 23 November 2026): your own messages
+lean right and the others' left, and the educator's messages are light red
+(`--ph-msg-educator`, `.ph-messages__item--educator`, set by `messages.js`
+for sender 0). Pinned by `tests/test_messages_browser.py`.
+
 **`drawBarsAndLine`: stacked bars on the left axis, one line on a right axis**
 (owner, 23 November 2026). Two measures of the same categories in different
 units, such as room nights sold by price band and the average price per night
