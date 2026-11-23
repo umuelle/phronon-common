@@ -7,6 +7,14 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## Unreleased
 
+**`drawBarsAndLine`: stacked bars on the left axis, one line on a right axis**
+(owner, 23 November 2026). Two measures of the same categories in different
+units, such as room nights sold by price band and the average price per night
+in Peak Season. Both axes start at zero; the line, its dots, the right axis
+numbers and its title share one colour; segments and dots carry their values
+as tooltips, tall segments print them. Peak Season draws its own copy until
+this release is live and then switches. Pinned by
+`tests/test_bars_and_line_chart.py` (Chromium).
 
 ## 1.118.0 — 23 November 2026
 

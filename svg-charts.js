@@ -28,7 +28,7 @@
  *   has(v), fmt(v), tag(name, attrs, text)
  *   drawRows(host, rows, opts)   the row renderer, documented below
  *   drawDotRows, drawShares, drawBars, drawScatter, drawLine,
- *   drawGroupedBars, drawRadar, drawStackedBars, drawPie, legendRow,
+ *   drawGroupedBars, drawRadar, drawStackedBars, drawBarsAndLine, drawPie, legendRow,
  *   dataTable                    the other forms, each documented above
  *                                its own function
  *   chartPng, exportChartPng, tableCsv, zipBlob, exportChartsZip,
@@ -1948,6 +1948,132 @@
     host.appendChild(svg);
   }
 
+  /* ── drawBarsAndLine: stacked bars on the left axis, one line on the right ─
+   * Two measures of the same seasons that belong together and have different
+   * units: how much (the stacked bars, left axis) and at what level (the line,
+   * right axis), e.g. room nights sold by price band and the average price
+   * per night (owner, 23 November 2026, Peak Season). Both axes start at zero,
+   * so neither can exaggerate a change, and the line, its dots, its right
+   * axis numbers and its axis title share one colour, so the pair reads as
+   * one. cats: x labels; keys: the stack order, first key at the bottom;
+   * rows: per category a {key: value} map; opts: fills, labels, darkText (as
+   * drawStackedBars), line {label, values (null = no point), color}, yLabel,
+   * y2Label, xLabel, aria, height, digits (decimals printed in the bars and
+   * on the left axis; default 0). Every segment and every dot carries its
+   * value as a tooltip; segments tall enough carry it printed too.
+   */
+  function drawBarsAndLine(host, cats, rows, opts) {
+    if (!host || !cats.length) return;
+    var C = palette();
+    var KEYS = opts.keys || [];
+    var line = opts.line || { values: [] };
+    var LC = line.color || C.better;
+    var digits = opts.digits || 0;
+    function n2(v) { return fmt(Number(v).toLocaleString('en-US', { maximumFractionDigits: digits })); }
+    var W = 900, H = opts.height || 460;
+    var PAD_L = 76, PAD_R = 86, PAD_T = 26, PAD_B = 96;
+    var plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+    var sums = rows.map(function (r) {
+      return KEYS.reduce(function (t, k) { return t + ((r && r[k]) || 0); }, 0);
+    });
+    var lineVals = (line.values || []).filter(has);
+    var max1 = Math.max.apply(null, sums.concat([0])) || 1;
+    var max2 = Math.max.apply(null, lineVals.concat([0])) || 1;
+    var step1 = niceStep(max1), top1 = Math.ceil(max1 / step1) * step1;
+    var step2 = niceStep(max2), top2 = Math.ceil(max2 / step2) * step2;
+    function y1(v) { return PAD_T + plotH - (v / top1) * plotH; }
+    function y2(v) { return PAD_T + plotH - (v / top2) * plotH; }
+    var slot = plotW / cats.length;
+    var barW = Math.min(slot * 0.6, 70);
+    function cx(i) { return PAD_L + i * slot + slot / 2; }
+
+    var svg = baseSvg(W, H, opts.aria);
+    for (var t = 0; t <= top1 + 1e-9; t += step1) {
+      svg.appendChild(tag('line', {
+        x1: PAD_L, x2: PAD_L + plotW, y1: y1(t), y2: y1(t), stroke: C.grid, 'stroke-width': 1,
+      }));
+      svg.appendChild(tag('text', {
+        x: PAD_L - 10, y: y1(t) + 4, fill: C.muted, 'font-size': 11.5,
+        'text-anchor': 'end', 'font-variant-numeric': 'tabular-nums',
+      }, n2(t)));
+    }
+    for (var t2 = 0; t2 <= top2 + 1e-9; t2 += step2) {
+      svg.appendChild(tag('text', {
+        x: PAD_L + plotW + 10, y: y2(t2) + 4, fill: LC, 'font-size': 11.5,
+        'font-variant-numeric': 'tabular-nums', 'data-axis': 'right',
+      }, fmt(Math.round(t2))));
+    }
+    if (opts.yLabel) {
+      svg.appendChild(tag('text', {
+        x: 16, y: PAD_T + plotH / 2, fill: C.muted, 'font-size': 12.5, 'text-anchor': 'middle',
+        transform: 'rotate(-90 16 ' + (PAD_T + plotH / 2) + ')',
+      }, opts.yLabel));
+    }
+    if (opts.y2Label) {
+      svg.appendChild(tag('text', {
+        x: W - 14, y: PAD_T + plotH / 2, fill: LC, 'font-size': 12.5, 'text-anchor': 'middle',
+        transform: 'rotate(90 ' + (W - 14) + ' ' + (PAD_T + plotH / 2) + ')', 'data-axis': 'right',
+      }, opts.y2Label));
+    }
+    cats.forEach(function (cat, i) {
+      var r = rows[i] || {}, acc = 0;
+      KEYS.forEach(function (k) {
+        var v = r[k] || 0;
+        if (!v) return;
+        var yTop = y1(acc + v), yBot = y1(acc);
+        var rect = tag('rect', {
+          x: cx(i) - barW / 2, y: yTop, width: barW, height: Math.max(yBot - yTop, 1),
+          fill: (opts.fills && opts.fills[k]) || C.muted, stroke: C.surface, 'stroke-width': 1.5,
+        });
+        rect.appendChild(tag('title', {}, cat + ' — ' + ((opts.labels && opts.labels[k]) || k) + ': ' + n2(v)));
+        svg.appendChild(rect);
+        if (yBot - yTop >= 14) {
+          svg.appendChild(tag('text', {
+            x: cx(i), y: (yTop + yBot) / 2 + 4.5, 'font-size': 11.5, 'text-anchor': 'middle',
+            fill: (opts.darkText && opts.darkText[k]) ? C.ink : C.surface,
+            'font-variant-numeric': 'tabular-nums', 'pointer-events': 'none',
+          }, n2(v)));
+        }
+        acc += v;
+      });
+      svg.appendChild(tag('text', {
+        x: cx(i), y: PAD_T + plotH + 18, fill: C.ink, 'font-size': 11.5, 'text-anchor': 'middle',
+      }, cat));
+    });
+    var d = '';
+    (line.values || []).forEach(function (v, i) {
+      if (!has(v)) return;
+      d += (d ? ' L ' : 'M ') + cx(i) + ' ' + y2(v);
+    });
+    if (d) {
+      svg.appendChild(tag('path', {
+        d: d, fill: 'none', stroke: LC, 'stroke-width': 3, 'stroke-linejoin': 'round', 'data-line': 'true',
+      }));
+    }
+    (line.values || []).forEach(function (v, i) {
+      if (!has(v)) return;
+      var dot = tag('circle', { cx: cx(i), cy: y2(v), r: 5, fill: LC, stroke: C.surface, 'stroke-width': 2 });
+      dot.appendChild(tag('title', {}, cats[i] + ' — ' + (line.label || '') + ': ' + fmt(Math.round(v))));
+      svg.appendChild(dot);
+    });
+    if (opts.xLabel) {
+      svg.appendChild(tag('text', {
+        x: PAD_L + plotW / 2, y: PAD_T + plotH + 44, fill: C.muted, 'font-size': 12.5, 'text-anchor': 'middle',
+      }, opts.xLabel));
+    }
+    var items = KEYS.map(function (k) {
+      return { label: (opts.labels && opts.labels[k]) || k, fill: (opts.fills && opts.fills[k]) || C.muted };
+    });
+    legendRow(svg, items, PAD_L, H - 18);
+    // the line's legend mark: a piece of the line, after the swatches
+    var lx = PAD_L + items.reduce(function (w, it) { return w + 19 + String(it.label).length * 6.4 + 22; }, 0);
+    svg.appendChild(tag('line', {
+      x1: lx, x2: lx + 16, y1: H - 21.5, y2: H - 21.5, stroke: LC, 'stroke-width': 3, 'stroke-linecap': 'round',
+    }));
+    svg.appendChild(tag('text', { x: lx + 22, y: H - 17, fill: LC, 'font-size': 12, 'font-weight': 600 }, line.label || ''));
+    host.appendChild(svg);
+  }
+
   /* ── drawPie: shares of one whole ────────────────────────────────────────
    * Reached for only when the reader's question really is "what fraction of
    * one whole" and the slices are few. slices: [{label, value, fill}];
@@ -2497,6 +2623,7 @@
     drawGroupedBars: drawGroupedBars,
     drawRadar: drawRadar,
     drawStackedBars: drawStackedBars,
+    drawBarsAndLine: drawBarsAndLine,
     drawPie: drawPie,
     legendRow: legendRow,
     dataTable: dataTable,
