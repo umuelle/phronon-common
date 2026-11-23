@@ -16,6 +16,11 @@
  * window" and Cmd-click opens a new tab. A plain click switches here and writes
  * the tab into the address, so a reload and a copied link open it too.
  *
+ * A click or a key also scrolls the page until the strip sits at the top of
+ * the window, under the sticky bar (owner, 23 November 2026, as Layoff did).
+ * The first opening does not scroll, so a page that restores its scroll
+ * position after a refresh keeps it.
+ *
  * The tab to open on: the one the address names (?tab=, or #name for old
  * bookmarks), else the one remembered in this window, else data-tab-default,
  * else the one the page marked .active, else the first. A panel is shown with
@@ -107,10 +112,21 @@
     });
     this.open = name;
     if (remember) this.remember(name);
+    if (byUser) this.bringUp();
     if (this === strips[0]) {
       listeners.forEach(function (fn) { fn(name, shown, !!byUser); });
     }
     return true;
+  };
+
+  Strip.prototype.bringUp = function () {
+    var calm = false;
+    try { calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { /* old browser */ }
+    try {
+      this.nav.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+    } catch (e) {
+      this.nav.scrollIntoView(true);
+    }
   };
 
   Strip.prototype.wire = function () {

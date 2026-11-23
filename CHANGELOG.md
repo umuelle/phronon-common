@@ -8,6 +8,18 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 ## Unreleased
 
 
+## 1.118.0 — 23 November 2026
+
+**A click on a tab brings the tab strip to the top of the window** (owner,
+23 November 2026: what Layoff's results page did, now in every tool). A click
+or a key in `tabs.js` scrolls the strip up until it sits just under the sticky
+bar, so the section above it leaves the screen and the panel starts right
+below the tabs. The scroll is smooth, and immediate for a reader whose system
+asks for less motion. The first opening and `PhrononTabs.show()` do not
+scroll, so a page that restores its scroll position after its refresh keeps
+it. Layoff's own `onShow` scroll goes once this release is live. Pinned by
+`tests/test_tabs_browser.py` (Chromium and WebKit).
+
 ## 1.117.1 — 23 November 2026
 
 **The tab link rule in `backoffice-core.css` reads `.tabs__nav a.tabs__tab`.**

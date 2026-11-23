@@ -14,7 +14,10 @@ cases the seven tools need, served under Whiteout's policy (`script-src
   * onShow replays the open tab for a late listener and reports clicks as
     the user's; show() opens a tab for a page's own script;
   * arrow keys, Home, End and Space move and open;
-  * a page without a tab bar (presentation mode) keeps every panel shown.
+  * a page without a tab bar (presentation mode) keeps every panel shown;
+  * a click scrolls the strip to the top of the window (smoothly, or at once
+    for a reader who asks for less motion); the first opening and show() do
+    not scroll.
 
 Needs Playwright (the browser venv on this Mac, as test_chart_export_browser).
 """
@@ -35,6 +38,7 @@ CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
 
 PAGE = """<!doctype html>
 <html><head><meta charset="utf-8"><title>tabs</title></head><body>
+<div id="top-section" style="height:1200px">the session's top section</div>
 <div class="tabs__nav" role="tablist" data-tab-store="probe:tab" data-tab-default="two"
      data-tab-drop="done">
   <a href="?tab=one" class="tabs__tab" role="tab" data-tab="one" aria-controls="panel-one">One</a>
@@ -44,6 +48,7 @@ PAGE = """<!doctype html>
 <section id="panel-one" role="tabpanel">one</section>
 <section id="panel-two" role="tabpanel" hidden>two</section>
 <section id="panel-three" role="tabpanel" hidden>three</section>
+<div style="height:3000px"></div>
 <script src="/tabs.js"></script>
 <script src="/probe.js"></script>
 </body></html>
@@ -74,7 +79,12 @@ STATE_JS = """() => ({
   selected: [...document.querySelectorAll('.tabs__tab[aria-selected=true]')].map(t => t.dataset.tab),
   search: location.search, hash: location.hash,
   stored: sessionStorage.getItem('probe:tab'),
-  seen: window.__seen, marker: window.__marker || 0})"""
+  seen: window.__seen, marker: window.__marker || 0,
+  scrollY: Math.round(window.scrollY),
+  navTop: Math.round(document.querySelector('.tabs__nav').getBoundingClientRect().top)})"""
+
+# The strip has reached the top of the window (a smooth scroll takes a moment).
+AT_TOP_JS = "() => Math.abs(document.querySelector('.tabs__nav').getBoundingClientRect().top) <= 1"
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -130,6 +140,7 @@ def probe() -> dict:
                     page.goto(base + "?done=saved")
                     r["first"] = page.evaluate(STATE_JS)
                     page.click('.tabs__tab[data-tab="three"]')
+                    page.wait_for_function(AT_TOP_JS, timeout=5000)
                     r["clicked"] = page.evaluate(STATE_JS)
                     mod = "Meta" if sys.platform == "darwin" else "Control"
                     with ctx.expect_page() as popup:
@@ -146,7 +157,12 @@ def probe() -> dict:
                     page.focus('.tabs__tab[data-tab="two"]')
                     page.keyboard.press(" ")
                     r["space"] = page.evaluate(STATE_JS)
+                    page.wait_for_function(AT_TOP_JS, timeout=5000)
+                    page.evaluate("window.scrollTo({top: 0, behavior: 'instant'})")
+                    page.wait_for_timeout(400)
+                    r["before_show"] = round(page.evaluate("window.scrollY"))
                     page.evaluate("PhrononTabs.show('three', false)")
+                    page.wait_for_timeout(400)
                     r["shown"] = page.evaluate(STATE_JS)
                     page.evaluate("""() => { window.__late = [];
                         PhrononTabs.onShow((n, p, u) => window.__late.push([n, p && p.id, u])); }""")
@@ -167,6 +183,13 @@ def probe() -> dict:
                     r["pageErrors"] = errors
                     report[name] = r
                     ctx.close()
+                    # Less motion asked for: the jump is immediate.
+                    calm = browser.new_context(reduced_motion="reduce")
+                    cpage = calm.new_page()
+                    cpage.goto(base)
+                    cpage.click('.tabs__tab[data-tab="one"]')
+                    r["calm"] = cpage.evaluate(STATE_JS)
+                    calm.close()
                 finally:
                     browser.close()
     finally:
@@ -206,12 +229,15 @@ def _check(report: dict) -> None:
             "two", ["panel-two"], ["two"], ["two"]), (key, f)
         assert f["search"] == "?done=saved" and f["stored"] is None, (key, f)
         assert f["seen"] == [["two", "panel-two", False]], (key, f["seen"])
+        assert f["scrollY"] == 0, (key, "the first opening scrolled", f["scrollY"])
         # A plain click: same page, panel, address, memory, the listed parameter gone.
         c = r["clicked"]
         assert c["marker"] == 1, (key, "a plain click left the page")
         assert (c["open"], c["visible"], c["search"], c["stored"]) == (
             "three", ["panel-three"], "?tab=three", "three"), (key, c)
         assert c["seen"][-1] == ["three", "panel-three", True], (key, c["seen"])
+        # ...and the strip now sits at the top, the section above it scrolled away.
+        assert c["scrollY"] >= 1100 and abs(c["navTop"]) <= 1, (key, c["scrollY"], c["navTop"])
         # Cmd-click: a new tab of the browser's, this page unchanged.
         m = r["modified"]
         assert (m["open"], m["search"]) == ("three", "?tab=three"), (key, m)
@@ -225,6 +251,9 @@ def _check(report: dict) -> None:
         assert (s["open"], s["visible"], s["search"], s["stored"]) == (
             "three", ["panel-three"], "?tab=two", "two"), (key, s)
         assert s["seen"][-1] == ["three", "panel-three", False], (key, s["seen"])
+        assert s["scrollY"] == r["before_show"], (key, "show() scrolled", r["before_show"], s["scrollY"])
+        cm = r["calm"]
+        assert cm["open"] == "one" and abs(cm["navTop"]) <= 1, (key, cm)
         assert r["late"] == [["three", "panel-three", False]], (key, r["late"])
         # The address wins over the memory of the window that opened it.
         fr = r["fresh"]
