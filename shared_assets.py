@@ -30,6 +30,7 @@ MASTERS = Path(__file__).resolve().parent
 ASSETS = {
     "design-tokens.css":       "static/css/phronon-tokens.css",
     "rank-a11y.js":            "static/js/rank-a11y.js",
+    "rank-list.css":           "static/css/rank-list.css",
     "share-card.css":          "static/css/share-card.css",
     "backoffice-nav.css":      "static/css/backoffice-nav.css",
     "backoffice-core.css":     "static/css/backoffice-core.css",
@@ -60,7 +61,9 @@ ASSETS = {
 #   * design-tokens.css: not Layoff. The master carries @font-face rules for
 #     self-hosted Source Serif 4 / Source Sans 3; Layoff uses Inter from its own
 #     static/vendor/fonts/fonts.css, so the master would add ten 404s per page.
-#   * rank-a11y.js: only the drag-ranking exercises, Layoff and Whiteout.
+#   * rank-a11y.js and rank-list.css: every tool with a drag-and-drop ranking
+#     list, Layoff, Moral Mirror and Whiteout. The sheet is the row layout
+#     (description, arrows, dots), 24 November 2026.
 #   * svg-charts.js (the fleet chart engine, FL-027): not OrgDesignSim, whose
 #     fairness scatter is server-rendered SVG that works with JS off. No tool
 #     uses Chart.js any more, and its table helper chart-table.js was retired

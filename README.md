@@ -68,7 +68,7 @@ imports. One version, everywhere, or the deploy stops.
 each tool, and which tools carry it. The masters themselves sit beside it —
 `design-tokens.css`, `backoffice-nav.css`, `backoffice-core.css`,
 `share-card.css`, `two-factor.css`, `actions.js`, `bulk-select.js`,
-`dashboard-table.js`, `rank-a11y.js`, `share-card-download.js`,
+`dashboard-table.js`, `rank-a11y.js`, `rank-list.css`, `share-card-download.js`,
 `svg-charts.js`, `users-password.js`, `pdf-report.js` — and they ship in the
 wheel, so a tool can compare its copy against the real master.
 

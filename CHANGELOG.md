@@ -7,6 +7,15 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## Unreleased
 
+**`rank-list.css`: one row layout for every drag-and-drop ranking list** (owner,
+24 November 2026). Description on the left, the move-up / move-down buttons
+from `rank-a11y.js`, and the six dots to drag by on the right, close together
+and close to the border. A tool keeps its own row styling and adds `.rank-row`
+to the row, `.rank-row__text` to the description and `.rank-handle` to the
+dots; the markup contract is in the sheet's first comment. New master (so
+`shared_assets.py` changes and no existing master does); Layoff, Moral Mirror
+and Whiteout adopt it.
+
 
 ## 1.119.0 — 23 November 2026
 

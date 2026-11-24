@@ -1,0 +1,44 @@
+/* The row of a drag-and-drop ranking list, the same in every tool (owner,
+   24 November 2026): description on the left, the move-up / move-down buttons
+   (rank-a11y.js), and the six dots to drag by on the right, close together and
+   close to the border. A tool styles its own row (border, number, colours) and
+   adds these two classes:
+
+     <li class="... rank-row">
+       <span class="... rank-row__text">the description</span>
+       <!-- rank-a11y.js appends .rank-a11y-controls here -->
+       <span class="rank-handle" aria-hidden="true">⠿</span>
+     </li>
+
+   The dots go last in the row, after the buttons that script adds at run
+   time, so they carry order:1. The row itself keeps touch-action: pan-y in
+   the tool (a vertical swipe scrolls the page); only the dots start a drag. */
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.rank-row__text { flex: 1 1 auto; min-width: 0; }
+.rank-row .rank-a11y-controls {
+  gap: 2px;
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+}
+.rank-row .rank-a11y-btn { margin: 0; }   /* a tool's base sheet may give every button a margin */
+.rank-handle {
+  order: 1;
+  flex: none;
+  width: 16px;
+  min-height: 32px;
+  margin-inline-start: -.3rem;            /* right beside the buttons */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b6a65;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.sortable-chosen .rank-handle { cursor: grabbing; }
