@@ -74,6 +74,14 @@ _TITLES = {
 }
 
 
+def _tab_name(tool_key: str, config: dict) -> str:
+    """The name a browser tab shows: the registry's short name for a fleet
+    tool (Whiteout, not Whiteout Exercise), else the notice's own name."""
+    from phronon_common.registry import TOOLS
+    tool = TOOLS.get(tool_key)
+    return tool.short_name if tool else config["tool_name"]
+
+
 def render_legal(tool_key: str, doc: str, lang: str = "en", *, config: dict,
                  stylesheet_url: str | None = None) -> str:
     """Render one legal document to HTML. Exposed for tests.
@@ -89,6 +97,7 @@ def render_legal(tool_key: str, doc: str, lang: str = "en", *, config: dict,
         stylesheet_url=stylesheet_url,
         inline_css=None if stylesheet_url else Markup(_CSS),  # this package's own file
         cfg=config,
+        tab_name=_tab_name(tool_key, config),
         lang=lang,
         doc_title=_TITLES[doc].get(lang) or next(iter(_TITLES[doc].values())),
         L=lambda prose: prose.get(lang) or prose["en"],

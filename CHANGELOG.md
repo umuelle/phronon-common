@@ -8,6 +8,15 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 ## Unreleased
 
 
+## 1.121.0 — 24 November 2026
+
+**Legal pages: the tab shows the tool's short name** (owner, 24 November
+2026, FL-163). `<document> — <tool>` now takes the tool's name from the
+registry's `short_name`, so Whiteout's legal pages read "— Whiteout" in the tab
+while the page text keeps "Whiteout Exercise". A tool the registry does not
+know (Moral Mirror's Decision Room door) keeps the notice's own name.
+
+
 ## 1.120.0 — 24 November 2026
 
 **`rank-list.css`: one row layout for every drag-and-drop ranking list** (owner,

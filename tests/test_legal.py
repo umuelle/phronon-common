@@ -217,3 +217,13 @@ def test_a_page_rendered_outside_the_router_carries_the_same_rules_inline():
     html = _render(GERMAN, "privacy", "en")
     assert sheet in html and '"Segoe UI"' in html
     assert '<link rel="stylesheet"' not in html
+
+
+@pytest.mark.parametrize("doc", DOCS)
+def test_tab_title_is_the_document_then_the_tools_short_name(doc):
+    """The tab reads "<document> — Whiteout": the registry's short name, even
+    though the notice's own name (and the page text) says Whiteout Exercise."""
+    html = _render("whiteout", doc)
+    title = re.search(r"<title>(.*?)</title>", html).group(1)
+    assert title.endswith(" — Whiteout")
+    assert "Exercise" not in title

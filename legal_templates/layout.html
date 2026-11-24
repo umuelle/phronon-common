@@ -10,7 +10,7 @@
   - <html lang> is controlled per document (lang="de" on /impressum);
   - robots is always index,follow, regardless of the site default.
 
-  Context: cfg (tool config dict), lang ("en"/"de"), doc_title,
+  Context: cfg (tool config dict), tab_name, lang ("en"/"de"), doc_title,
   L (picks the lang variant out of a per-tool prose dict), stylesheet_url
   (the router's versioned /legal.css, or None) and inline_css.
 #}<!doctype html>
@@ -19,7 +19,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="index, follow">
-<title>{{ doc_title }} — {{ cfg.tool_name }}</title>
+<title>{{ doc_title }} — {{ tab_name }}</title>
 {%- if stylesheet_url %}
 <link rel="stylesheet" href="{{ stylesheet_url }}">
 {%- else %}
