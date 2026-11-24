@@ -7,6 +7,9 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 
 ## Unreleased
 
+
+## 1.120.0 — 24 November 2026
+
 **`rank-list.css`: one row layout for every drag-and-drop ranking list** (owner,
 24 November 2026). Description on the left, the move-up / move-down buttons
 from `rank-a11y.js`, and the six dots to drag by on the right, close together
