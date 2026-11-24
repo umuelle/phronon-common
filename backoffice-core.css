@@ -694,7 +694,7 @@ a.bo-detail-code:hover { background: var(--bo-code-bg, #f0f2f5); }
   border: 1.5px solid #f1d9a3; background: #fffaf1; border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;
 }
 .test-class-fieldset legend {
-  font-weight: 700; font-size: .9rem; padding: 0 .4rem; color: #9a6700;
+  font-weight: 700; font-size: 1rem; padding: 0 .4rem; color: #9a6700;
 }
 .variant-preview {
   margin-top: .75rem; padding: .5rem .75rem; background: #f0f3fa; border-radius: var(--radius-sm); font-size: .85rem; color: var(--bo-muted);
@@ -947,3 +947,112 @@ a.bo-session-code:hover {
 .tabs-row .results-actions .btn-ghost:hover { background: var(--bo-code-bg, #f0f2f5); border-color: var(--bo-text, #16191d); }
 /* The shared component has no visible focus ring; a keyboard user needs one. */
 .tabs__tab:focus-visible { outline: 2px solid var(--bo-accent, #2456a6); outline-offset: 2px; }
+
+/* ══ Settings and their switches (25 November 2026) ════════════════════
+
+   Owner's decision: in an educator backoffice a setting that is on or off is
+   a SWITCH, in every tool. A tick box stays where it marks rows of a table,
+   picks several of a list, or confirms something once. A heading is at least
+   as large as what stands under it. server-ops/fleet_switch_check.py holds
+   the rule at every deploy; the markup is in NEW-TOOL.md:
+
+     <section class="bo-settings">
+       <h3 class="bo-settings__head">What the teams can do</h3>
+       <div class="bo-settings__list">
+         <div class="bo-setting">
+           <div class="bo-setting__text">
+             <label class="bo-setting__name" for="fund">Valley fund</label>
+             <p class="bo-setting__help" id="fund_help">Every hotel benefits.</p>
+           </div>
+           <input type="checkbox" id="fund" name="fund" value="1" role="switch"
+                  class="bo-switch" aria-describedby="fund_help">
+         </div>
+       </div>
+     </section>
+
+   The input stays a tick box for the form: same name, same value, nothing
+   sent when off. The whole row is its click area (the label's ::after). */
+.bo-settings { margin: 0 0 1.25rem; }
+.bo-settings:last-child { margin-bottom: 0; }
+.bo-settings > .bo-settings__head { font-size: 1rem; font-weight: 700; line-height: 1.3; margin: 0 0 .45rem; color: var(--bo-text, #16191d); }
+.bo-settings__list {
+  border: 1px solid var(--bo-border, #d5dae1); border-radius: var(--radius, 12px);
+  background: var(--bo-surface, #fff); padding: 0 1rem;
+}
+.bo-setting {
+  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 1.25rem;
+  padding: .75rem 0; margin: 0;
+}
+.bo-setting + .bo-setting, .bo-setting__more + .bo-setting { border-top: 1px solid var(--bo-line, #e8ebef); }
+fieldset > .bo-setting { padding: .15rem 0; }
+.bo-setting__text { flex: 1 1 auto; min-width: 0; max-width: 46rem; }
+.bo-setting .bo-setting__name {
+  display: block; margin: 0; padding: 0; color: var(--bo-text, #16191d); cursor: pointer;
+  font-size: .95rem; font-weight: 600; line-height: 1.35; letter-spacing: normal; text-transform: none;
+}
+.bo-setting .bo-setting__name::after { content: ""; position: absolute; inset: 0; }
+.bo-setting .bo-setting__help {
+  margin: .1rem 0 0; color: var(--bo-muted, #5b6470); font-size: .85rem; font-weight: 400; line-height: 1.45;
+}
+.bo-setting__help a { position: relative; z-index: 1; }
+/* What belongs to a setting and is asked only while it is on. */
+.bo-setting__more { display: flex; flex-wrap: wrap; gap: .6rem 2rem; padding: 0 0 .9rem; }
+.bo-setting__more[hidden] { display: none; }
+.bo-setting:has(.bo-switch:disabled) .bo-setting__name { cursor: default; }
+
+input.bo-switch.bo-switch[type="checkbox"] {
+  -webkit-appearance: none; appearance: none;
+  position: relative; z-index: 1; float: none; flex: 0 0 auto; box-sizing: border-box;
+  width: 2.75rem; height: 1.625rem; min-width: 0; min-height: 0; margin: 0; padding: 0;
+  border: 0; border-radius: 1rem; background: #7c8590; background-image: none; box-shadow: none;
+  cursor: pointer; transition: background-color .15s;
+}
+input.bo-switch.bo-switch[type="checkbox"]::before {
+  content: ""; position: absolute; top: .1875rem; left: .1875rem;
+  width: 1.25rem; height: 1.25rem; border-radius: 50%; background: #fff; transition: transform .15s;
+  border: 0; opacity: 1; transform: none;
+}
+input.bo-switch.bo-switch[type="checkbox"]:checked { background: var(--bo-accent, #2456a6); }
+input.bo-switch.bo-switch[type="checkbox"]:checked::before { transform: translateX(1.125rem); }
+input.bo-switch.bo-switch[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--bo-accent, #2456a6); outline-offset: 3px;
+}
+input.bo-switch.bo-switch[type="checkbox"]:disabled { opacity: .5; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) {
+  input.bo-switch.bo-switch[type="checkbox"], input.bo-switch.bo-switch[type="checkbox"]::before { transition: none; }
+}
+/* Where the system draws its own colours, it draws its own tick box too. */
+@media (forced-colors: active) {
+  input.bo-switch.bo-switch[type="checkbox"] {
+    -webkit-appearance: auto; appearance: auto; width: 1.15rem; height: 1.15rem;
+  }
+  input.bo-switch.bo-switch[type="checkbox"]::before { content: none; }
+}
+
+/* The tick boxes that stay: rows marked in a table, picks from a list, a confirmation. */
+.bo-content input[type="checkbox"]:not(.bo-switch) {
+  -webkit-appearance: none; appearance: none;
+  position: relative; box-sizing: border-box; flex: 0 0 auto;
+  width: 1.2rem; height: 1.2rem; min-height: 0; padding: 0; vertical-align: -.25rem;
+  border: 1.5px solid #7c8590; border-radius: .35rem; background: var(--bo-surface, #fff); background-image: none;
+  cursor: pointer; transition: background-color .12s, border-color .12s;
+}
+.bo-content input[type="checkbox"]:not(.bo-switch)::before {
+  content: ""; position: absolute; left: .33rem; top: .1rem; width: .3rem; height: .6rem;
+  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); opacity: 0;
+}
+.bo-content input[type="checkbox"]:not(.bo-switch):checked,
+.bo-content input[type="checkbox"]:not(.bo-switch):indeterminate {
+  background: var(--bo-accent, #2456a6); border-color: var(--bo-accent, #2456a6); background-image: none;
+}
+.bo-content input[type="checkbox"]:not(.bo-switch):checked::before { opacity: 1; }
+.bo-content input[type="checkbox"]:not(.bo-switch):indeterminate::before {
+  left: .22rem; top: .42rem; width: .6rem; height: 0; border-width: 0 0 2px 0; transform: none; opacity: 1;
+}
+.bo-content input[type="checkbox"]:not(.bo-switch):hover { border-color: var(--bo-accent, #2456a6); }
+.bo-content input[type="checkbox"]:not(.bo-switch):focus-visible { outline: 2px solid var(--bo-accent, #2456a6); outline-offset: 2px; }
+.bo-content input[type="checkbox"]:not(.bo-switch):disabled { opacity: .5; cursor: not-allowed; }
+@media (forced-colors: active) {
+  .bo-content input[type="checkbox"]:not(.bo-switch) { -webkit-appearance: auto; appearance: auto; }
+  .bo-content input[type="checkbox"]:not(.bo-switch)::before { content: none; }
+}

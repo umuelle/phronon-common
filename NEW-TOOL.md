@@ -206,6 +206,32 @@ the story, this is the list to work from.
     pass that ran on the server), its block in `OPERATIONS_REFERENCE.md`, and
     `server-ops/nginx_mirror_check.py --write`.
 
+## Settings, switches and headings (owner, 25 November 2026)
+
+A setting that is on or off is a switch, in every backoffice; `server-ops/fleet_switch_check.py`
+refuses a plain tick box at every deploy. The look is in `backoffice-core.css`. The markup:
+
+```html
+<section class="bo-settings">
+  <h2 class="bo-settings__head">What the teams can do</h2>
+  <div class="bo-settings__list">
+    <div class="bo-setting">
+      <div class="bo-setting__text">
+        <label class="bo-setting__name" for="fund">Valley fund</label>
+        <p class="bo-setting__help" id="fund_help">Every hotel benefits, whether it paid or not.</p>
+      </div>
+      <input type="checkbox" id="fund" name="fund" value="1" role="switch" class="bo-switch"
+             aria-describedby="fund_help">
+    </div>
+    <div class="bo-setting__more" hidden>fields asked only while the setting above is on</div>
+  </div>
+</section>
+```
+
+A tick box stays where it marks rows of a table, picks several of a list
+(`data-tick="pick"`) or confirms something once (`data-tick="confirm"`). Help texts say
+"switch on" and "switch off". A heading is at least as large as what stands under it.
+
 ## Changing the shared package because of the new tool
 
 The registry entry is always such a change. Sometimes the new tool also needs

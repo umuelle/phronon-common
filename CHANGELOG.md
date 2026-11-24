@@ -8,6 +8,16 @@ tool when its pin is deliberately bumped — never implicitly on the next restar
 ## Unreleased
 
 
+## 1.122.0 — 25 November 2026
+
+**Settings are switches** (owner, 25 November 2026): `backoffice-core.css` has
+`bo-settings`, `bo-setting` and `bo-switch`, one look for every setting that is
+on or off in an educator backoffice, and one look for the tick boxes that stay
+(rows marked in a table, picks from a list, confirmations). The test session's
+legend is 1rem, as large as the setting under it. Only a stylesheet changes:
+an assets-only release. The markup is in `NEW-TOOL.md`.
+
+
 ## 1.121.0 — 24 November 2026
 
 **Legal pages: the tab shows the tool's short name** (owner, 24 November
